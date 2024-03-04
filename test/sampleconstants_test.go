@@ -5,7 +5,7 @@ A Sample test harness.
 */
 
 import (
-	"github.com/AaronSaikovski/gostarter/constants"
+	"github.com/AaronSaikovski/armv/constants"
 	"testing"
 )
 

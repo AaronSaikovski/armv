@@ -1,47 +1,70 @@
 <div align="center">
 
-# GoLang project Template
+# ARMV - Azure Resource Moveability Validator
 
-A simple Golang project template to save you time and energy.
-
-[![Build Status](https://github.com/AaronSaikovski/gostarter/workflows/build/badge.svg)](https://github.com/AaronSaikovski/gostarter/actions)
-[![Licence](https://img.shields.io/github/license/AaronSaikovski/gostarter)](LICENSE)
+[![Build Status](https://github.com/AaronSaikovski/armv/workflows/build/badge.svg)](https://github.com/AaronSaikovski/armv/actions)
+[![Licence](https://img.shields.io/github/license/AaronSaikovski/armv)](LICENSE)
 
 </div>
-A simple GoLang boiler plate project to accelerate Golang projects.
 
-## Install
+### Description
 
-Click the [Use this template](https://github.com/AaronSaikovski/gostarter/generate) button at the top of this project's GitHub page to get started.
+Provides a command line interface to validate moving of Azure resources from one subscription & resource group to another within a Single Azure tenant.
+
+The expected inputs are a source Azure SubscriptionID and Resource Group, passes these to the [Validate Move Resources API](https://learn.microsoft.com/en-us/rest/api/resources/resources/validate-move-resources?view=rest-resources-2021-04-01) and validates these source resources against the target SubscriptionID and ResourceGroup and reports accordingly.
+
+**NOTE: This tool will not perform the move operation but will generate a report for further analysis.**
+
+This tool is a rewrite of the [pyazvalidatemoveresources](https://github.com/AaronSaikovski/pyazvalidatemoveresources) tool originally written in Python and now greatly enhanced in 100% Go. This tool utilisies the [Microsoft Go SDK](https://learn.microsoft.com/en-us/azure/developer/go/overview) and is cross platform and designed to be self-contained.
+
+### Software Requirements
+
+- [Go v1.22](https://www.go.dev/dl/) or later needs to be installed to build the code.
+- [Azure CLI tools](https://learn.microsoft.com/en-us/cli/azure/) 2.50 or later
+
+## Azure Setup
+
+You must be logged into Azure from the CLI (az login) for this program to work. This program will use the CLIs current logged in identity context.  
+Ensure you have run the following:
+
+```bash
+az login
+
+# Where "XXXX-XXXX-XXXX-XXXX" is your subscriptionID
+az account set --subscription "XXXX-XXXX-XXXX-XXXX"
+```
+
+## Installation
+
+The toolchain is mainly driven by the Makefile.
+
+```bash
+help         - Display help about make targets for this Makefile
+release      - Builds the project in preparation for (local)release
+build        - Builds the project in preparation for debug
+run          - builds and runs the program on the target platform
+clean        - Remove the old builds and any debug information
+test         - executes unit tests
+deps         - fetches any external dependencies and updates
+vet          - Vet examines Go source code and reports suspicious constructs
+staticcheck  - Runs static code analyzer staticcheck - currently broken
+seccheck     - Code vulnerability check
+lint         - format code and tidy modules
+```
+
+To get started type,
+
+- make dep - to fetch all dependencies
+- make build - to build debug version for your target environment architecture
+- make release - Builds a release version for your target environment architecture
 
 ## Usage
 
-### Setup configuration
+```bash
+./armv --SourceSubId "XXXX-XXXX-XXXX-XXXX" --SourceRsg "SourceRSG" --TargetSubId "XXXX-XXXX-XXXX-XXXX" --TargetRsg "TargetRSG"
+```
 
-1. Configure the `go.mod` file and replace `module github.com/AaronSaikovski/gostarter` with your specific project url.
-2. Configure the `Makefile` targets and parameters
-3. Update the name in the `LICENSE` or swap it out entirely
-4. Configure the `.github/workflows/build.yml` file
-5. Update the `CHANGELOG.md` with your own info
-6. Rename other files/folders as needed and configure their content
-7. Delete this `README` and rename `README_project.md` to `README.md`
-8. Run `go mod tidy` to ensure all the modules and packages are in place.
-9. The build process is run from the `Makefile` and to test the project is working type: `make run` and check the console for output.
+## Known issues and limitations
 
-### Build and run
-
-#### run `make help` for more assistance on the make file.
-
-1. `make build` - To make and build the program using the `Makefile`.
-2. `make run` - To make and run the program using the `Makefile`.
-3. `make test` - To make and run the unit tests using the `Makefile`.
-4. `make clean` - To cleanup and delete all binaries using the `Makefile`.
-5. `make lint` - To lint the code using `golangci-lint` via the `Makefile`.
-6. `make dep` - To download all program dependencies using `Makefile`.
-7. `make depupdate` - Upgrades all dependencies to the latest or minor patch release using `Makefile`.
-
-## References
-
-- [Golang project Layout](https://github.com/golang-standards/project-layout)
-- [The one-and-only, must-have, eternal Go project layout](https://appliedgo.com/blog/go-project-layout)
-- [How To Upgrade Golang Dependencies](https://golang.cafe/blog/how-to-upgrade-golang-dependencies.html)
+- Currently this program only supports subscriptions and resource groups under the same single tenant.
+- No know bugs or known issues - if found, please report [here](https://github.com/AaronSaikovski/armv/issues)

@@ -3,8 +3,8 @@ package main
 import (
 	"os"
 
-	"github.com/AaronSaikovski/gostarter/app"
-	"github.com/AaronSaikovski/gostarter/pkg/utils"
+	"github.com/AaronSaikovski/armv/app"
+	"github.com/AaronSaikovski/armv/pkg/utils"
 )
 
 // main - program main

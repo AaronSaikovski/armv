@@ -1,8 +1,8 @@
 # Define Go command and flags
 GO = go
 GOFLAGS = -ldflags="-s -w"
-TARGET = gostarter
-MAINAPPPATH = ./main.go
+TARGET = armv
+MAINAPPPATH = ./cmd/main.go
 
 default: help
 
@@ -20,7 +20,7 @@ release: vet lint seccheck
 
 .PHONY: build
 ## build - Builds the project in preparation for debug
-build: clean
+build: 
 	go build -o bin/${TARGET} ${MAINAPPPATH}
 	file bin/${TARGET}
 

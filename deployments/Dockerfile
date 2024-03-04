@@ -1,6 +1,6 @@
 FROM golang:1.21.0-bullseye 
 
-WORKDIR /cmd/gostarter
+WORKDIR /cmd/armv
 
 ENV CGO_CPPFLAGS="-D_FORTIFY_SOURCE=2 -fstack-protector-all"
 ENV GOFLAGS="-buildmode=pie"

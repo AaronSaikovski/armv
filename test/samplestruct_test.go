@@ -5,7 +5,7 @@ A Sample test harness.
 package testing
 
 import (
-	"github.com/AaronSaikovski/gostarter/types"
+	"github.com/AaronSaikovski/armv/types"
 	"testing"
 )
 
