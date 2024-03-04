@@ -4,6 +4,7 @@ go 1.22
 
 require (
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.5.1
+	github.com/alexflint/go-arg v1.4.3
 	github.com/logrusorgru/aurora v2.0.3+incompatible
 )
 
@@ -11,8 +12,7 @@ require (
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.10.0 // indirect
 	github.com/Azure/azure-sdk-for-go/sdk/internal v1.5.2 // indirect
 	github.com/AzureAD/microsoft-authentication-library-for-go v1.2.2 // indirect
-	github.com/alexflint/go-arg v1.4.3 // indirect
-	github.com/alexflint/go-scalar v1.1.0 // indirect
+	github.com/alexflint/go-scalar v1.2.0 // indirect
 	github.com/golang-jwt/jwt/v5 v5.2.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect

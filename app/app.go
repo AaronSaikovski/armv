@@ -3,12 +3,7 @@ package app
 import (
 	"fmt"
 
-	"github.com/logrusorgru/aurora"
-
-	"github.com/AaronSaikovski/armv/constants"
-	"github.com/AaronSaikovski/armv/pkg/samplemodule"
 	"github.com/AaronSaikovski/armv/pkg/utils"
-	"github.com/AaronSaikovski/armv/types"
 	"github.com/alexflint/go-arg"
 )
 
@@ -27,19 +22,13 @@ func Run() error {
 
 	//check for valid subscription Id
 	if !utils.CheckValidSubscriptionID(args.SourceSubscriptionId) {
-		p.Fail("Invalid Source Subscription ID format: - should be: 'XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX'.")
+		p.Fail("Invalid Source Subscription ID format: - should be: '0000-0000-0000-000000000000'.")
 	}
 
-
-	fmt.Println(aurora.BrightGreen(string("This is the main function.\n")))
-
-	for i := 0; i < constants.LoopConstant; i++ {
-		fmt.Printf("print using loop const \n")
+	//check for valid subscription Id
+	if !utils.CheckValidSubscriptionID(args.TargetSubscriptionId) {
+		p.Fail("Invalid Target Subscription ID format: - should be: '0000-0000-0000-000000000000'.")
 	}
-
-	samplemodule.SampleFunction()
-
-	fmt.Print(types.Sample{SampleString: "hello from struct", SampleInt: 1})
 
 	return nil
 }
