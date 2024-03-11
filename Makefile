@@ -2,7 +2,7 @@
 GO = go
 GOFLAGS = -ldflags="-s -w"
 TARGET = armv
-MAINAPPPATH = ./cmd/main.go
+MAINAPPPATH = ./cmd/armv/main.go
 
 default: help
 

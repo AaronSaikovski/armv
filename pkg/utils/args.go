@@ -13,10 +13,10 @@ var (
 
 // Args - struct using go-arg- https://github.com/alexflint/go-arg
 type Args struct {
-	SourceSubscriptionId string `arg:"required,--srcsubid" help:"Source Subscription Id.."`
-	SourceResourceGroup  string `arg:"required,--srcrsg" help:"Source Resource Group."`
-	TargetSubscriptionId string `arg:"required,--targsubid" help:"Target Subscription Id."`
-	TargetResourceGroup  string `arg:"required,--targrsg" help:"Target Resource Group."`
+	SourceSubscriptionId string `arg:"required,--SourceSubscriptionId" help:"Source Subscription Id."`
+	SourceResourceGroup  string `arg:"required,--SourceResourceGroup" help:"Source Resource Group."`
+	TargetSubscriptionId string `arg:"required,--TargetSubscriptionId" help:"Target Subscription Id."`
+	TargetResourceGroup  string `arg:"required,--TargetResourceGroup" help:"Target Resource Group."`
 }
 
 // Description - App description
