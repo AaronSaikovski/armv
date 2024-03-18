@@ -3,44 +3,57 @@ package resources
 import (
 	"context"
 
-	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources"
 )
 
 var (
-	resourceGroupClient    *armresources.ResourceGroupsClient
-	resourcesClient        *armresources.Client
-	resourcesClientFactory *armresources.ClientFactory
+	resourcesClient *armresources.Client
 )
 
-// GetResources retrieves all resources for a given resource group.
+// GetResources retrieves a list of resources in a specific resource group.
 //
-// ctx: context.Context - The context for the request.
-// resourceGroupName: string - The name of the resource group.
-// *runtime.Pager - A pager for iterating over the list of resources.
-func GetResources(ctx context.Context, resourceGroupName string) *runtime.Pager {
+// ctx: the context for the request
+// resourceGroupName: the name of the resource group to retrieve resources from
+// []*armresources.GenericResourceExpanded: a list of expanded generic resources
+// error: an error if the operation fails
+func GetResources(ctx context.Context, resourceGroupName string) ([]*armresources.GenericResourceExpanded, error) {
 
-	resp := resourcesClient.NewListByResourceGroupPager(resourceGroupName, nil)
-	return resp
+	resourcePager := resourcesClient.NewListByResourceGroupPager(resourceGroupName, nil)
 
-}
+	resourceItems := make([]*armresources.GenericResourceExpanded, 0)
 
-// GetResourceIds description of the Go function.
-//
-// ctx context.Context, resourceGroupName string.
-// []string, error.
-func GetResourceIds(ctx context.Context, resourceGroupName string) ([]string, error) {
+	for resourcePager.More() {
 
-	var resourceIds []string
-	resources := GetResources(ctx, resourceGroupName)
+		pageResp, err := resourcePager.NextPage(ctx)
 
-	for resources.More() {
-		resource, err := resources.Next()
 		if err != nil {
 			return nil, err
 		}
-		resourceIds = append(resourceIds, *resource.Value.ID)
+
+		resourceItems = append(resourceItems, pageResp.ResourceListResult.Value...)
+
 	}
+
+	return resourceItems, nil
+}
+
+// GetResourceIds generates resource IDs for the given resource group.
+//
+// ctx: the context object.
+// resourceGroupName: the name of the resource group.
+// []string, error: returns a slice of resource IDs and an error if any.
+func GetResourceIds(ctx context.Context, resourceGroupName string) ([]string, error) {
+
+	resourceIds := make([]string, 0)
+	resourcesList, err := GetResources(ctx, resourceGroupName)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, val := range resourcesList { // loop in resourcesList
+		resourceIds = append(resourceIds, *val.ID)
+	}
+
 	return resourceIds, nil
 
 }

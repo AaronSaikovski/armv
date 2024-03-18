@@ -7,7 +7,10 @@ import (
 	"github.com/AaronSaikovski/armv/pkg/utils"
 )
 
-// main - program main
+// main is the entry point of the program.
+//
+// No parameters.
+// No return types.
 func main() {
 
 	if err := app.Run(); err != nil {
