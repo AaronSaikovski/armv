@@ -8,9 +8,11 @@ import (
 	"github.com/alexflint/go-arg"
 )
 
-// run - main run method
-func Run() error {
-
+// checkParams checks the parameters of the function.
+//
+// It does not take any parameters.
+// It returns an error.
+func checkParams() error {
 	//Get the args input data
 	var args utils.Args
 	p := arg.MustParse(&args)
@@ -29,6 +31,16 @@ func Run() error {
 	//check for valid subscription Id
 	if !subscriptions.CheckValidSubscriptionID(args.TargetSubscriptionId) {
 		p.Fail("Invalid Target Subscription ID format: - should be: '0000-0000-0000-000000000000'.")
+	}
+	return nil
+}
+
+// run - main run method
+func Run() error {
+
+	// check params
+	if err := checkParams(); err != nil {
+		return err
 	}
 
 	return nil
