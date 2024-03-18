@@ -3,6 +3,7 @@ package app
 import (
 	"fmt"
 
+	"github.com/AaronSaikovski/armv/internal/pkg/azure/subscriptions"
 	"github.com/AaronSaikovski/armv/pkg/utils"
 	"github.com/alexflint/go-arg"
 )
@@ -21,12 +22,12 @@ func Run() error {
 	fmt.Printf("Target Resource Group: %s\n", args.TargetResourceGroup)
 
 	//check for valid subscription Id
-	if !utils.CheckValidSubscriptionID(args.SourceSubscriptionId) {
+	if !subscriptions.CheckValidSubscriptionID(args.SourceSubscriptionId) {
 		p.Fail("Invalid Source Subscription ID format: - should be: '0000-0000-0000-000000000000'.")
 	}
 
 	//check for valid subscription Id
-	if !utils.CheckValidSubscriptionID(args.TargetSubscriptionId) {
+	if !subscriptions.CheckValidSubscriptionID(args.TargetSubscriptionId) {
 		p.Fail("Invalid Target Subscription ID format: - should be: '0000-0000-0000-000000000000'.")
 	}
 
