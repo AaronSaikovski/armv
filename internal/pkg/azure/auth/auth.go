@@ -3,7 +3,6 @@ package auth
 import (
 	"context"
 
-	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/subscription/armsubscription"
 )
@@ -12,17 +11,41 @@ import (
 //
 // No parameters.
 // Returns a boolean.
-func IsLoggedIn() bool {
+// func IsLoggedIn() bool {
+// 	cred, err := GetAzureDefaultCredential()
+// 	if err != nil {
+// 		return false
+// 	}
+// 	_, err = cred.GetToken(context.Background(), policy.TokenRequestOptions{})
+// 	// if err != nil {
+// 	// 	return false
+// 	// }
+// 	// return true
+// 	return err == nil
+// }
+
+// DoLogin performs the login process for a given subscription ID.
+//
+// Parameter:
+// subscriptionID: a string representing the subscription ID.
+//
+// Return type:
+// bool
+func DoLogin(subscriptionID string) bool {
+
 	cred, err := GetAzureDefaultCredential()
 	if err != nil {
 		return false
 	}
-	_, err = cred.GetToken(context.Background(), policy.TokenRequestOptions{})
-	// if err != nil {
-	// 	return false
-	// }
-	// return true
-	return err == nil
+
+	client, err := SubscriptionClientCred(cred)
+	if err != nil {
+		return false
+	}
+
+	clientErr := GetSubscriptionClient(client, subscriptionID)
+	return clientErr == nil
+
 }
 
 // GetAzureDefaultCredential retrieves the default Azure credential.
@@ -53,11 +76,11 @@ func SubscriptionClientCred(cred *azidentity.DefaultAzureCredential) (*armsubscr
 	return client, nil
 }
 
-// GetSubcriptionClient retrieves a subscription client.
+// GetSubscriptionClient retrieves a subscription client.
 //
 // Takes a pointer to a SubscriptionsClient and a subscriptionID string.
 // Returns an error.
-func GetSubcriptionClient(client *armsubscription.SubscriptionsClient, subscriptionID string) error {
+func GetSubscriptionClient(client *armsubscription.SubscriptionsClient, subscriptionID string) error {
 	_, err := client.Get(context.TODO(), subscriptionID, nil)
 
 	if err != nil {

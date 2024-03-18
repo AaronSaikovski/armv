@@ -2,7 +2,9 @@ package app
 
 import (
 	"fmt"
+	"strconv"
 
+	"github.com/AaronSaikovski/armv/internal/pkg/azure/auth"
 	"github.com/AaronSaikovski/armv/pkg/utils"
 	"github.com/AaronSaikovski/armv/types"
 )
@@ -33,6 +35,9 @@ func Run() error {
 	fmt.Printf("Source Resource Group: %s\n", inputParams.SourceResourceGroup)
 	fmt.Printf("Target Subscription Id: %s\n", inputParams.TargetSubscriptionId)
 	fmt.Printf("Target Resource Group: %s\n", inputParams.TargetResourceGroup)
+
+	isLoggedIn := auth.DoLogin(inputParams.SourceSubscriptionId)
+	fmt.Printf("Logged in to Azure? %s \n", strconv.FormatBool(isLoggedIn))
 
 	return nil
 }
