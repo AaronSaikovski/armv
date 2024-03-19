@@ -6,12 +6,12 @@ import (
 
 	"github.com/AaronSaikovski/armv/internal/pkg/azure/auth"
 	"github.com/AaronSaikovski/armv/pkg/utils"
-	"github.com/AaronSaikovski/armv/types"
+	//"github.com/AaronSaikovski/armv/types"
 )
 
 var (
-	args        utils.Args
-	inputParams types.Params
+	args utils.Args
+	//inputParams types.Params
 )
 
 // run - main run method
@@ -23,20 +23,20 @@ func Run() error {
 	}
 
 	// populate the params struct
-	inputParams = types.Params{
-		SourceSubscriptionId: args.SourceSubscriptionId,
-		SourceResourceGroup:  args.SourceResourceGroup,
-		TargetSubscriptionId: args.TargetSubscriptionId,
-		TargetResourceGroup:  args.TargetResourceGroup,
-	}
+	// inputParams = types.Params{
+	// 	SourceSubscriptionId: args.SourceSubscriptionId,
+	// 	SourceResourceGroup:  args.SourceResourceGroup,
+	// 	TargetSubscriptionId: args.TargetSubscriptionId,
+	// 	TargetResourceGroup:  args.TargetResourceGroup,
+	// }
 
 	//Print the args
-	fmt.Printf("Source Subscription Id: %s\n", inputParams.SourceSubscriptionId)
-	fmt.Printf("Source Resource Group: %s\n", inputParams.SourceResourceGroup)
-	fmt.Printf("Target Subscription Id: %s\n", inputParams.TargetSubscriptionId)
-	fmt.Printf("Target Resource Group: %s\n", inputParams.TargetResourceGroup)
+	fmt.Printf("Source Subscription Id: %s\n", args.SourceSubscriptionId)
+	fmt.Printf("Source Resource Group: %s\n", args.SourceResourceGroup)
+	fmt.Printf("Target Subscription Id: %s\n", args.TargetSubscriptionId)
+	fmt.Printf("Target Resource Group: %s\n", args.TargetResourceGroup)
 
-	isLoggedIn := auth.DoLogin(inputParams.SourceSubscriptionId)
+	isLoggedIn := auth.DoLogin(args.SourceSubscriptionId) //inputParams.SourceSubscriptionId)
 	fmt.Printf("Logged in to Azure? %s \n", strconv.FormatBool(isLoggedIn))
 
 	return nil
