@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/AaronSaikovski/armv/app"
+	"github.com/AaronSaikovski/armv/internal/app"
 	"github.com/AaronSaikovski/armv/pkg/utils"
 )
 

@@ -1,7 +1,7 @@
 package app
 
 import (
-	"github.com/AaronSaikovski/armv/internal/pkg/azure/subscriptions"
+	"github.com/AaronSaikovski/armv/internal/pkg/subscriptions"
 	"github.com/alexflint/go-arg"
 )
 

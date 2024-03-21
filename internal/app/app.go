@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/AaronSaikovski/armv/internal/pkg/azure/auth"
+	"github.com/AaronSaikovski/armv/internal/pkg/auth"
 	"github.com/AaronSaikovski/armv/pkg/utils"
 	//"github.com/AaronSaikovski/armv/types"
 )
