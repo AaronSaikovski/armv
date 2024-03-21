@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"strconv"
 	"sync"
 
 	"github.com/AaronSaikovski/armv/types"
@@ -48,7 +47,7 @@ func MoveApiLookup(ctx context.Context, wg *sync.WaitGroup, resultChan chan<- st
 
 	// Check the status code
 	if resp.StatusCode != http.StatusOK {
-		logger.Error("Unexpected status code:", strconv.Itoa(resp.StatusCode))
+		logger.Error(fmt.Sprintf("Unexpected status code: %d", resp.StatusCode))
 		return
 	}
 
