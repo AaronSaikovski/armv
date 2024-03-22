@@ -6,6 +6,7 @@ import (
 
 	"github.com/AaronSaikovski/armv/internal/pkg/auth"
 	"github.com/AaronSaikovski/armv/pkg/utils"
+	"github.com/mattn/go-colorable"
 	//"github.com/AaronSaikovski/armv/types"
 )
 
@@ -16,6 +17,11 @@ var (
 
 // run - main run method
 func Run() error {
+
+	//ctx := context.Background()
+
+	restoreColorMode := colorable.EnableColorsStdout(nil)
+	defer restoreColorMode()
 
 	// check params
 	if err := checkParams(); err != nil {
