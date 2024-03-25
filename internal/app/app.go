@@ -18,15 +18,27 @@ var (
 // run - main run method
 func Run() error {
 
-	ctx := context.Background()
-
-	restoreColorMode := colorable.EnableColorsStdout(nil)
-	defer restoreColorMode()
-
 	// check params
 	if err := checkParams(); err != nil {
 		return err
 	}
+
+	restoreColorMode := colorable.EnableColorsStdout(nil)
+	defer restoreColorMode()
+
+	// Get default cred
+	cred, err := auth.GetAzureDefaultCredential()
+	if err != nil {
+		return err
+	}
+
+	ctx := context.Background()
+
+	// resourcesClientFactory, err = armresources.NewClientFactory(args.SourceSubscriptionId, cred, nil)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// resourceGroupClient = resourcesClientFactory.NewResourceGroupsClient()
 
 	// populate the params struct
 	// inputParams = types.Params{
@@ -51,8 +63,16 @@ func Run() error {
 
 	/* ********************************************************************** */
 
+	//Get the resource group client
+	resourceGroupClient, err := resourcegroups.GetResourceGroupClient(cred, args.SourceSubscriptionId)
+	if err != nil {
+		return err
+	}
+
+	/* ********************************************************************** */
+
 	//check source and destination resource groups exist
-	srcRsgExists, err := resourcegroups.CheckResourceGroupExists(ctx, args.SourceResourceGroup)
+	srcRsgExists, err := resourcegroups.CheckResourceGroupExists(ctx, resourceGroupClient, args.SourceResourceGroup)
 	if err != nil {
 		return err
 	}
@@ -63,7 +83,7 @@ func Run() error {
 	/* ********************************************************************** */
 
 	//check destination and destination resource groups exist
-	dstRsgExists, err := resourcegroups.CheckResourceGroupExists(ctx, args.TargetResourceGroup)
+	dstRsgExists, err := resourcegroups.CheckResourceGroupExists(ctx, resourceGroupClient, args.TargetResourceGroup)
 	if err != nil {
 		return err
 	}
@@ -74,14 +94,19 @@ func Run() error {
 	/* ********************************************************************** */
 
 	// Get all resource IDs from source resource group
-	resourceIds, err := resources.GetResourceIds(ctx, args.SourceResourceGroup)
+	resourcesClient, err := resources.GetResourcesClient(cred, args.SourceSubscriptionId)
+
+	if err != nil {
+		return err
+	}
+
+	resourceIds, err := resources.GetResourceIds(ctx, resourcesClient, args.SourceResourceGroup)
 	if err != nil {
 		return err
 	}
 
 	fmt.Printf("Resource Ids: %s\n", resourceIds)
-
-	/* ********************************************************************** */
+	fmt.Println("done!")
 
 	/* ********************************************************************** */
 

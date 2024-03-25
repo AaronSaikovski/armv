@@ -2,12 +2,34 @@ package resourcegroups
 
 import (
 	"context"
+
+	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources"
 )
 
 var (
-	resourceGroupClient *armresources.ResourceGroupsClient
+	resourceGroupClient    *armresources.ResourceGroupsClient
+	resourcesClientFactory *armresources.ClientFactory
 )
+
+// GetResourceGroupClient retrieves an Azure Resource Groups client.
+//
+// Takes in Azure credentials and a subscription ID. Returns a ResourceGroupsClient pointer and an error.
+
+func GetResourceGroupClient(cred *azidentity.DefaultAzureCredential, subscriptionID string) (*armresources.ResourceGroupsClient, error) {
+	resourcesClientFactory, err := armresources.NewClientFactory(subscriptionID, cred, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	resourceGroupClient = resourcesClientFactory.NewResourceGroupsClient()
+
+	if resourceGroupClient == nil {
+		return nil, err
+	}
+
+	return resourceGroupClient, nil
+}
 
 // GetResourceGroup retrieves a resource group using the provided resource group name.
 //
@@ -27,7 +49,7 @@ func GetResourceGroup(ctx context.Context, resourceGroupName string) (*armresour
 //
 // ctx - the context within which the function is executed.
 // []*armresources.ResourceGroup, error - returns a slice of resource groups and an error if any.
-func ListResourceGroup(ctx context.Context) ([]*armresources.ResourceGroup, error) {
+func ListResourceGroup(ctx context.Context, resourceGroupClient *armresources.ResourceGroupsClient) ([]*armresources.ResourceGroup, error) {
 
 	resultPager := resourceGroupClient.NewListPager(nil)
 
@@ -47,7 +69,7 @@ func ListResourceGroup(ctx context.Context) ([]*armresources.ResourceGroup, erro
 // ctx: the context for the request.
 // resourceGroupName: the name of the resource group to check.
 // (bool, error): returns a boolean indicating if the resource group exists and an error if any.
-func CheckResourceGroupExists(ctx context.Context, resourceGroupName string) (bool, error) {
+func CheckResourceGroupExists(ctx context.Context, resourceGroupClient *armresources.ResourceGroupsClient, resourceGroupName string) (bool, error) {
 
 	boolResp, err := resourceGroupClient.CheckExistence(ctx, resourceGroupName, nil)
 	if err != nil {
