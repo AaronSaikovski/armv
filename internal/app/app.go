@@ -46,14 +46,11 @@ func Run() error {
 
 	/* ********************************************************************** */
 	// check we are logged into the Azure source subscription
-	isLoggedIn := auth.DoLogin(args.SourceSubscriptionId)
-	// fmt.Printf("Logged in to Azure? %s \n", strconv.FormatBool(isLoggedIn))
-
-	if isLoggedIn {
-		fmt.Println("Logged into Azure")
-	} else {
-		fmt.Println("NOT Logged into Azure")
+	isLoggedIn := auth.GetLogin(args.SourceSubscriptionId)
+	if !isLoggedIn {
+		return fmt.Errorf("not logged into azure, please login and retry operation.")
 	}
+
 	/* ********************************************************************** */
 
 	//check source and destination resource groups exist
@@ -85,6 +82,8 @@ func Run() error {
 	}
 
 	fmt.Println(resourceIds)
+
+	/* ********************************************************************** */
 
 	/* ********************************************************************** */
 

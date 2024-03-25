@@ -7,14 +7,14 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/subscription/armsubscription"
 )
 
-// DoLogin performs the login process for a given subscription ID.
+// GetLogin Gets the login creds for a given user context
 //
 // Parameter:
 // subscriptionID: a string representing the subscription ID.
 //
 // Return type:
 // bool
-func DoLogin(subscriptionID string) bool {
+func GetLogin(subscriptionID string) bool {
 
 	cred, err := GetAzureDefaultCredential()
 	if err != nil {
