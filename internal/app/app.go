@@ -93,13 +93,13 @@ func Run() error {
 
 	/* ********************************************************************** */
 
-	// Get all resource IDs from source resource group
+	// Get resource client
 	resourcesClient, err := resources.GetResourcesClient(cred, args.SourceSubscriptionId)
-
 	if err != nil {
 		return err
 	}
 
+	// Get all resource IDs from source resource group
 	resourceIds, err := resources.GetResourceIds(ctx, resourcesClient, args.SourceResourceGroup)
 	if err != nil {
 		return err
