@@ -9,12 +9,10 @@ import (
 	"github.com/AaronSaikovski/armv/internal/pkg/resources"
 	"github.com/AaronSaikovski/armv/pkg/utils"
 	"github.com/mattn/go-colorable"
-	//"github.com/AaronSaikovski/armv/types"
 )
 
 var (
 	args utils.Args
-	//inputParams types.Params
 )
 
 // run - main run method
@@ -48,7 +46,7 @@ func Run() error {
 	// check we are logged into the Azure source subscription
 	isLoggedIn := auth.GetLogin(args.SourceSubscriptionId)
 	if !isLoggedIn {
-		return fmt.Errorf("not logged into azure, please login and retry operation.")
+		return fmt.Errorf("you are not logged into the azure subscription '%s', please login and retry operation.", args.SourceSubscriptionId)
 	}
 
 	/* ********************************************************************** */
@@ -81,7 +79,7 @@ func Run() error {
 		return err
 	}
 
-	fmt.Println(resourceIds)
+	fmt.Printf("Resource Ids: %s\n", resourceIds)
 
 	/* ********************************************************************** */
 
