@@ -9,7 +9,6 @@ import (
 
 var (
 	resourceGroupClient    *armresources.ResourceGroupsClient
-	resourcesClientFactory *armresources.ClientFactory
 )
 
 // GetResourceGroupClient retrieves an Azure Resource Groups client.
