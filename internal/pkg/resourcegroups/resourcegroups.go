@@ -15,7 +15,7 @@ var (
 //
 // Takes in Azure credentials and a subscription ID. Returns a ResourceGroupsClient pointer and an error.
 
-func GetResourceGroupClient(cred *azidentity.DefaultAzureCredential, subscriptionID string) (*armresources.ResourceGroupsClient, error) {
+func GetResourceGroupClient(cred *azidentity.DefaultAzureCredential, subscriptionID string) (*armresources.ResourceGroupsClient, error) { //move to interface
 	resourcesClientFactory, err := armresources.NewClientFactory(subscriptionID, cred, nil)
 	if err != nil {
 		return nil, err
@@ -35,7 +35,7 @@ func GetResourceGroupClient(cred *azidentity.DefaultAzureCredential, subscriptio
 // ctx: The context within which the function is being executed.
 // resourceGroupName: The name of the resource group to retrieve.
 // Returns a pointer to armresources.ResourceGroup and an error.
-func GetResourceGroup(ctx context.Context, resourceGroupName string) (*armresources.ResourceGroup, error) {
+func GetResourceGroup(ctx context.Context, resourceGroupClient *armresources.ResourceGroupsClient, resourceGroupName string) (*armresources.ResourceGroup, error) {
 
 	resourceGroupResp, err := resourceGroupClient.Get(ctx, resourceGroupName, nil)
 	if err != nil {

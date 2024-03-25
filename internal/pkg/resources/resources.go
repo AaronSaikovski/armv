@@ -20,7 +20,7 @@ var (
 // Returns:
 // - *armresources.Client: The created client instance.
 // - error: An error if the client creation fails.
-func GetResourcesClient(cred *azidentity.DefaultAzureCredential, subscriptionID string) (*armresources.Client, error) {
+func GetResourcesClient(cred *azidentity.DefaultAzureCredential, subscriptionID string) (*armresources.Client, error) { //move to interface
 	resourcesClientFactory, err := armresources.NewClientFactory(subscriptionID, cred, nil)
 	if err != nil {
 		return nil, err
