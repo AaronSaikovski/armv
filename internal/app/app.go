@@ -6,7 +6,8 @@ import (
 
 	"github.com/AaronSaikovski/armv/internal/pkg/auth"
 	"github.com/AaronSaikovski/armv/internal/pkg/resourcegroups"
-	"github.com/AaronSaikovski/armv/internal/pkg/resources"
+
+	//"github.com/AaronSaikovski/armv/internal/pkg/resources"
 	"github.com/AaronSaikovski/armv/pkg/utils"
 	"github.com/mattn/go-colorable"
 )
@@ -56,10 +57,12 @@ func Run() error {
 
 	/* ********************************************************************** */
 	// check we are logged into the Azure source subscription
-	// isLoggedIn := auth.GetLogin(args.SourceSubscriptionId)
-	// if !isLoggedIn {
-	// 	return fmt.Errorf("you are not logged into the azure subscription '%s', please login and retry operation.", args.SourceSubscriptionId)
-	// }
+	isLoggedIn := auth.GetLogin(args.SourceSubscriptionId)
+	if !isLoggedIn {
+		return fmt.Errorf("you are not logged into the azure subscription '%s', please login and retry operation.", args.SourceSubscriptionId)
+	} else {
+		fmt.Printf("Logged into Subscription Id: %s\n", args.SourceSubscriptionId)
+	}
 
 	/* ********************************************************************** */
 
@@ -94,18 +97,18 @@ func Run() error {
 	/* ********************************************************************** */
 
 	// Get resource client
-	resourcesClient, err := resources.GetResourcesClient(cred, args.SourceSubscriptionId)
-	if err != nil {
-		return err
-	}
+	// resourcesClient, err := resources.GetResourcesClient(cred, args.SourceSubscriptionId)
+	// if err != nil {
+	// 	return err
+	// }
 
 	// Get all resource IDs from source resource group
-	resourceIds, err := resources.GetResourceIds(ctx, resourcesClient, args.SourceResourceGroup)
-	if err != nil {
-		return err
-	}
+	// resourceIds, err := resources.GetResourceIds(ctx, resourcesClient, args.SourceResourceGroup)
+	// if err != nil {
+	// 	return err
+	// }
 
-	fmt.Printf("Resource Ids: %s\n", resourceIds)
+	//fmt.Printf("Resource Ids: %s\n", resourceIds)
 	fmt.Println("done!")
 
 	/* ********************************************************************** */
