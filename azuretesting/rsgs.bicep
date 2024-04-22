@@ -21,18 +21,25 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
-param storageLocation string
+targetScope = 'subscription'
 
-@description('The name of the Storage Account')
-param storageName string = 'stg${uniqueString(resourceGroup().id)}'
+param sourcersg string = 'src-rsg'
+param destrsg string = 'dest-rsg'
 
+param resourceGroupLocation string = 'australiaeast'
 
-resource storageAcct 'Microsoft.Storage/storageAccounts@2023-01-01' = {
-  name: storageName
-  location: storageLocation
-  sku: {
-    name: 'Standard_LRS'
+module sourceRsg './modules/resourcegroup.bicep' = {
+  name: 'sourcersgmodule'
+  params: {
+    name: sourcersg
+    location: resourceGroupLocation
   }
-  kind: 'Storage'
-  properties: {}
+}
+
+module destinationRsg './modules/resourcegroup.bicep' = {
+  name: 'destrsgmodule'
+  params: {
+    name: destrsg
+    location: resourceGroupLocation
+  }
 }
