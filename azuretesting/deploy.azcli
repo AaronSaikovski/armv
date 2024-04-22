@@ -1,0 +1,17 @@
+az login
+
+az account list --output table
+
+az account set --subscription "<SUBSCRIPTION_ID>"
+
+templateFile="main.bicep"
+today=$(date +"%d-%b-%Y")
+deploymentName="sub-scope-"$today
+location="australia east"
+
+az deployment sub create \
+    --name $deploymentName \
+    --location $location \
+    --template-file $templateFile
+
+
