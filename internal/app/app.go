@@ -29,8 +29,6 @@ import (
 
 	"github.com/AaronSaikovski/armv/internal/pkg/auth"
 	"github.com/AaronSaikovski/armv/internal/pkg/resourcegroups"
-
-	//"github.com/AaronSaikovski/armv/internal/pkg/resources"
 	"github.com/AaronSaikovski/armv/pkg/utils"
 	"github.com/mattn/go-colorable"
 )
