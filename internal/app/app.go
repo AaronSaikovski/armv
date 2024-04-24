@@ -103,7 +103,7 @@ func Run() error {
 		return err
 	}
 	if !srcRsgExists {
-		return fmt.Errorf("source resource group %s does not exist", args.SourceResourceGroup)
+		return fmt.Errorf("source resource group '%s' does not exist", args.SourceResourceGroup)
 	}
 
 	/* ********************************************************************** */
@@ -114,7 +114,7 @@ func Run() error {
 		return err
 	}
 	if !dstRsgExists {
-		return fmt.Errorf("destination resource group %s does not exist", args.TargetResourceGroup)
+		return fmt.Errorf("destination resource group '%s' does not exist", args.TargetResourceGroup)
 	}
 
 	/* ********************************************************************** */
