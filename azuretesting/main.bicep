@@ -25,7 +25,6 @@ targetScope = 'subscription'
 
 param sourcersg string = 'src-rsg'
 param destrsg string = 'dest-rsg'
-
 param resourceGroupLocation string = 'australiaeast'
 
 module sourceRsg './modules/resourcegroup.bicep' = {
@@ -43,3 +42,20 @@ module destinationRsg './modules/resourcegroup.bicep' = {
     location: resourceGroupLocation
   }
 }
+
+
+module webApp './modules/webapp.bicep' = {
+  name: 'webappmodule'
+  scope: resourceGroup(sourceRsg.name)
+}
+
+
+module storageAcct './modules/storage.bicep' = {
+  name:'storagemodule'
+  params: {
+
+      storageLocation:resourceGroupLocation
+  }
+  scope: resourceGroup(sourceRsg.name)
+}
+

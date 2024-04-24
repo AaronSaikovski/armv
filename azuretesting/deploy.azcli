@@ -27,7 +27,8 @@ az account list --output table
 
 az account set --subscription "<SUBSCRIPTION_ID>"
 
-templateFile="rsgs.bicep"
+templateFile="main.bicep"
+paramsFile = "main.parameters.json"
 today=$(date +"%d-%b-%Y")
 deploymentName="sub-scope-"$today
 location="australia east"
@@ -35,6 +36,7 @@ location="australia east"
 az deployment sub create \
     --name $deploymentName \
     --location $location \
-    --template-file $templateFile
+    --template-file $templateFile \
+    --parameters $paramsFile
 
 

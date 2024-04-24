@@ -39,7 +39,7 @@ param location string = resourceGroup().location
 var webAppPortalName = '${webAppName}-webapp'
 var appServicePlanName = 'AppServicePlan-${webAppName}'
 
-resource appServicePlan 'Microsoft.Web/serverfarms@2022-03-01' = {
+resource appServicePlan 'Microsoft.Web/serverfarms@2023-01-01' = {
   name: appServicePlanName
   location: location
   sku: {
@@ -51,7 +51,7 @@ resource appServicePlan 'Microsoft.Web/serverfarms@2022-03-01' = {
   }
 }
 
-resource webAppPortal 'Microsoft.Web/sites@2022-03-01' = {
+resource webAppPortal 'Microsoft.Web/sites@2023-01-01' = {
   name: webAppPortalName
   location: location
   kind: 'app'
@@ -65,13 +65,5 @@ resource webAppPortal 'Microsoft.Web/sites@2022-03-01' = {
   }
   identity: {
     type: 'SystemAssigned'
-  }
-}
-
-
-module storageAcct './modules/storage.bicep' = {
-  name: 'storageModule'
-  params: {
-    storageLocation: location
   }
 }
