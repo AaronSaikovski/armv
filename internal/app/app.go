@@ -130,7 +130,7 @@ func Run() error {
 	// }
 
 	//fmt.Printf("Resource Ids: %s\n", resourceIds)
-	fmt.Println("done!")
+	fmt.Println("Done!")
 
 	/* ********************************************************************** */
 
