@@ -101,18 +101,45 @@ func GetSubscriptionClient(client *armsubscription.SubscriptionsClient, subscrip
 //
 // ctx - the context in which the function is being called.
 // // *exported.AzCachedAccessToken - returns a pointer to an Azure cached access token.
-func GetAzCachedAccessToken(ctx context.Context) { //*exported.AzCachedAccessToken {
+// func GetAzCachedAccessToken(ctx context.Context) { //*exported.AzCachedAccessToken {
 
-	// cred, err := GetAzureDefaultCredential()
-	// if err != nil {
-	// 	return nil
+// 	// cred, err := GetAzureDefaultCredential()
+// 	// if err != nil {
+// 	// 	return nil
+// 	// }
+// 	// token, err := cred.GetToken(ctx, policy.TokenRequestOptions{})
+
+// 	// if err != nil {
+// 	// 	return nil
+// 	// }
+
+// 	// return &token
+
+// }
+
+func GetAzCachedAccessToken(ctx context.Context) (string, error) {
+
+	// 	cred, err := azidentity.NewDefaultAzureCredential(nil)
+	// 	if err != nil {
+	// 		return "", err
+	// 	}
+
+	// 	// settings := auth.NewMultiTenantClientCredentialsConfig(nil)
+
+	// 	// authorizer, err := settings.Authorizer()
+	// 	// if err != nil {
+	// 	// 	return "", err
+	// 	// }
+
+	// 	// token, err := authorizer.GetToken()
+	// 	// if err != nil {
+	// 	// 	return "", err
+	// 	// }
+
+	// 	// return token.Token, nil
+
+	// 	return cred.GetToken(ctx).Token, nil
 	// }
-	// token, err := cred.GetToken(ctx, policy.TokenRequestOptions{})
 
-	// if err != nil {
-	// 	return nil
-	// }
-
-	// return &token
-
+	return "", nil
 }
