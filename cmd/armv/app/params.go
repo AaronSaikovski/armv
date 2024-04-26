@@ -28,7 +28,6 @@ import (
 	"github.com/alexflint/go-arg"
 )
 
-
 // checkParams checks the parameters of the function.
 //
 // It does not take any parameters.

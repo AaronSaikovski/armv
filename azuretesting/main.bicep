@@ -28,7 +28,7 @@ param destrsg string = 'dest-rsg'
 param resourceGroupLocation string = 'australiaeast'
 
 module sourceRsg './modules/resourcegroup.bicep' = {
-  name: 'sourcersgmodule'
+  name: sourcersg
   params: {
     name: sourcersg
     location: resourceGroupLocation
@@ -36,26 +36,23 @@ module sourceRsg './modules/resourcegroup.bicep' = {
 }
 
 module destinationRsg './modules/resourcegroup.bicep' = {
-  name: 'destrsgmodule'
+  name: destrsg
   params: {
     name: destrsg
     location: resourceGroupLocation
   }
 }
 
-
 module webApp './modules/webapp.bicep' = {
   name: 'webappmodule'
   scope: resourceGroup(sourceRsg.name)
 }
 
+// module storageAcct './modules/storage.bicep' = {
+//   name:'storagemodule'
+//   params: {
 
-module storageAcct './modules/storage.bicep' = {
-  name:'storagemodule'
-  params: {
-
-      storageLocation:resourceGroupLocation
-  }
-  scope: resourceGroup(sourceRsg.name)
-}
-
+//       storageLocation:resourceGroupLocation
+//   }
+//   scope: resourceGroup(sourceRsg.name)
+// }

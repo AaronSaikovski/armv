@@ -29,6 +29,7 @@ import (
 
 	"github.com/AaronSaikovski/armv/internal/pkg/auth"
 	"github.com/AaronSaikovski/armv/internal/pkg/resourcegroups"
+	"github.com/AaronSaikovski/armv/internal/pkg/resources"
 	"github.com/AaronSaikovski/armv/pkg/utils"
 	"github.com/mattn/go-colorable"
 )
@@ -118,21 +119,21 @@ func Run() error {
 	/* ********************************************************************** */
 
 	// Get resource client
-	// resourcesClient, err := resources.GetResourcesClient(cred, args.SourceSubscriptionId)
-	// if err != nil {
-	// 	return err
-	// }
+	resourcesClient, err := resources.GetResourcesClient(cred, args.SourceSubscriptionId)
+	if err != nil {
+		return err
+	}
 
 	// Get all resource IDs from source resource group
-	// resourceIds, err := resources.GetResourceIds(ctx, resourcesClient, args.SourceResourceGroup)
-	// if err != nil {
-	// 	return err
-	// }
-
-	//fmt.Printf("Resource Ids: %s\n", resourceIds)
-	fmt.Println("Done!")
+	resourceIds, err := resources.GetResourceIds(ctx, resourcesClient, args.SourceResourceGroup)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("Resource Ids: %s\n", resourceIds)
 
 	/* ********************************************************************** */
+
+	fmt.Println("Done!")
 
 	return nil
 }

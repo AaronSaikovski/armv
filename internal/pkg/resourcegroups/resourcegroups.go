@@ -39,7 +39,7 @@ var (
 // Takes in Azure credentials and a subscription ID. Returns a ResourceGroupsClient pointer and an error.
 
 func GetResourceGroupClient(cred *azidentity.DefaultAzureCredential, subscriptionID string) (*armresources.ResourceGroupsClient, error) { //move to interface
-	
+
 	// Create a new Resource Groups client
 	resourcesClientFactory, err := armresources.NewClientFactory(subscriptionID, cred, nil)
 	if err != nil {
