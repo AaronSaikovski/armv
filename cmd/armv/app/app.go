@@ -27,7 +27,6 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"sync"
 
 	api "github.com/AaronSaikovski/armv/internal/pkg/apis"
 	"github.com/AaronSaikovski/armv/internal/pkg/auth"
@@ -149,22 +148,28 @@ func Run() error {
 	/* ********************************************************************** */
 
 	// Create a channel to receive results
-	resultChan := make(chan string)
+	// resultChan := make(chan string)
 
-	// Create a WaitGroup to wait for all goroutines to finish
-	var wg sync.WaitGroup
+	// // Create a WaitGroup to wait for all goroutines to finish
+	// var wg sync.WaitGroup
 
-	// Increment the WaitGroup counter
-	wg.Add(1)
+	// // Increment the WaitGroup counter
+	// wg.Add(1)
 
-	// Call the API in a goroutine
-	go api.CallValidationApi(args.SourceSubscriptionId, args.SourceResourceGroup, strings.Join(resourceIds, ""), ctx, &wg, resultChan)
+	// // Call the API in a goroutine
+	// go api.CallValidationApi(args.SourceSubscriptionId, args.SourceResourceGroup, strings.Join(resourceIds, ""), ctx, &wg, resultChan)
 
-	// Wait for all goroutines to finish
-	wg.Wait()
+	// // Wait for all goroutines to finish
+	// wg.Wait()
 
-	// Close the result channel to signal completion
-	close(resultChan)
+	// // Close the result channel to signal completion
+	// close(resultChan)
+
+	resp, err := api.CallValidationApi(args.SourceSubscriptionId, args.SourceResourceGroup, strings.Join(resourceIds, ""), ctx)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("response: %s\n", resp)
 
 	/* ********************************************************************** */
 
