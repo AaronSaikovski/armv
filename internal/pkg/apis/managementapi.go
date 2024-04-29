@@ -28,6 +28,13 @@ import (
 	"sync"
 )
 
-func CallManagementApi(ctx context.Context, wg *sync.WaitGroup, resultChan chan<- string) {
+const (
+	//API return codes
+	API_SUCCESS            int = 202
+	API_RESOURCE_MOVE_OK   int = 204
+	API_RESOURCE_MOVE_FAIL int = 409
+)
+
+func CallManagementApi(apiResponse string, requestHeader string, ctx context.Context, wg *sync.WaitGroup, resultChan chan<- string) {
 	//return "", nil
 }

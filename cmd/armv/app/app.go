@@ -26,7 +26,10 @@ package app
 import (
 	"context"
 	"fmt"
+	"strings"
+	"sync"
 
+	api "github.com/AaronSaikovski/armv/internal/pkg/apis"
 	"github.com/AaronSaikovski/armv/internal/pkg/auth"
 	"github.com/AaronSaikovski/armv/internal/pkg/resourcegroups"
 	"github.com/AaronSaikovski/armv/internal/pkg/resources"
@@ -55,7 +58,10 @@ func Run() error {
 		return err
 	}
 
-	ctx := context.Background()
+	// Create a context with cancellation capability
+	//ctx := context.Background()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
 	// resourcesClientFactory, err = armresources.NewClientFactory(args.SourceSubscriptionId, cred, nil)
 	// if err != nil {
@@ -81,7 +87,7 @@ func Run() error {
 	// check we are logged into the Azure source subscription
 	isLoggedIn := auth.GetLogin(args.SourceSubscriptionId)
 	if !isLoggedIn {
-		return fmt.Errorf("you are not logged into the azure subscription '%s', please login and retry operation.", args.SourceSubscriptionId)
+		return fmt.Errorf("you are not logged into the azure subscription '%s', please login and retry operation", args.SourceSubscriptionId)
 	} else {
 		fmt.Printf("Logged into Subscription Id: %s\n", args.SourceSubscriptionId)
 	}
@@ -139,6 +145,26 @@ func Run() error {
 		return err
 	}
 	fmt.Printf("token: %s\n", token)
+
+	/* ********************************************************************** */
+
+	// Create a channel to receive results
+	resultChan := make(chan string)
+
+	// Create a WaitGroup to wait for all goroutines to finish
+	var wg sync.WaitGroup
+
+	// Increment the WaitGroup counter
+	wg.Add(1)
+
+	// Call the API in a goroutine
+	go api.CallValidationApi(args.SourceSubscriptionId, args.SourceResourceGroup, strings.Join(resourceIds, ""), ctx, &wg, resultChan)
+
+	// Wait for all goroutines to finish
+	wg.Wait()
+
+	// Close the result channel to signal completion
+	close(resultChan)
 
 	/* ********************************************************************** */
 
