@@ -26,6 +26,7 @@ package auth
 import (
 	"context"
 
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/subscription/armsubscription"
 )
@@ -97,49 +98,19 @@ func GetSubscriptionClient(client *armsubscription.SubscriptionsClient, subscrip
 
 }
 
-// GetAzCachedAccessToken retrieves an Azure cached access token.
-//
-// ctx - the context in which the function is being called.
-// // *exported.AzCachedAccessToken - returns a pointer to an Azure cached access token.
-// func GetAzCachedAccessToken(ctx context.Context) { //*exported.AzCachedAccessToken {
-
-// 	// cred, err := GetAzureDefaultCredential()
-// 	// if err != nil {
-// 	// 	return nil
-// 	// }
-// 	// token, err := cred.GetToken(ctx, policy.TokenRequestOptions{})
-
-// 	// if err != nil {
-// 	// 	return nil
-// 	// }
-
-// 	// return &token
-
-// }
-
+// Get the bearer token as already signed into Azure
 func GetAzCachedAccessToken(ctx context.Context) (string, error) {
 
-	// 	cred, err := azidentity.NewDefaultAzureCredential(nil)
-	// 	if err != nil {
-	// 		return "", err
-	// 	}
+	cred, err := GetAzureDefaultCredential() //azidentity.NewDefaultAzureCredential(nil)
+	if err != nil {
+		return "", err
+	}
 
-	// 	// settings := auth.NewMultiTenantClientCredentialsConfig(nil)
+	token, err := cred.GetToken(ctx, policy.TokenRequestOptions{})
+	if err != nil {
+		return "", err
+	}
 
-	// 	// authorizer, err := settings.Authorizer()
-	// 	// if err != nil {
-	// 	// 	return "", err
-	// 	// }
+	return token.Token, nil
 
-	// 	// token, err := authorizer.GetToken()
-	// 	// if err != nil {
-	// 	// 	return "", err
-	// 	// }
-
-	// 	// return token.Token, nil
-
-	// 	return cred.GetToken(ctx).Token, nil
-	// }
-
-	return "", nil
 }
