@@ -107,6 +107,13 @@ func GetAzureAccessToken(ctx context.Context) (string, error) {
 		return "", err
 	}
 
+	// Azure Resource Management clients accept the credential as a parameter
+	//client, err := armresources.NewClient("<subscriptionId>", cred, nil)
+	// if err != nil {
+	// 	// handle error
+	// }
+	//resp, err:= client.BeginValidateMoveResources(ctx, nil)
+
 	token, err := cred.GetToken(ctx, policy.TokenRequestOptions{})
 	if err != nil {
 		return "", err
