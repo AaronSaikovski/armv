@@ -99,7 +99,7 @@ func GetSubscriptionClient(client *armsubscription.SubscriptionsClient, subscrip
 }
 
 // Get the bearer token as already signed into Azure
-func GetAzCachedAccessToken(ctx context.Context) (string, error) {
+func GetAzureAccessToken(ctx context.Context) (string, error) {
 
 	cred, err := GetAzureDefaultCredential()
 	//cred, err := azidentity.NewDefaultAzureCredential(nil)
@@ -115,3 +115,20 @@ func GetAzCachedAccessToken(ctx context.Context) (string, error) {
 	return token.Token, nil
 
 }
+
+// func getAzureAccessToken(subscriptionID string, ctx context.Context) (string, error) {
+// 	authorizer, err := auth.NewAuthorizerFromEnvironment()
+// 	if err != nil {
+// 		return "", err
+// 	}
+
+// 	subscriptionClient := subscriptions.NewClient(subscriptionID)
+// 	subscriptionClient.Authorizer = authorizer.WithAuthorization()
+
+// 	token, err := subscriptionClient.Authorizer.Token()
+// 	if err != nil {
+// 		return "", fmt.Errorf("failed to get access token: %v", err)
+// 	}
+
+// 	return token.AccessToken, nil
+// }

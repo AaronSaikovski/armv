@@ -139,7 +139,7 @@ func Run() error {
 	/* ********************************************************************** */
 
 	// Get our bearer token because we're already signed into Azure
-	token, err := auth.GetAzCachedAccessToken(ctx)
+	token, err := auth.GetAzureAccessToken(ctx)
 	if err != nil {
 		return err
 	}

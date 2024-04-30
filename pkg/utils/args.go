@@ -36,6 +36,7 @@ var (
 
 // Args - struct using go-arg- https://github.com/alexflint/go-arg
 type Args struct {
+	TenantId             string `arg:"required,--TenantId" help:"Tenant Id."`
 	SourceSubscriptionId string `arg:"required,--SourceSubscriptionId" help:"Source Subscription Id."`
 	SourceResourceGroup  string `arg:"required,--SourceResourceGroup" help:"Source Resource Group."`
 	TargetSubscriptionId string `arg:"required,--TargetSubscriptionId" help:"Target Subscription Id."`

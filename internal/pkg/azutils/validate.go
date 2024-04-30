@@ -21,18 +21,46 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
-package subscriptions
+package azutils
 
 import (
 	"regexp"
 )
+
+// validateId checks if the inputId string matches the specified pattern.
+//
+// inputId - the string to validate.
+// bool - returns true if the inputId matches the pattern, false otherwise.
+func validateId(inputId string) bool {
+	pattern := regexp.MustCompile(`^(\{{0,1}([0-9a-fA-F]){8}-([0-9a-fA-F]){4}-([0-9a-fA-F]){4}-([0-9a-fA-F]){4}-([0-9a-fA-F]){12}\}{0,1})$`)
+	return pattern.MatchString(inputId)
+}
 
 // CheckValidSubscriptionID checks if the provided subscription ID is valid.
 //
 // subscriptionID: a string representing a subscription ID
 // bool: returns true if the subscription ID is valid, false otherwise
 func CheckValidSubscriptionID(subscriptionID string) bool {
-	pattern := regexp.MustCompile(`^(\{{0,1}([0-9a-fA-F]){8}-([0-9a-fA-F]){4}-([0-9a-fA-F]){4}-([0-9a-fA-F]){4}-([0-9a-fA-F]){12}\}{0,1})$`)
-	return pattern.MatchString(subscriptionID)
+
+	//check for empty string
+	if subscriptionID == "" {
+		return false
+	}
+	return validateId(subscriptionID)
+
+}
+
+// CheckValidTenantID checks if the provided tenant ID is valid.
+//
+// tenantID: a string representing a tenant ID
+// bool: returns true if the tenant ID is valid, false otherwise
+func CheckValidTenantID(tenantID string) bool {
+
+	//check for empty string
+	if tenantID == "" {
+		return false
+	}
+
+	return validateId(tenantID)
 
 }

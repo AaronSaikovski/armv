@@ -66,7 +66,8 @@ func CallValidationApi(sourceSubscriptionId string, sourceResourceGroup string, 
 	}
 
 	//get the access token
-	token, err := auth.GetAzCachedAccessToken(ctx)
+	//token, err := auth.GetAzCachedAccessToken(ctx)
+	token, err := auth.GetAzureAccessToken(ctx)
 	if err != nil {
 		fmt.Println("Error fetching access token:", err)
 		return nil, err
