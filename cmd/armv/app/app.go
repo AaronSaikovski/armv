@@ -169,7 +169,7 @@ func Run() error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("response: %s\n", resp)
+	fmt.Printf("response body: %s\n", resp)
 
 	/* ********************************************************************** */
 

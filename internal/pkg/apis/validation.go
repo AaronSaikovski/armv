@@ -35,6 +35,17 @@ import (
 	"github.com/AaronSaikovski/armv/pkg/utils"
 )
 
+// CallValidationApi calls the validation API to validate move resources.
+//
+// Parameters:
+// - sourceSubscriptionId: the ID of the source subscription.
+// - sourceResourceGroup: the name of the source resource group.
+// - resourceIds: the IDs of the resources to validate.
+// - ctx: the context for the API call.
+//
+// Returns:
+// - []byte: the response body of the API call.
+// - error: an error if the API call encounters any issues.
 func CallValidationApi(sourceSubscriptionId string, sourceResourceGroup string, resourceIds string, ctx context.Context) ([]byte, error) {
 
 	// Build the API and call it and get the response code
@@ -73,27 +84,6 @@ func CallValidationApi(sourceSubscriptionId string, sourceResourceGroup string, 
 
 	//cleanup
 	defer resp.Body.Close()
-
-	//get the request body
-	// requestBody, err := json.Marshal(CreateRequestBody(sourceSubscriptionId, sourceResourceGroup, resourceIds))
-	// if err != nil {
-	// 	fmt.Println("Error creating request body:", err)
-	// 	return nil, err
-	// }
-
-	//make the API Call
-	// Make POST request
-	// resp, err := http.Post(validateMoveApiUrl, "application/json", bytes.NewBuffer(requestBody))
-	// if err != nil {
-	// 	fmt.Println("Error making POST request:", err)
-	// 	return nil, err
-	// }
-	// resp, err := http.DefaultClient.Do(req)
-	// if err != nil {
-	// 	fmt.Println("Error making request:", err)
-	// 	return
-	// }
-	//defer resp.Body.Close()
 
 	// Get the response body
 	respBody, err := utils.FetchResponseBody(resp.Body)

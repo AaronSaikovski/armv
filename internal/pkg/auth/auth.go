@@ -101,7 +101,8 @@ func GetSubscriptionClient(client *armsubscription.SubscriptionsClient, subscrip
 // Get the bearer token as already signed into Azure
 func GetAzCachedAccessToken(ctx context.Context) (string, error) {
 
-	cred, err := GetAzureDefaultCredential() //azidentity.NewDefaultAzureCredential(nil)
+	cred, err := GetAzureDefaultCredential()
+	//cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		return "", err
 	}
