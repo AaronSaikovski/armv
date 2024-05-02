@@ -28,6 +28,7 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/subscription/armsubscription"
 )
 
@@ -67,6 +68,18 @@ func GetAzureDefaultCredential() (*azidentity.DefaultAzureCredential, error) {
 	}
 	return cred, nil
 
+}
+
+// NewClient creates a new armresources.Client using the provided Azure SDK DefaultAzureCredential.
+//
+// Takes a subscriptionID string and a pointer to a DefaultAzureCredential as parameters.
+// Returns a pointer to an armresources.Client and an error.
+func NewResourceClient(subscriptionID string, cred *azidentity.DefaultAzureCredential) (*armresources.Client, error) {
+	clientFactory, err := armresources.NewClientFactory(subscriptionID, cred, nil)
+	if err != nil {
+		return nil, err
+	}
+	return clientFactory.NewClient(), nil
 }
 
 // SubscriptionClientCred creates a new SubscriptionsClient using the provided Azure SDK DefaultAzureCredential.

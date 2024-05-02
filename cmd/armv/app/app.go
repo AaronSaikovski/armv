@@ -26,9 +26,7 @@ package app
 import (
 	"context"
 	"fmt"
-	"strings"
 
-	api "github.com/AaronSaikovski/armv/internal/pkg/apis"
 	"github.com/AaronSaikovski/armv/internal/pkg/auth"
 	"github.com/AaronSaikovski/armv/internal/pkg/resourcegroups"
 	"github.com/AaronSaikovski/armv/internal/pkg/resources"
@@ -139,11 +137,11 @@ func Run() error {
 	/* ********************************************************************** */
 
 	// Get our bearer token because we're already signed into Azure
-	token, err := auth.GetAzureAccessToken(ctx)
-	if err != nil {
-		return err
-	}
-	fmt.Printf("token: %s\n", token)
+	// token, err := auth.GetAzureAccessToken(ctx)
+	// if err != nil {
+	// 	return err
+	// }
+	// fmt.Printf("token: %s\n", token)
 
 	/* ********************************************************************** */
 
@@ -165,11 +163,11 @@ func Run() error {
 	// // Close the result channel to signal completion
 	// close(resultChan)
 
-	resp, err := api.CallValidationApi(args.SourceSubscriptionId, args.SourceResourceGroup, strings.Join(resourceIds, ""), ctx)
-	if err != nil {
-		return err
-	}
-	fmt.Printf("response body: %s\n", resp)
+	// resp, err := api.CallValidationApi(args.SourceSubscriptionId, args.SourceResourceGroup, strings.Join(resourceIds, ""), ctx)
+	// if err != nil {
+	// 	return err
+	// }
+	// fmt.Printf("response body: %s\n", resp)
 
 	/* ********************************************************************** */
 
