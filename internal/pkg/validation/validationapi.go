@@ -23,11 +23,11 @@ SOFTWARE.
 */
 package validation
 
-import (
-	"context"
-	"sync"
-)
+// import (
+// 	"context"
+// 	"sync"
+// )
 
-func ValidationApiLookup(ctx context.Context, wg *sync.WaitGroup, resultChan chan<- string) {
-	//return "", nil
-}
+// func ValidationApiLookup(ctx context.Context, wg *sync.WaitGroup, resultChan chan<- string) {
+// 	//return "", nil
+// }

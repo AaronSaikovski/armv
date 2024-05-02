@@ -25,7 +25,6 @@ package validation
 
 import (
 	"context"
-	"sync"
 
 	"github.com/AaronSaikovski/armv/internal/pkg/auth"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
@@ -48,11 +47,14 @@ import (
 //
 // Returns:
 // - MoveInfo: the MoveInfo object with the specified resource IDs and target resource group.
-func GetMoveInfoParams(resourceIds []*string, targetResourceGroup *string) armresources.MoveInfo {
-	return armresources.MoveInfo{
+func MoveInfoParams(resourceIds []*string, targetResourceGroup *string) armresources.MoveInfo {
+
+	moveInfoParams := armresources.MoveInfo{
 		Resources:           resourceIds,
 		TargetResourceGroup: targetResourceGroup,
 	}
+
+	return moveInfoParams
 }
 
 // This operation checks whether the specified resources can be moved to the target. The resources
@@ -77,27 +79,5 @@ func ValidateMoveResources(ctx context.Context, sourceSubscriptionID string, sou
 
 	// Validate move resources
 	return client.BeginValidateMoveResources(ctx, sourceResourceGroupName, moveInfoParams, nil)
-
-}
-
-func ValidateMoveResourcesWG(ctx context.Context, wg *sync.WaitGroup, sourceSubscriptionID string, sourceResourceGroupName string, moveInfoParams armresources.MoveInfo) (*runtime.Poller[armresources.ClientValidateMoveResourcesResponse], error) {
-
-	// defer wg.Done()
-
-	// // Authorisation
-	// cred, credErr := auth.GetAzureDefaultCredential()
-	// if credErr != nil {
-	// 	return nil, credErr
-	// }
-
-	// // Create a client
-	// client, clientErr := auth.NewResourceClient(sourceSubscriptionID, cred)
-	// if clientErr != nil {
-	// 	return nil, clientErr
-	// }
-
-	// // Validate move resources
-	// return client.BeginValidateMoveResources(ctx, sourceResourceGroupName, moveInfoParams, nil)
-	return nil, nil
 
 }

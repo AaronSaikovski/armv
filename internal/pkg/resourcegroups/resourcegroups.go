@@ -69,6 +69,15 @@ func GetResourceGroup(ctx context.Context, resourceGroupClient *armresources.Res
 	return &resourceGroupResp.ResourceGroup, nil
 }
 
+func GetResourceGroupId(ctx context.Context, resourceGroupClient *armresources.ResourceGroupsClient, resourceGroupName string) (*string, error) {
+
+	resourceGroupResp, err := resourceGroupClient.Get(ctx, resourceGroupName, nil)
+	if err != nil {
+		return nil, err
+	}
+	return resourceGroupResp.ResourceGroup.ID, nil
+}
+
 // ListResourceGroup fetches a list of resource groups.
 //
 // ctx - the context within which the function is executed.

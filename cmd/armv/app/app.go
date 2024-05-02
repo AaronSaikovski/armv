@@ -127,6 +127,8 @@ func Run() error {
 		return err
 	}
 
+	/* ********************************************************************** */
+
 	// Get all resource IDs from source resource group
 	resourceIds, err := resources.GetResourceIds(ctx, resourcesClient, args.SourceResourceGroup)
 	if err != nil {
@@ -168,6 +170,37 @@ func Run() error {
 	// 	return err
 	// }
 	// fmt.Printf("response body: %s\n", resp)
+
+	/* ********************************************************************** */
+
+	//not nice but it works
+	//convert a slice of strings ([]string) to a slice of string pointers ([]*string)
+	var resourcePointers []*string
+	for _, id := range resourceIds {
+		resourcePointers = append(resourcePointers, &id)
+	}
+
+	// get the target resource group ID
+	// targetResourceGroupId, err := resourcegroups.GetResourceGroupId(ctx, resourceGroupClient, args.TargetResourceGroup)
+	// if err != nil {
+	// 	return err
+	// }
+
+	// get the move params
+	// moveParams := validation.MoveInfoParams(resourcePointers, targetResourceGroupId)
+
+	// resp, err := validation.ValidateMoveResources(ctx, args.SourceSubscriptionId, args.SourceResourceGroup, moveParams)
+	// if err != nil {
+	// 	return err
+	// }
+
+	//doesnt work!!
+	// resp.PollUntilDone(ctx, &runtime.PollUntilDoneOptions{Frequency: 1 * time.Second})
+
+	// if resp.Done() {
+
+	// 	fmt.Printf("validate response: %s\n", resp.Result)
+	// }
 
 	/* ********************************************************************** */
 
