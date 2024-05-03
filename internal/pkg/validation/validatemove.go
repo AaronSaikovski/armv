@@ -77,6 +77,38 @@ func ValidateMoveResources(ctx context.Context, sourceSubscriptionID string, sou
 		return nil, clientErr
 	}
 
+
+// 	//ref: https://learn.microsoft.com/en-us/azure/developer/go/azure-sdk-core-concepts
+// 	resp, err := client.BeginCreate(context.Background(), "green_widget")
+
+// if err != nil {
+//     // Handle error...
+// }
+
+// poller := resp.Poller
+
+// for {
+//     resp, err := poller.Poll(context.Background())
+
+//     if err != nil {
+//         // Handle error...
+//     }
+
+//     if poller.Done() {
+//         break
+//     }
+
+//     // Do other work while waiting.
+// }
+
+// w, err := poller.FinalResponse(ctx)
+
+// if err != nil {
+//     // Handle error...
+// }
+
+// process(w)
+
 	// Validate move resources
 	return client.BeginValidateMoveResources(ctx, sourceResourceGroupName, moveInfoParams, nil)
 
