@@ -175,10 +175,10 @@ func Run() error {
 
 	//not nice but it works
 	//convert a slice of strings ([]string) to a slice of string pointers ([]*string)
-	var resourcePointers []*string
-	for _, id := range resourceIds {
-		resourcePointers = append(resourcePointers, &id)
-	}
+	// var resourcePointers []*string
+	// for _, id := range resourceIds {
+	// 	resourcePointers = append(resourcePointers, &id)
+	// }
 
 	// get the target resource group ID
 	// targetResourceGroupId, err := resourcegroups.GetResourceGroupId(ctx, resourceGroupClient, args.TargetResourceGroup)

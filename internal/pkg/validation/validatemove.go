@@ -25,9 +25,9 @@ package validation
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/AaronSaikovski/armv/internal/pkg/auth"
-	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources"
 )
 
@@ -63,53 +63,45 @@ func MoveInfoParams(resourceIds []*string, targetResourceGroup *string) armresou
 // If validation fails, it returns HTTP response code 409 (Conflict) with an
 // error message. Retrieve the URL in the Location header value to check the result of the long-running operation.
 // If the operation fails it returns an *azcore.ResponseError type.
-func ValidateMoveResources(ctx context.Context, sourceSubscriptionID string, sourceResourceGroupName string, moveInfoParams armresources.MoveInfo) (*runtime.Poller[armresources.ClientValidateMoveResourcesResponse], error) {
+func ValidateMoveResources(ctx context.Context, sourceSubscriptionID string, sourceResourceGroupName string, moveInfoParams armresources.MoveInfo) (armresources.ClientValidateMoveResourcesResponse, error) {
 
 	// Authorisation
-	cred, credErr := auth.GetAzureDefaultCredential()
-	if credErr != nil {
-		return nil, credErr
-	}
+	cred, _ := auth.GetAzureDefaultCredential()
+	// if err != nil {
+	// 	return nil, err
+	// }
 
 	// Create a client
-	client, clientErr := auth.NewResourceClient(sourceSubscriptionID, cred)
-	if clientErr != nil {
-		return nil, clientErr
+	client, _ := auth.NewResourceClient(sourceSubscriptionID, cred)
+	// if err != nil {
+	// 	return nil, err
+	// }
+
+	// Call Validate move api
+	validateMove, _ := client.BeginValidateMoveResources(ctx, sourceResourceGroupName, moveInfoParams, nil)
+	// if err != nil {
+	// 	return nil, err
+	// }
+
+	//ref: https://learn.microsoft.com/en-us/azure/developer/go/azure-sdk-core-concepts
+	// https://github.com/Azure/azure-sdk-for-go/blob/sdk/azcore/v1.11.1/sdk/azcore/runtime/poller.go#L316
+	for {
+		resp, err := validateMove.Poll(ctx)
+
+		if err != nil {
+			//return resp, err
+			fmt.Println(resp)
+		}
+
+		if validateMove.Done() {
+			break
+		}
+
+		// Do other work while waiting.
 	}
 
+	//azcore.ResponseError
 
-// 	//ref: https://learn.microsoft.com/en-us/azure/developer/go/azure-sdk-core-concepts
-// 	resp, err := client.BeginCreate(context.Background(), "green_widget")
-
-// if err != nil {
-//     // Handle error...
-// }
-
-// poller := resp.Poller
-
-// for {
-//     resp, err := poller.Poll(context.Background())
-
-//     if err != nil {
-//         // Handle error...
-//     }
-
-//     if poller.Done() {
-//         break
-//     }
-
-//     // Do other work while waiting.
-// }
-
-// w, err := poller.FinalResponse(ctx)
-
-// if err != nil {
-//     // Handle error...
-// }
-
-// process(w)
-
-	// Validate move resources
-	return client.BeginValidateMoveResources(ctx, sourceResourceGroupName, moveInfoParams, nil)
+	return validateMove.Result(ctx)
 
 }
