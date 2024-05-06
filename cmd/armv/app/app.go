@@ -36,9 +36,9 @@ import (
 )
 
 var (
-	args     utils.Args
-	respBody []byte
-	respCode int
+	args           utils.Args
+	respBody       []byte
+	respStatusCode int
 )
 
 const (
@@ -160,7 +160,7 @@ func Run() error {
 		//if done. update response codes
 		if resp.Done() {
 			respBody = utils.FetchResponseBody(w.Body)
-			respCode = w.StatusCode
+			respStatusCode = w.StatusCode
 			break
 		}
 
@@ -168,7 +168,7 @@ func Run() error {
 
 	//204 == validation successful - no content
 	//409 - with error validation failed
-	if respCode == API_RESOURCE_MOVE_OK {
+	if respStatusCode == API_RESOURCE_MOVE_OK {
 		utils.OutputSuccess()
 	} else {
 		utils.OutputFail(args.SourceResourceGroup, respBody)
@@ -176,6 +176,5 @@ func Run() error {
 	/* ********************************************************************** */
 
 	fmt.Printf("Elapsed time: %.2f seconds\n", time.Since(startTime).Seconds())
-
 	return nil
 }
