@@ -36,7 +36,9 @@ import (
 )
 
 var (
-	args utils.Args
+	args     utils.Args
+	respBody []byte
+	respCode int
 )
 
 const (
@@ -143,19 +145,27 @@ func Run() error {
 		return err
 	}
 
-	var respBody string
-	var respCode int
+	/* ********************************************************************** */
 
 	// Pooling loop
 	for {
 		fmt.Println("Polling....")
+
+		//poll the response
 		w, err := resp.Poll(ctx)
 		if err != nil {
 			return err
 		}
 
+		// 	// Get the response body
+		// respBody, respErr := utils.FetchResponseBody(resp.Body)
+		// if respErr != nil {
+		// 	return nil, respErr
+		// }
+
+		//if done. update response codes
 		if resp.Done() {
-			respBody = w.Status
+			respBody = utils.FetchResponseBody(w.Body)
 			respCode = w.StatusCode
 			break
 		}
@@ -164,15 +174,14 @@ func Run() error {
 
 	//204 == validation successful - no content
 	//409 - with error validation failed
-	//fmt.Println(respBody)
-
-	fmt.Printf("Response Body: %s\n", respBody)
-	fmt.Printf("Response Code: %d\n", respCode)
-
+	if respCode == API_RESOURCE_MOVE_OK {
+		utils.OutputSuccess()
+	} else {
+		utils.OutputFail(args.SourceResourceGroup, respBody)
+	}
 	/* ********************************************************************** */
 
-	fmt.Printf("Elapsed time: %.2f seconds\n", time.Now().Sub(startTime).Seconds())
-	fmt.Println("Done!")
+	fmt.Printf("Elapsed time: %.2f seconds\n", time.Since(startTime).Seconds())
 
 	return nil
 }
