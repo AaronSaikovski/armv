@@ -23,11 +23,11 @@ SOFTWARE.
 */
 package validation
 
-import (
-	"log/slog"
-	"os"
-)
+// import (
+// 	"log/slog"
+// 	"os"
+// )
 
-var (
-	logger = slog.New(slog.NewTextHandler(os.Stderr, nil))
-)
+// var (
+// 	logger = slog.New(slog.NewTextHandler(os.Stderr, nil))
+// )

@@ -117,16 +117,7 @@ func Run() error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("Resource Ids: %s\n", resourceIds)
-
-	/* ********************************************************************** */
-
-	//not nice but it works
-	//convert a slice of strings ([]string) to a slice of string pointers ([]*string)
-	// var resourcePointers []*string
-	// for _, id := range resourceIds {
-	// 	resourcePointers = append(resourcePointers, &id)
-	// }
+	//fmt.Printf("Resource Ids: %s\n", resourceIds)
 
 	/* ********************************************************************** */
 
@@ -137,14 +128,6 @@ func Run() error {
 	}
 
 	/* ********************************************************************** */
-
-	// get the move params
-	// moveParams := validation.MoveInfoParams(resourceIds, targetResourceGroupId)
-
-	// //Validate resources
-	// resp, err := validation.ValidateMoveResources(ctx, args.SourceSubscriptionId, args.SourceResourceGroup, moveParams)
-
-	//moveParams := validation.MoveInfoParams(resourceIds, targetResourceGroupId)
 
 	//Validate resources
 	resp, err := validation.ValidateMove(ctx, args.SourceSubscriptionId, args.SourceResourceGroup, resourceIds, targetResourceGroupId)
