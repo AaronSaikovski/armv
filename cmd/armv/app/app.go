@@ -36,16 +36,10 @@ import (
 )
 
 var (
-	args           utils.Args
-	respBody       []byte
-	respStatusCode int
-)
-
-const (
-	//API return codes
-	API_SUCCESS            int = 202
-	API_RESOURCE_MOVE_OK   int = 204
-	API_RESOURCE_MOVE_FAIL int = 409
+	args utils.Args
+	// respBody       []byte
+	// respStatusCode int
+	// respStatus     string
 )
 
 // run - main run method
@@ -145,33 +139,61 @@ func Run() error {
 
 	/* ********************************************************************** */
 
-	// polling loop
-	for {
+	// barCount := 0
+	// bar := progressbar.NewOptions(PROGRESS_BAR_MAX,
+	// 	progressbar.OptionSetWriter(ansi.NewAnsiStdout()), //you should install "github.com/k0kubun/go-ansi"
+	// 	progressbar.OptionEnableColorCodes(true),
+	// 	//progressbar.OptionSetWidth(50),
+	// 	progressbar.OptionSetDescription("[cyan][reset] Polling AzureRM Validation API..."),
+	// 	progressbar.OptionSetTheme(progressbar.Theme{
+	// 		Saucer:        "[green]=[reset]",
+	// 		SaucerHead:    "[green]>[reset]",
+	// 		SaucerPadding: " ",
+	// 		BarStart:      "[",
+	// 		BarEnd:        "]",
+	// 	}))
 
-		fmt.Println("Polling....")
+	// // //polling loop
+	// for {
+	// 	bar.Add(1)
+	// 	barCount += 1
+	// 	time.Sleep(5 * time.Millisecond)
+	// 	if barCount >= PROGRESS_BAR_MAX {
+	// 		bar.Reset()
+	// 		barCount = 0
+	// 	}
 
-		//poll the response
-		w, err := resp.Poll(ctx)
-		if err != nil {
-			return err
-		}
+	// 	//poll the response
+	// 	w, err := resp.Poll(ctx)
+	// 	if err != nil {
+	// 		return err
+	// 	}
 
-		//if done. update response codes
-		if resp.Done() {
-			respBody = utils.FetchResponseBody(w.Body)
-			respStatusCode = w.StatusCode
-			break
-		}
+	// 	//if done. update response codes
+	// 	if resp.Done() {
+	// 		respBody = utils.FetchResponseBody(w.Body)
+	// 		respStatusCode = w.StatusCode
+	// 		respStatus = w.Status
+	// 		bar.Finish()
+	// 		break
+	// 	}
 
+	// }
+
+	// Poll the API and show a status
+	pollResp, err := pollApi(ctx, resp)
+	if err != nil {
+		return err
 	}
 
 	//204 == validation successful - no content
 	//409 - with error validation failed
-	if respStatusCode == API_RESOURCE_MOVE_OK {
-		utils.OutputSuccess()
+	if pollResp.respStatusCode == API_RESOURCE_MOVE_OK {
+		utils.OutputSuccess(pollResp.respStatus)
 	} else {
-		utils.OutputFail(args.SourceResourceGroup, respBody)
+		utils.OutputFail(args.SourceResourceGroup, string(pollResp.respBody))
 	}
+
 	/* ********************************************************************** */
 
 	fmt.Printf("Elapsed time: %.2f seconds\n", time.Since(startTime).Seconds())
