@@ -82,7 +82,7 @@ func Run() error {
 
 	/* ********************************************************************** */
 
-	//check source and destination resource groups exist
+	//check source and destination resource groups exists
 	srcRsgExists, err := resourcegroups.CheckResourceGroupExists(ctx, resourceGroupClient, args.SourceResourceGroup)
 	if err != nil {
 		return err
@@ -93,7 +93,7 @@ func Run() error {
 
 	/* ********************************************************************** */
 
-	//check destination and destination resource groups exist
+	//check destination and destination resource groups exists
 	dstRsgExists, err := resourcegroups.CheckResourceGroupExists(ctx, resourceGroupClient, args.TargetResourceGroup)
 	if err != nil {
 		return err
@@ -123,10 +123,10 @@ func Run() error {
 
 	//not nice but it works
 	//convert a slice of strings ([]string) to a slice of string pointers ([]*string)
-	var resourcePointers []*string
-	for _, id := range resourceIds {
-		resourcePointers = append(resourcePointers, &id)
-	}
+	// var resourcePointers []*string
+	// for _, id := range resourceIds {
+	// 	resourcePointers = append(resourcePointers, &id)
+	// }
 
 	/* ********************************************************************** */
 
@@ -139,10 +139,16 @@ func Run() error {
 	/* ********************************************************************** */
 
 	// get the move params
-	moveParams := validation.MoveInfoParams(resourcePointers, targetResourceGroupId)
+	// moveParams := validation.MoveInfoParams(resourceIds, targetResourceGroupId)
+
+	// //Validate resources
+	// resp, err := validation.ValidateMoveResources(ctx, args.SourceSubscriptionId, args.SourceResourceGroup, moveParams)
+
+	//moveParams := validation.MoveInfoParams(resourceIds, targetResourceGroupId)
 
 	//Validate resources
-	resp, err := validation.ValidateMoveResources(ctx, args.SourceSubscriptionId, args.SourceResourceGroup, moveParams)
+	resp, err := validation.ValidateMove(ctx, args.SourceSubscriptionId, args.SourceResourceGroup, resourceIds, targetResourceGroupId)
+
 	if err != nil {
 		return err
 	}

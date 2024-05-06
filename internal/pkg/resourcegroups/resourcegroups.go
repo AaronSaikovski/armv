@@ -69,6 +69,12 @@ func GetResourceGroup(ctx context.Context, resourceGroupClient *armresources.Res
 	return &resourceGroupResp.ResourceGroup, nil
 }
 
+// GetResourceGroupId retrieves the ID of a resource group.
+//
+// ctx: The context within which the function is being executed.
+// resourceGroupClient: The client for interacting with Azure Resource Groups.
+// resourceGroupName: The name of the resource group.
+// *string, error: The ID of the resource group and an error if any.
 func GetResourceGroupId(ctx context.Context, resourceGroupClient *armresources.ResourceGroupsClient, resourceGroupName string) (*string, error) {
 
 	resourceGroupResp, err := resourceGroupClient.Get(ctx, resourceGroupName, nil)
