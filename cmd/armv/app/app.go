@@ -32,7 +32,6 @@ import (
 	"github.com/AaronSaikovski/armv/internal/pkg/resources"
 	"github.com/AaronSaikovski/armv/internal/pkg/validation"
 	"github.com/AaronSaikovski/armv/pkg/utils"
-	"github.com/mattn/go-colorable"
 )
 
 var (
@@ -47,39 +46,22 @@ func Run() error {
 		return err
 	}
 
-	restoreColorMode := colorable.EnableColorsStdout(nil)
-	defer restoreColorMode()
+	//restoreColorMode := colorable.EnableColorsStdout(nil)
+	//defer restoreColorMode()
+
+	/* ********************************************************************** */
+
+	// Create a context with cancellation capability
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	/* ********************************************************************** */
 
 	// Get default cred
 	cred, err := auth.GetAzureDefaultCredential()
 	if err != nil {
 		return err
 	}
-
-	// Create a context with cancellation capability
-	//ctx := context.Background()
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	// resourcesClientFactory, err = armresources.NewClientFactory(args.SourceSubscriptionId, cred, nil)
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	// resourceGroupClient = resourcesClientFactory.NewResourceGroupsClient()
-
-	// populate the params struct
-	// inputParams = types.Params{
-	// 	SourceSubscriptionId: args.SourceSubscriptionId,
-	// 	SourceResourceGroup:  args.SourceResourceGroup,
-	// 	TargetSubscriptionId: args.TargetSubscriptionId,
-	// 	TargetResourceGroup:  args.TargetResourceGroup,
-	// }
-
-	//Print the args
-	// fmt.Printf("Source Subscription Id: %s\n", args.SourceSubscriptionId)
-	// fmt.Printf("Source Resource Group: %s\n", args.SourceResourceGroup)
-	// fmt.Printf("Target Subscription Id: %s\n", args.TargetSubscriptionId)
-	// fmt.Printf("Target Resource Group: %s\n", args.TargetResourceGroup)
 
 	/* ********************************************************************** */
 	// check we are logged into the Azure source subscription
@@ -139,41 +121,6 @@ func Run() error {
 
 	/* ********************************************************************** */
 
-	// Get our bearer token because we're already signed into Azure
-	// token, err := auth.GetAzureAccessToken(ctx)
-	// if err != nil {
-	// 	return err
-	// }
-	// fmt.Printf("token: %s\n", token)
-
-	/* ********************************************************************** */
-
-	// Create a channel to receive results
-	// resultChan := make(chan string)
-
-	// // Create a WaitGroup to wait for all goroutines to finish
-	// var wg sync.WaitGroup
-
-	// // Increment the WaitGroup counter
-	// wg.Add(1)
-
-	// // Call the API in a goroutine
-	// go api.CallValidationApi(args.SourceSubscriptionId, args.SourceResourceGroup, strings.Join(resourceIds, ""), ctx, &wg, resultChan)
-
-	// // Wait for all goroutines to finish
-	// wg.Wait()
-
-	// // Close the result channel to signal completion
-	// close(resultChan)
-
-	// resp, err := api.CallValidationApi(args.SourceSubscriptionId, args.SourceResourceGroup, strings.Join(resourceIds, ""), ctx)
-	// if err != nil {
-	// 	return err
-	// }
-	// fmt.Printf("response body: %s\n", resp)
-
-	/* ********************************************************************** */
-
 	//not nice but it works
 	//convert a slice of strings ([]string) to a slice of string pointers ([]*string)
 	var resourcePointers []*string
@@ -181,15 +128,20 @@ func Run() error {
 		resourcePointers = append(resourcePointers, &id)
 	}
 
+	/* ********************************************************************** */
+
 	// get the target resource group ID
 	targetResourceGroupId, err := resourcegroups.GetResourceGroupId(ctx, resourceGroupClient, args.TargetResourceGroup)
 	if err != nil {
 		return err
 	}
 
+	/* ********************************************************************** */
+
 	// get the move params
 	moveParams := validation.MoveInfoParams(resourcePointers, targetResourceGroupId)
 
+	//Validate resources
 	resp, err := validation.ValidateMoveResources(ctx, args.SourceSubscriptionId, args.SourceResourceGroup, moveParams)
 	if err != nil {
 		return err
@@ -197,14 +149,13 @@ func Run() error {
 
 	var bodyText string
 
+	// Pooling loop
 	for {
-		fmt.Println("Polling....") //add a status bar?
+		fmt.Println("Polling....")
 		w, err := resp.Poll(ctx)
 		if err != nil {
 			return err
 		}
-
-		//fmt.Printf("status: %s\n", w.Status)
 
 		if resp.Done() {
 			bodyText = w.Status
@@ -216,34 +167,6 @@ func Run() error {
 	//204 == validation successful - no content
 	//409 - with error validation failed
 	fmt.Println(bodyText)
-
-	// r, err := resp.Result(ctx)
-
-	// fmt.Println(resp.Result(ctx))
-	// fmt.Println(w)
-
-	// w, err := resp.PollUntilDone(context.Background(), nil)
-
-	// if err != nil {
-	// 	// Handle error...
-	// }
-
-	// fmt.Println(resp.Result(ctx))
-	// fmt.Println(w)
-
-	//doesnt work!!
-	//resp.PollUntilDone(ctx, &runtime.PollUntilDoneOptions{Frequency: 1 * time.Second})
-	// w, err = resp.PollUntilDone(context.Background(), nil)
-	// if err != nil {
-	// 	// Handle error...
-	// }
-
-	// if resp.Done() {
-
-	// 	fmt.Printf("validate response: %s\n", resp.Result)
-	// }
-
-	//poller := resp.Poller
 
 	/* ********************************************************************** */
 
