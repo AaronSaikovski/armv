@@ -30,6 +30,7 @@ import (
 	"github.com/AaronSaikovski/armv/internal/pkg/auth"
 	"github.com/AaronSaikovski/armv/internal/pkg/resourcegroups"
 	"github.com/AaronSaikovski/armv/internal/pkg/resources"
+	"github.com/AaronSaikovski/armv/internal/pkg/validation"
 	"github.com/AaronSaikovski/armv/pkg/utils"
 	"github.com/mattn/go-colorable"
 )
@@ -175,32 +176,74 @@ func Run() error {
 
 	//not nice but it works
 	//convert a slice of strings ([]string) to a slice of string pointers ([]*string)
-	// var resourcePointers []*string
-	// for _, id := range resourceIds {
-	// 	resourcePointers = append(resourcePointers, &id)
-	// }
+	var resourcePointers []*string
+	for _, id := range resourceIds {
+		resourcePointers = append(resourcePointers, &id)
+	}
 
 	// get the target resource group ID
-	// targetResourceGroupId, err := resourcegroups.GetResourceGroupId(ctx, resourceGroupClient, args.TargetResourceGroup)
-	// if err != nil {
-	// 	return err
-	// }
+	targetResourceGroupId, err := resourcegroups.GetResourceGroupId(ctx, resourceGroupClient, args.TargetResourceGroup)
+	if err != nil {
+		return err
+	}
 
 	// get the move params
-	// moveParams := validation.MoveInfoParams(resourcePointers, targetResourceGroupId)
+	moveParams := validation.MoveInfoParams(resourcePointers, targetResourceGroupId)
 
-	// resp, err := validation.ValidateMoveResources(ctx, args.SourceSubscriptionId, args.SourceResourceGroup, moveParams)
+	resp, err := validation.ValidateMoveResources(ctx, args.SourceSubscriptionId, args.SourceResourceGroup, moveParams)
+	if err != nil {
+		return err
+	}
+
+	var bodyText string
+
+	for {
+		fmt.Println("Polling....") //add a status bar?
+		w, err := resp.Poll(ctx)
+		if err != nil {
+			return err
+		}
+
+		//fmt.Printf("status: %s\n", w.Status)
+
+		if resp.Done() {
+			bodyText = w.Status
+			break
+		}
+
+	}
+
+	//204 == validation successful - no content
+	//409 - with error validation failed
+	fmt.Println(bodyText)
+
+	// r, err := resp.Result(ctx)
+
+	// fmt.Println(resp.Result(ctx))
+	// fmt.Println(w)
+
+	// w, err := resp.PollUntilDone(context.Background(), nil)
+
 	// if err != nil {
-	// 	return err
+	// 	// Handle error...
 	// }
 
+	// fmt.Println(resp.Result(ctx))
+	// fmt.Println(w)
+
 	//doesnt work!!
-	// resp.PollUntilDone(ctx, &runtime.PollUntilDoneOptions{Frequency: 1 * time.Second})
+	//resp.PollUntilDone(ctx, &runtime.PollUntilDoneOptions{Frequency: 1 * time.Second})
+	// w, err = resp.PollUntilDone(context.Background(), nil)
+	// if err != nil {
+	// 	// Handle error...
+	// }
 
 	// if resp.Done() {
 
 	// 	fmt.Printf("validate response: %s\n", resp.Result)
 	// }
+
+	//poller := resp.Poller
 
 	/* ********************************************************************** */
 

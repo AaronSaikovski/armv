@@ -37,9 +37,9 @@ func checkParams() error {
 	p := arg.MustParse(&args)
 
 	//check for valid subscription Id
-	if !azutils.CheckValidTenantID(args.TenantId) {
-		p.Fail("Invalid Tenant ID format: - should be: '0000-0000-0000-000000000000'.")
-	}
+	// if !azutils.CheckValidTenantID(args.TenantId) {
+	// 	p.Fail("Invalid Tenant ID format: - should be: '0000-0000-0000-000000000000'.")
+	// }
 
 	//check for valid subscription Id
 	if !azutils.CheckValidSubscriptionID(args.SourceSubscriptionId) {
