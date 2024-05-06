@@ -38,6 +38,13 @@ var (
 	args utils.Args
 )
 
+const (
+	//API return codes
+	API_SUCCESS            int = 202
+	API_RESOURCE_MOVE_OK   int = 204
+	API_RESOURCE_MOVE_FAIL int = 409
+)
+
 // run - main run method
 func Run() error {
 
@@ -45,9 +52,6 @@ func Run() error {
 	if err := checkParams(); err != nil {
 		return err
 	}
-
-	//restoreColorMode := colorable.EnableColorsStdout(nil)
-	//defer restoreColorMode()
 
 	/* ********************************************************************** */
 

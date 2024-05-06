@@ -87,27 +87,6 @@ func GetResources(ctx context.Context, resourcesClient *armresources.Client, res
 // GetResourceIds generates resource IDs for the given resource group.
 //
 // ctx: the context object.
-// resourceGroupName: the name of the resource group.
-// []string, error: returns a slice of resource IDs and an error if any.
-// func GetResourceIds(ctx context.Context, resourcesClient *armresources.Client, resourceGroupName string) ([]string, error) {
-
-// 	resourceIds := make([]string, 0)
-// 	resourcesList, err := GetResources(ctx, resourcesClient, resourceGroupName)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	for _, val := range resourcesList {
-// 		resourceIds = append(resourceIds, *val.ID)
-// 	}
-
-// 	return resourceIds, nil
-
-// }
-
-// GetResourceIds generates resource IDs for the given resource group.
-//
-// ctx: the context object.
 // resourcesClient: the client for interacting with Azure resources.
 // resourceGroupName: the name of the resource group.
 // []*string, error: returns a slice of pointers to resource IDs and an error if any.
