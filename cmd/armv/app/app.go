@@ -147,8 +147,8 @@ func Run() error {
 
 	/* ********************************************************************** */
 
-	// Pooling loop
 	for {
+
 		fmt.Println("Polling....")
 
 		//poll the response
@@ -156,12 +156,6 @@ func Run() error {
 		if err != nil {
 			return err
 		}
-
-		// 	// Get the response body
-		// respBody, respErr := utils.FetchResponseBody(resp.Body)
-		// if respErr != nil {
-		// 	return nil, respErr
-		// }
 
 		//if done. update response codes
 		if resp.Done() {
