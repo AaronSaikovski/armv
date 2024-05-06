@@ -26,6 +26,7 @@ package app
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/AaronSaikovski/armv/internal/pkg/auth"
 	"github.com/AaronSaikovski/armv/internal/pkg/resourcegroups"
@@ -47,6 +48,8 @@ const (
 
 // run - main run method
 func Run() error {
+
+	startTime := time.Now()
 
 	// check params
 	if err := checkParams(); err != nil {
@@ -140,7 +143,8 @@ func Run() error {
 		return err
 	}
 
-	var bodyText string
+	var respBody string
+	var respCode int
 
 	// Pooling loop
 	for {
@@ -151,7 +155,8 @@ func Run() error {
 		}
 
 		if resp.Done() {
-			bodyText = w.Status
+			respBody = w.Status
+			respCode = w.StatusCode
 			break
 		}
 
@@ -159,10 +164,14 @@ func Run() error {
 
 	//204 == validation successful - no content
 	//409 - with error validation failed
-	fmt.Println(bodyText)
+	//fmt.Println(respBody)
+
+	fmt.Printf("Response Body: %s\n", respBody)
+	fmt.Printf("Response Code: %d\n", respCode)
 
 	/* ********************************************************************** */
 
+	fmt.Printf("Elapsed time: %.2f seconds\n", time.Now().Sub(startTime).Seconds())
 	fmt.Println("Done!")
 
 	return nil
