@@ -23,35 +23,35 @@ SOFTWARE.
 */
 package api
 
-import (
-	"encoding/json"
-	"fmt"
-	"net/http"
-)
+// import (
+// 	"encoding/json"
+// 	"fmt"
+// 	"net/http"
+// )
 
-// CreateRequestHeader builds the request header dictionary.
-//
-// cachedAccessToken string - the cached access token used for authorization.
-// map[string]string - returns the request header dictionary.
-func CreateRequestHeader(cachedAccessToken string, r *http.Request) {
+// // CreateRequestHeader builds the request header dictionary.
+// //
+// // cachedAccessToken string - the cached access token used for authorization.
+// // map[string]string - returns the request header dictionary.
+// func CreateRequestHeader(cachedAccessToken string, r *http.Request) {
 
-	r.Header.Add("Content-Type", "application/json")
-	r.Header.Add("Authorization", fmt.Sprintf("Bearer %s", cachedAccessToken))
-}
+// 	r.Header.Add("Content-Type", "application/json")
+// 	r.Header.Add("Authorization", fmt.Sprintf("Bearer %s", cachedAccessToken))
+// }
 
-// CreateRequestBody generates a JSON body based on the provided parameters.
-//
-// targetSubscriptionID - the ID of the target subscription.
-// targetResourceGroup - the name of the target resource group.
-// resourceIDs - the IDs of the resources to include in the body.
-// string - returns the generated JSON body as a string.
-func CreateRequestBody(targetSubscriptionID string, targetResourceGroup string, resourceIDs string) string {
-	bodyMap := map[string]interface{}{
-		"resources":           resourceIDs,
-		"targetResourceGroup": fmt.Sprintf("/subscriptions/%s/resourceGroups/%s", targetSubscriptionID, targetResourceGroup),
-	}
+// // CreateRequestBody generates a JSON body based on the provided parameters.
+// //
+// // targetSubscriptionID - the ID of the target subscription.
+// // targetResourceGroup - the name of the target resource group.
+// // resourceIDs - the IDs of the resources to include in the body.
+// // string - returns the generated JSON body as a string.
+// func CreateRequestBody(targetSubscriptionID string, targetResourceGroup string, resourceIDs string) string {
+// 	bodyMap := map[string]interface{}{
+// 		"resources":           resourceIDs,
+// 		"targetResourceGroup": fmt.Sprintf("/subscriptions/%s/resourceGroups/%s", targetSubscriptionID, targetResourceGroup),
+// 	}
 
-	bodyJSON, _ := json.Marshal(bodyMap)
-	return string(bodyJSON)
+// 	bodyJSON, _ := json.Marshal(bodyMap)
+// 	return string(bodyJSON)
 
-}
+// }
