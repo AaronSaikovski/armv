@@ -78,8 +78,6 @@ dist/
 bin/
 
 # ignore output files
-output*.*
-out*.*
 out.txt
 
 # misc
