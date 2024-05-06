@@ -65,7 +65,7 @@ func Run() error {
 
 	/* ********************************************************************** */
 	// check we are logged into the Azure source subscription
-	isLoggedIn := auth.GetLogin(args.SourceSubscriptionId)
+	isLoggedIn := auth.GetLogin(ctx, args.SourceSubscriptionId)
 	if !isLoggedIn {
 		return fmt.Errorf("you are not logged into the azure subscription '%s', please login and retry operation", args.SourceSubscriptionId)
 	} else {

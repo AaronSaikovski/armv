@@ -26,7 +26,6 @@ package auth
 import (
 	"context"
 
-	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/subscription/armsubscription"
@@ -39,7 +38,7 @@ import (
 //
 // Return type:
 // bool
-func GetLogin(subscriptionID string) bool {
+func GetLogin(ctx context.Context, subscriptionID string) bool {
 
 	cred, err := GetAzureDefaultCredential()
 	if err != nil {
@@ -51,7 +50,7 @@ func GetLogin(subscriptionID string) bool {
 		return false
 	}
 
-	clientErr := GetSubscriptionClient(client, subscriptionID)
+	clientErr := GetSubscriptionClient(ctx, client, subscriptionID)
 	return clientErr == nil
 
 }
@@ -100,38 +99,13 @@ func SubscriptionClientCred(cred *azidentity.DefaultAzureCredential) (*armsubscr
 //
 // Takes a pointer to a SubscriptionsClient and a subscriptionID string.
 // Returns an error.
-func GetSubscriptionClient(client *armsubscription.SubscriptionsClient, subscriptionID string) error {
-	_, err := client.Get(context.TODO(), subscriptionID, nil)
+func GetSubscriptionClient(ctx context.Context, client *armsubscription.SubscriptionsClient, subscriptionID string) error {
+	_, err := client.Get(ctx, subscriptionID, nil)
 
 	if err != nil {
 		return err
 	}
 
 	return nil
-
-}
-
-// Get the bearer token as already signed into Azure
-func GetAzureAccessToken(ctx context.Context) (string, error) {
-
-	cred, err := GetAzureDefaultCredential()
-	//cred, err := azidentity.NewDefaultAzureCredential(nil)
-	if err != nil {
-		return "", err
-	}
-
-	// Azure Resource Management clients accept the credential as a parameter
-	//client, err := armresources.NewClient("<subscriptionId>", cred, nil)
-	// if err != nil {
-	// 	// handle error
-	// }
-	//resp, err:= client.BeginValidateMoveResources(ctx, nil)
-
-	token, err := cred.GetToken(ctx, policy.TokenRequestOptions{})
-	if err != nil {
-		return "", err
-	}
-
-	return token.Token, nil
 
 }

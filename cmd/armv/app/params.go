@@ -24,7 +24,7 @@ SOFTWARE.
 package app
 
 import (
-	"github.com/AaronSaikovski/armv/internal/pkg/azutils"
+	"github.com/AaronSaikovski/armv/pkg/utils"
 	"github.com/alexflint/go-arg"
 )
 
@@ -42,12 +42,12 @@ func checkParams() error {
 	// }
 
 	//check for valid subscription Id
-	if !azutils.CheckValidSubscriptionID(args.SourceSubscriptionId) {
+	if !utils.CheckValidSubscriptionID(args.SourceSubscriptionId) {
 		p.Fail("Invalid Source Subscription ID format: - should be: '0000-0000-0000-000000000000'.")
 	}
 
 	//check for valid subscription Id
-	if !azutils.CheckValidSubscriptionID(args.TargetSubscriptionId) {
+	if !utils.CheckValidSubscriptionID(args.TargetSubscriptionId) {
 		p.Fail("Invalid Target Subscription ID format: - should be: '0000-0000-0000-000000000000'.")
 	}
 	return nil
