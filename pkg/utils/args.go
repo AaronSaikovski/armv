@@ -25,12 +25,14 @@ package utils
 
 var (
 	// Version string
-	VersionString string = "armv v0.0.1"
+	VersionString string = "armv v0.0.1-beta"
 
 	infoString string = `
-        Validates a source Azure resource group
-        and all child resources to check for moveability support into a target
-        resource group within a target subscription.
+   		*** Azure Resource Movability Validator (ARMV)* **
+		This utility checks whether the specified Azure resources can be moved to the target location in the same tenant.  
+		If validation succeeds, it returns HTTP response code 204 (no content).
+		If validation fails, it returns HTTP response code 409 (Conflict) with an error message. 
+		** This only performs a read of resources and NO changes are made. **
     `
 )
 
