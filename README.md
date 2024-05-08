@@ -7,6 +7,8 @@
 
 </div>
 
+**Please note that this utility is still in beta and still undergoing extensive testing - please report all bugs and issues [here](https://github.com/AaronSaikovski/armv/issues)**
+
 ### Description
 
 This utility performs a validation on whether the specified Azure resources can be moved to the specified target.
