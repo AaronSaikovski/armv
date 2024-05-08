@@ -1,6 +1,6 @@
 <div align="center">
 
-# ARMV - Azure Resource Moveability Validator - v0.0.1-beta
+# ARMV - Azure Resource Moveability Validator
 
 [![Build Status](https://github.com/AaronSaikovski/armv/workflows/build/badge.svg)](https://github.com/AaronSaikovski/armv/actions)
 [![Licence](https://img.shields.io/github/license/AaronSaikovski/armv)](LICENSE)
