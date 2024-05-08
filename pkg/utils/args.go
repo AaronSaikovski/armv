@@ -24,8 +24,7 @@ SOFTWARE.
 package utils
 
 var (
-	// Version string
-	VersionString string = "armv v0.0.1-beta"
+	VersionString string
 
 	infoString string = `
    		*** Azure Resource Movability Validator (ARMV)* **
@@ -52,4 +51,9 @@ func (Args) Description() string {
 // Version - Version info
 func (Args) Version() string {
 	return VersionString
+}
+
+// set version string
+func (Args) SetVersion(versionString string) {
+	VersionString = versionString
 }

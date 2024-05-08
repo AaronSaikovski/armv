@@ -37,15 +37,15 @@ import (
 
 var (
 	args utils.Args
-	// respBody       []byte
-	// respStatusCode int
-	// respStatus     string
 )
 
 // run - main run method
-func Run() error {
+func Run(versionString string) error {
 
 	startTime := time.Now()
+
+	//set the version build info
+	args.SetVersion(versionString)
 
 	// check params
 	if err := checkParams(); err != nil {

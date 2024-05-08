@@ -24,11 +24,18 @@ SOFTWARE.
 package main
 
 import (
+	_ "embed"
 	"os"
 
 	"github.com/AaronSaikovski/armv/cmd/armv/app"
 	"github.com/AaronSaikovski/armv/pkg/utils"
 )
+
+//ref: https://levelup.gitconnected.com/a-better-way-than-ldflags-to-add-a-build-version-to-your-go-binaries-2258ce419d2d
+
+//go:generate bash get_version.sh
+//go:embed version.txt
+var version string
 
 // main is the entry point of the program.
 //
@@ -36,7 +43,7 @@ import (
 // No return types.
 func main() {
 
-	if err := app.Run(); err != nil {
+	if err := app.Run(version); err != nil {
 		utils.HandleError(err)
 		os.Exit(1)
 	}

@@ -1,8 +1,8 @@
 # Define Go command and flags
-GO = go
-GOFLAGS = -ldflags="-s -w"
-TARGET = armv
+GO 			= go
+TARGET 		= armv
 MAINAPPPATH = ./cmd/armv/main.go
+GOFLAGS 	= -ldflags="-s -w"
 
 default: help
 
@@ -15,6 +15,7 @@ help:
 .PHONY: release
 ## release - Builds the project in preparation for (local)release
 release: vet lint seccheck
+	go generate ${MAINAPPPATH}
 	go build $(GOFLAGS) -o bin/${TARGET} ${MAINAPPPATH}
 	file bin/${TARGET}
 
