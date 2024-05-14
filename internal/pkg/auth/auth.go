@@ -38,8 +38,23 @@ import (
 //
 // Return type:
 // bool
-func GetLogin(ctx context.Context, subscriptionID string) bool {
+// func GetLogin(ctx context.Context, subscriptionID string) bool {
 
+// 	cred, err := GetAzureDefaultCredential()
+// 	if err != nil {
+// 		return false
+// 	}
+
+// 	client, err := SubscriptionClientCred(cred)
+// 	if err != nil {
+// 		return false
+// 	}
+
+// 	clientErr := GetSubscriptionClient(ctx, client, subscriptionID)
+// 	return clientErr == nil
+
+// }
+func GetLogin(ctx context.Context, subscriptionID string) bool {
 	cred, err := GetAzureDefaultCredential()
 	if err != nil {
 		return false
@@ -50,9 +65,7 @@ func GetLogin(ctx context.Context, subscriptionID string) bool {
 		return false
 	}
 
-	clientErr := GetSubscriptionClient(ctx, client, subscriptionID)
-	return clientErr == nil
-
+	return GetSubscriptionClient(ctx, client, subscriptionID) == nil
 }
 
 // GetAzureDefaultCredential retrieves the default Azure credential.
@@ -60,12 +73,16 @@ func GetLogin(ctx context.Context, subscriptionID string) bool {
 // No parameters.
 // Returns a pointer to azidentity.DefaultAzureCredential and an error.
 
+// func GetAzureDefaultCredential() (*azidentity.DefaultAzureCredential, error) {
+// 	cred, err := azidentity.NewDefaultAzureCredential(nil)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	return cred, nil
+
+// }
 func GetAzureDefaultCredential() (*azidentity.DefaultAzureCredential, error) {
-	cred, err := azidentity.NewDefaultAzureCredential(nil)
-	if err != nil {
-		return nil, err
-	}
-	return cred, nil
+	return azidentity.NewDefaultAzureCredential(nil)
 
 }
 
@@ -73,6 +90,14 @@ func GetAzureDefaultCredential() (*azidentity.DefaultAzureCredential, error) {
 //
 // Takes a subscriptionID string and a pointer to a DefaultAzureCredential as parameters.
 // Returns a pointer to an armresources.Client and an error.
+//
+//	func NewResourceClient(subscriptionID string, cred *azidentity.DefaultAzureCredential) (*armresources.Client, error) {
+//		clientFactory, err := armresources.NewClientFactory(subscriptionID, cred, nil)
+//		if err != nil {
+//			return nil, err
+//		}
+//		return clientFactory.NewClient(), nil
+//	}
 func NewResourceClient(subscriptionID string, cred *azidentity.DefaultAzureCredential) (*armresources.Client, error) {
 	clientFactory, err := armresources.NewClientFactory(subscriptionID, cred, nil)
 	if err != nil {
@@ -84,28 +109,39 @@ func NewResourceClient(subscriptionID string, cred *azidentity.DefaultAzureCrede
 // SubscriptionClientCred creates a new SubscriptionsClient using the provided Azure SDK DefaultAzureCredential.
 //
 // Takes a pointer to a DefaultAzureCredential as a parameter. Returns a pointer to a SubscriptionsClient and an error.
+// func SubscriptionClientCred(cred *azidentity.DefaultAzureCredential) (*armsubscription.SubscriptionsClient, error) {
+// 	// Azure SDK Resource Management clients accept the credential as a parameter.
+// 	// The client will authenticate with the credential as necessary.
+// 	client, err := armsubscription.NewSubscriptionsClient(cred, nil)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+
+//		return client, nil
+//	}
 func SubscriptionClientCred(cred *azidentity.DefaultAzureCredential) (*armsubscription.SubscriptionsClient, error) {
 	// Azure SDK Resource Management clients accept the credential as a parameter.
 	// The client will authenticate with the credential as necessary.
-	client, err := armsubscription.NewSubscriptionsClient(cred, nil)
-	if err != nil {
-		return nil, err
-	}
+	return armsubscription.NewSubscriptionsClient(cred, nil)
 
-	return client, nil
 }
 
 // GetSubscriptionClient retrieves a subscription client.
 //
 // Takes a pointer to a SubscriptionsClient and a subscriptionID string.
 // Returns an error.
+// func GetSubscriptionClient(ctx context.Context, client *armsubscription.SubscriptionsClient, subscriptionID string) error {
+// 	_, err := client.Get(ctx, subscriptionID, nil)
+
+// 	if err != nil {
+// 		return err
+// 	}
+
+// 	return nil
+
+// }
+
 func GetSubscriptionClient(ctx context.Context, client *armsubscription.SubscriptionsClient, subscriptionID string) error {
 	_, err := client.Get(ctx, subscriptionID, nil)
-
-	if err != nil {
-		return err
-	}
-
-	return nil
-
+	return err
 }

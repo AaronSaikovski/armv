@@ -42,15 +42,65 @@ import (
 // The function returns a PollerResponse object and an error.
 // The PollerResponse object contains the response body, status code, and status.
 // The error object represents any error that occurred during the polling process.
-func pollApi[T any](ctx context.Context, respPoller *runtime.Poller[T]) (pollerResp PollerResponse, err error) {
+// func pollApi[T any](ctx context.Context, respPoller *runtime.Poller[T]) (pollerResp PollerResponse, err error) {
 
+// 	poller := PollerResponse{}
+
+// 	barCount := 0
+// 	bar := progressbar.NewOptions(PROGRESS_BAR_MAX,
+// 		progressbar.OptionSetWriter(ansi.NewAnsiStdout()), //you should install "github.com/k0kubun/go-ansi"
+// 		progressbar.OptionEnableColorCodes(true),
+// 		//progressbar.OptionSetWidth(50),
+// 		progressbar.OptionSetDescription("[cyan][reset] Polling AzureRM Validation API..."),
+// 		progressbar.OptionSetTheme(progressbar.Theme{
+// 			Saucer:        "[green]=[reset]",
+// 			SaucerHead:    "[green]>[reset]",
+// 			SaucerPadding: " ",
+// 			BarStart:      "[",
+// 			BarEnd:        "]",
+// 		}))
+
+// 	// polling loop
+// 	for {
+// 		bar.Add(1)
+// 		barCount += 1
+// 		time.Sleep(5 * time.Millisecond)
+// 		if barCount >= PROGRESS_BAR_MAX {
+// 			bar.Reset()
+// 			barCount = 0
+// 		}
+
+// 		//poll the response
+// 		w, err := respPoller.Poll(ctx)
+// 		if err != nil {
+// 			return PollerResponse{}, err
+// 		}
+
+// 		//if done. update response codes
+// 		if respPoller.Done() {
+// 			poller.respBody = utils.FetchResponseBody(w.Body)
+// 			poller.respStatusCode = w.StatusCode
+// 			poller.respStatus = w.Status
+// 			bar.Finish()
+// 			break
+// 		}
+
+// 	}
+// 	return poller, nil
+
+// }
+
+func pollApi[T any](ctx context.Context, respPoller *runtime.Poller[T]) (pollerResp PollerResponse, err error) {
 	poller := PollerResponse{}
 
-	barCount := 0
-	bar := progressbar.NewOptions(PROGRESS_BAR_MAX,
-		progressbar.OptionSetWriter(ansi.NewAnsiStdout()), //you should install "github.com/k0kubun/go-ansi"
+	const (
+		progressBarMax = 100
+		sleepDuration  = 5 * time.Millisecond
+	)
+
+	bar := progressbar.NewOptions(progressBarMax,
+		progressbar.OptionSetWriter(ansi.NewAnsiStdout()),
 		progressbar.OptionEnableColorCodes(true),
-		//progressbar.OptionSetWidth(50),
 		progressbar.OptionSetDescription("[cyan][reset] Polling AzureRM Validation API..."),
 		progressbar.OptionSetTheme(progressbar.Theme{
 			Saucer:        "[green]=[reset]",
@@ -60,32 +110,38 @@ func pollApi[T any](ctx context.Context, respPoller *runtime.Poller[T]) (pollerR
 			BarEnd:        "]",
 		}))
 
-	// polling loop
-	for {
-		bar.Add(1)
-		barCount += 1
-		time.Sleep(5 * time.Millisecond)
-		if barCount >= PROGRESS_BAR_MAX {
-			bar.Reset()
-			barCount = 0
-		}
+	defer bar.Finish()
 
-		//poll the response
-		w, err := respPoller.Poll(ctx)
-		if err != nil {
-			return PollerResponse{}, err
-		}
+	pollingLoop := func() (PollerResponse, error) {
+		barCount := 0
+		for {
+			bar.Add(1)
+			barCount++
+			time.Sleep(sleepDuration)
+			if barCount >= progressBarMax {
+				bar.Reset()
+				barCount = 0
+			}
 
-		//if done. update response codes
-		if respPoller.Done() {
-			poller.respBody = utils.FetchResponseBody(w.Body)
-			poller.respStatusCode = w.StatusCode
-			poller.respStatus = w.Status
-			bar.Finish()
-			break
-		}
+			w, err := respPoller.Poll(ctx)
+			if err != nil {
+				return PollerResponse{}, err
+			}
 
+			if respPoller.Done() {
+				return PollerResponse{
+					respBody:       utils.FetchResponseBody(w.Body),
+					respStatusCode: w.StatusCode,
+					respStatus:     w.Status,
+				}, nil
+			}
+		}
 	}
-	return poller, nil
 
+	poller, err = pollingLoop()
+	if err != nil {
+		return PollerResponse{}, err
+	}
+
+	return poller, nil
 }

@@ -25,6 +25,7 @@ package resourcegroups
 
 import (
 	"context"
+	"errors"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources"
@@ -38,18 +39,33 @@ var (
 //
 // Takes in Azure credentials and a subscription ID. Returns a ResourceGroupsClient pointer and an error.
 
-func GetResourceGroupClient(cred *azidentity.DefaultAzureCredential, subscriptionID string) (*armresources.ResourceGroupsClient, error) { //move to interface
+// func GetResourceGroupClient(cred *azidentity.DefaultAzureCredential, subscriptionID string) (*armresources.ResourceGroupsClient, error) { //move to interface
 
-	// Create a new Resource Groups client
+// 	// Create a new Resource Groups client
+// 	resourcesClientFactory, err := armresources.NewClientFactory(subscriptionID, cred, nil)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+
+// 	// Create a new Resource Groups client
+// 	resourceGroupClient = resourcesClientFactory.NewResourceGroupsClient()
+// 	if resourceGroupClient == nil {
+// 		return nil, err
+// 	}
+
+//		return resourceGroupClient, nil
+//	}
+func GetResourceGroupClient(cred *azidentity.DefaultAzureCredential, subscriptionID string) (*armresources.ResourceGroupsClient, error) {
+	// Create a new Resource Groups client factory
 	resourcesClientFactory, err := armresources.NewClientFactory(subscriptionID, cred, nil)
 	if err != nil {
 		return nil, err
 	}
 
 	// Create a new Resource Groups client
-	resourceGroupClient = resourcesClientFactory.NewResourceGroupsClient()
+	resourceGroupClient := resourcesClientFactory.NewResourceGroupsClient()
 	if resourceGroupClient == nil {
-		return nil, err
+		return nil, errors.New("failed to create resource group client")
 	}
 
 	return resourceGroupClient, nil
@@ -60,8 +76,15 @@ func GetResourceGroupClient(cred *azidentity.DefaultAzureCredential, subscriptio
 // ctx: The context within which the function is being executed.
 // resourceGroupName: The name of the resource group to retrieve.
 // Returns a pointer to armresources.ResourceGroup and an error.
-func GetResourceGroup(ctx context.Context, resourceGroupClient *armresources.ResourceGroupsClient, resourceGroupName string) (*armresources.ResourceGroup, error) {
+// func GetResourceGroup(ctx context.Context, resourceGroupClient *armresources.ResourceGroupsClient, resourceGroupName string) (*armresources.ResourceGroup, error) {
 
+//		resourceGroupResp, err := resourceGroupClient.Get(ctx, resourceGroupName, nil)
+//		if err != nil {
+//			return nil, err
+//		}
+//		return &resourceGroupResp.ResourceGroup, nil
+//	}
+func GetResourceGroup(ctx context.Context, resourceGroupClient *armresources.ResourceGroupsClient, resourceGroupName string) (*armresources.ResourceGroup, error) {
 	resourceGroupResp, err := resourceGroupClient.Get(ctx, resourceGroupName, nil)
 	if err != nil {
 		return nil, err
@@ -88,11 +111,24 @@ func GetResourceGroupId(ctx context.Context, resourceGroupClient *armresources.R
 //
 // ctx - the context within which the function is executed.
 // []*armresources.ResourceGroup, error - returns a slice of resource groups and an error if any.
-func ListResourceGroup(ctx context.Context, resourceGroupClient *armresources.ResourceGroupsClient) ([]*armresources.ResourceGroup, error) {
+// func ListResourceGroup(ctx context.Context, resourceGroupClient *armresources.ResourceGroupsClient) ([]*armresources.ResourceGroup, error) {
 
+// 	resultPager := resourceGroupClient.NewListPager(nil)
+
+//		resourceGroups := make([]*armresources.ResourceGroup, 0)
+//		for resultPager.More() {
+//			pageResp, err := resultPager.NextPage(ctx)
+//			if err != nil {
+//				return nil, err
+//			}
+//			resourceGroups = append(resourceGroups, pageResp.ResourceGroupListResult.Value...)
+//		}
+//		return resourceGroups, nil
+//	}
+func ListResourceGroup(ctx context.Context, resourceGroupClient *armresources.ResourceGroupsClient) ([]*armresources.ResourceGroup, error) {
 	resultPager := resourceGroupClient.NewListPager(nil)
 
-	resourceGroups := make([]*armresources.ResourceGroup, 0)
+	var resourceGroups []*armresources.ResourceGroup
 	for resultPager.More() {
 		pageResp, err := resultPager.NextPage(ctx)
 		if err != nil {
