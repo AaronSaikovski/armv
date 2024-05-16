@@ -90,9 +90,63 @@ import (
 
 // }
 
-func pollApi[T any](ctx context.Context, respPoller *runtime.Poller[T]) (pollerResp PollerResponse, err error) {
-	poller := PollerResponse{}
+// func pollApi[T any](ctx context.Context, respPoller *runtime.Poller[T]) (pollerResp PollerResponse, err error) {
+// 	poller := PollerResponse{}
 
+// 	const (
+// 		progressBarMax = 100
+// 		sleepDuration  = 5 * time.Millisecond
+// 	)
+
+// 	bar := progressbar.NewOptions(progressBarMax,
+// 		progressbar.OptionSetWriter(ansi.NewAnsiStdout()),
+// 		progressbar.OptionEnableColorCodes(true),
+// 		progressbar.OptionSetDescription("[cyan][reset] Polling AzureRM Validation API..."),
+// 		progressbar.OptionSetTheme(progressbar.Theme{
+// 			Saucer:        "[green]=[reset]",
+// 			SaucerHead:    "[green]>[reset]",
+// 			SaucerPadding: " ",
+// 			BarStart:      "[",
+// 			BarEnd:        "]",
+// 		}))
+
+// 	defer bar.Finish()
+
+// 	pollingLoop := func() (PollerResponse, error) {
+// 		barCount := 0
+// 		for {
+// 			bar.Add(1)
+// 			barCount++
+// 			time.Sleep(sleepDuration)
+// 			if barCount >= progressBarMax {
+// 				bar.Reset()
+// 				barCount = 0
+// 			}
+
+// 			w, err := respPoller.Poll(ctx)
+// 			if err != nil {
+// 				return PollerResponse{}, err
+// 			}
+
+// 			if respPoller.Done() {
+// 				return PollerResponse{
+// 					respBody:       utils.FetchResponseBody(w.Body),
+// 					respStatusCode: w.StatusCode,
+// 					respStatus:     w.Status,
+// 				}, nil
+// 			}
+// 		}
+// 	}
+
+// 	poller, err = pollingLoop()
+// 	if err != nil {
+// 		return poller, err
+// 	}
+
+// 	return poller, nil
+// }
+
+func pollApi[T any](ctx context.Context, respPoller *runtime.Poller[T]) (PollerResponse, error) {
 	const (
 		progressBarMax = 100
 		sleepDuration  = 5 * time.Millisecond
@@ -109,15 +163,20 @@ func pollApi[T any](ctx context.Context, respPoller *runtime.Poller[T]) (pollerR
 			BarStart:      "[",
 			BarEnd:        "]",
 		}))
-
-	defer bar.Finish()
+	defer func() {
+		_ = bar.Finish()
+	}()
 
 	pollingLoop := func() (PollerResponse, error) {
+		var poller PollerResponse
+
 		barCount := 0
+
 		for {
-			bar.Add(1)
+			_ = bar.Add(1)
 			barCount++
 			time.Sleep(sleepDuration)
+
 			if barCount >= progressBarMax {
 				bar.Reset()
 				barCount = 0
@@ -129,19 +188,15 @@ func pollApi[T any](ctx context.Context, respPoller *runtime.Poller[T]) (pollerR
 			}
 
 			if respPoller.Done() {
-				return PollerResponse{
+				poller = PollerResponse{
 					respBody:       utils.FetchResponseBody(w.Body),
 					respStatusCode: w.StatusCode,
 					respStatus:     w.Status,
-				}, nil
+				}
+				return poller, nil
 			}
 		}
 	}
 
-	poller, err = pollingLoop()
-	if err != nil {
-		return PollerResponse{}, err
-	}
-
-	return poller, nil
+	return pollingLoop()
 }

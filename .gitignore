@@ -30,3 +30,8 @@ output.txt
 out.txt
 
 .idea/
+
+
+/envs/dev.env
+
+/.vscode/launch.json

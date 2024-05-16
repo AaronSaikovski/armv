@@ -31,9 +31,9 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources"
 )
 
-var (
-	resourceGroupClient *armresources.ResourceGroupsClient
-)
+// var (
+// 	resourceGroupClient *armresources.ResourceGroupsClient
+// )
 
 // GetResourceGroupClient retrieves an Azure Resource Groups client.
 //

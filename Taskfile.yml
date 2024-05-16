@@ -22,24 +22,29 @@
 
 # using - https://taskfile.dev/
 
-version: '3'
+version: "3"
 
 #ENV VARS
 env:
-  TARGET: armv                #Change this to suit
+  TARGET: armv #Change this to suit
   APPPATH: ./cmd/armv/main.go #Change this to suit
+  ENV: dev
+
+dotenv: ["./envs/{{.ENV}}.env"]
 
 tasks:
+  # greet:
+  #   cmds:
+  #     - echo "Using $SOURCESUBSCRIPTIONID and endpoint $SOURCERESOURCEGROUP"
 
   ## version - get the Go version
   version:
     cmds:
       - go version
 
-
   ## release - Builds the project in preparation for (local)release
   release:
-    deps: [vet,lint, seccheck]
+    deps: [vet, lint, seccheck]
     cmds:
       - go generate $APPPATH
       - go build -ldflags="-s -w" -o bin/$TARGET $APPPATH
@@ -48,7 +53,7 @@ tasks:
   ## goreleaser - Builds the project in preparation for release
   goreleaser:
     cmds:
-      - goreleaser release --snapshot --clean 
+      - goreleaser release --snapshot --clean
 
   ## build - Builds the project in preparation for debug
   build:
@@ -61,6 +66,11 @@ tasks:
     cmds:
       - go run $APPPATH
 
+    ## run - builds and runs the program on the target platform
+  debug:
+    cmds:
+      - go run $APPPATH --SourceSubscriptionId $SOURCESUBSCRIPTIONID --SourceResourceGroup $SOURCERESOURCEGROUP --TargetSubscriptionId $TARGETSUBSCRIPTIONID --TargetResourceGroup $TARGETRESOURCEGROUP
+
   ## watch - use air server for hot reloading
   watch:
     cmds:
@@ -70,7 +80,6 @@ tasks:
   docs:
     cmds:
       - swag init
-
 
   ## clean - Remove the old builds and any debug information
   clean:
@@ -97,7 +106,7 @@ tasks:
     cmds:
       - go vet ./...
 
-  ## staticcheck - Runs static code analyzer staticcheck - currently broken 
+  ## staticcheck - Runs static code analyzer staticcheck - currently broken
   staticcheck:
     cmds:
       - staticcheck ./...
@@ -107,9 +116,14 @@ tasks:
     cmds:
       - govulncheck ./...
 
-## lint - format code and tidy modules
+  ## lint - format code and tidy modules
   lint:
     cmds:
       - go fmt ./...
       - go mod tidy -v
       - golangci-lint run ./...
+
+  ## generate - update build version
+  generate:
+    cmds:
+      - go generate $APPPATH
