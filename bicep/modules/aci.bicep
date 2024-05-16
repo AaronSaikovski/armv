@@ -21,42 +21,43 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
-targetScope = 'subscription'
 
-param sourcersg string = 'src-rsg'
-param destrsg string = 'dest-rsg'
-param resourceGroupLocation string = 'australiaeast'
+@description('Location for all resources.')
+param location string = resourceGroup().location
 
-module sourceRsg './modules/resourcegroup.bicep' = {
-  name: sourcersg
-  params: {
-    name: sourcersg
-    location: resourceGroupLocation
+resource containerGroup 'Microsoft.ContainerInstance/containerGroups@2021-03-01' = {
+  name: 'devtestaci'
+  location: location
+  properties: {
+    containers: [
+      {
+        name: 'devtestcontainer'
+        properties: {
+          image: 'mcr.microsoft.com/azuredocs/aci-helloworld:latest'
+          ports: [
+            {
+              port: 80
+            }
+          ]
+          resources: {
+            requests: {
+              cpu: 1
+              memoryInGB: 4
+            }
+          }
+        }
+      }
+    ]
+    restartPolicy: 'OnFailure'
+    osType: 'Linux'
+    ipAddress: {
+      type: 'Public'
+      ports: [
+        {
+          protocol: 'TCP'
+          port: 80
+        }
+      ]
+    }
   }
 }
-
-module destinationRsg './modules/resourcegroup.bicep' = {
-  name: destrsg
-  params: {
-    name: destrsg
-    location: resourceGroupLocation
-  }
-}
-
-module webApp './modules/webapp.bicep' = {
-  name: 'webappmodule'
-  scope: resourceGroup(sourceRsg.name)
-}
-
-module containerInstance 'modules/aci.bicep' = {
-  name: 'acimodule'
-  scope: resourceGroup(sourceRsg.name)
-}
-// module storageAcct './modules/storage.bicep' = {
-//   name:'storagemodule'
-//   params: {
-
-//       storageLocation:resourceGroupLocation
-//   }
-//   scope: resourceGroup(sourceRsg.name)
-// }
