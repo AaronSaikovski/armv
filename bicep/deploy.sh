@@ -21,17 +21,17 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-az login
+# az login
 
-az account list --output table
+# az account list --output table
 
-az account set --subscription "<SUBSCRIPTION_ID>"
+# az account set --subscription "<SUBSCRIPTION_ID>"
 
-templateFile="main.bicep"
-paramsFile="main.parameters.json"
+templateFile="./bicep/main.bicep"
+paramsFile="./bicep/main.parameters.json"
 today=$(date +"%d-%b-%Y")
 deploymentName="sub-scope-"$today
-location="australia east"
+location="australiaeast"
 
 az deployment sub create \
     --name $deploymentName \

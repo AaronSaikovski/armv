@@ -127,3 +127,13 @@ tasks:
   generate:
     cmds:
       - go generate $APPPATH
+
+  ## deploy - deploy azure stack
+  deploy:
+    cmds:
+      - bash ./bicep/deploy.sh
+
+  ## deploy - destroy azure stack
+  destroy:
+    cmds:
+      - bash ./bicep/destroy.sh
