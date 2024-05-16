@@ -21,29 +21,37 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
-package app
+
+/*
+# Name: jsonutils - helper functions to get the Powerstation Data from the API
+# Author: Aaron Saikovski - asaikovski@outlook.com
+*/
+package utils
 
 import (
-	"github.com/AaronSaikovski/armv/pkg/utils"
-	"github.com/alexflint/go-arg"
+	"encoding/json"
 )
 
-// checkParams checks the input arguments for validity.
+// UnmarshalDataToStruct unmarshals the JSON data from the `respBody` byte slice into the `targetStruct` interface.
 //
-// No parameters.
-// Returns an error.
-func checkParams() error {
-	//Get the args input data
-	p := arg.MustParse(&args)
+// Parameters:
+// - respBody: a byte slice containing the JSON data to be unmarshaled.
+// - targetStruct: an interface{} to store the unmarshaled JSON data.
+//
+// Returns:
+// - error: an error if the unmarshaling process fails.
+func UnmarshalDataToStruct(respBody []byte, targetStruct interface{}) error {
+	return json.Unmarshal(respBody, &targetStruct)
+}
 
-	//check for valid subscription Id
-	if !utils.CheckValidSubscriptionID(args.SourceSubscriptionId) {
-		p.Fail("Invalid Source Subscription ID format: - should be: '0000-0000-0000-000000000000'.")
-	}
-
-	//check for valid subscription Id
-	if !utils.CheckValidSubscriptionID(args.TargetSubscriptionId) {
-		p.Fail("Invalid Target Subscription ID format: - should be: '0000-0000-0000-000000000000'.")
-	}
-	return nil
+// MarshalStructToJSON marshals the struct pointer to JSON.
+//
+// Parameters:
+// - targetStruct: the struct pointer to be marshaled.
+//
+// Returns:
+// - []byte: the JSON representation of the struct pointer.
+// - error: an error if the marshaling process fails.
+func MarshalStructToJSON(targetStruct interface{}) ([]byte, error) {
+	return json.Marshal(&targetStruct)
 }

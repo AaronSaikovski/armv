@@ -139,47 +139,6 @@ func Run(versionString string) error {
 
 	/* ********************************************************************** */
 
-	// barCount := 0
-	// bar := progressbar.NewOptions(PROGRESS_BAR_MAX,
-	// 	progressbar.OptionSetWriter(ansi.NewAnsiStdout()), //you should install "github.com/k0kubun/go-ansi"
-	// 	progressbar.OptionEnableColorCodes(true),
-	// 	//progressbar.OptionSetWidth(50),
-	// 	progressbar.OptionSetDescription("[cyan][reset] Polling AzureRM Validation API..."),
-	// 	progressbar.OptionSetTheme(progressbar.Theme{
-	// 		Saucer:        "[green]=[reset]",
-	// 		SaucerHead:    "[green]>[reset]",
-	// 		SaucerPadding: " ",
-	// 		BarStart:      "[",
-	// 		BarEnd:        "]",
-	// 	}))
-
-	// // //polling loop
-	// for {
-	// 	bar.Add(1)
-	// 	barCount += 1
-	// 	time.Sleep(5 * time.Millisecond)
-	// 	if barCount >= PROGRESS_BAR_MAX {
-	// 		bar.Reset()
-	// 		barCount = 0
-	// 	}
-
-	// 	//poll the response
-	// 	w, err := resp.Poll(ctx)
-	// 	if err != nil {
-	// 		return err
-	// 	}
-
-	// 	//if done. update response codes
-	// 	if resp.Done() {
-	// 		respBody = utils.FetchResponseBody(w.Body)
-	// 		respStatusCode = w.StatusCode
-	// 		respStatus = w.Status
-	// 		bar.Finish()
-	// 		break
-	// 	}
-
-	// }
-
 	// Poll the API and show a status
 	pollResp, err := pollApi(ctx, resp)
 	if err != nil {

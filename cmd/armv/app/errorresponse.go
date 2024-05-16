@@ -23,27 +23,14 @@ SOFTWARE.
 */
 package app
 
-import (
-	"github.com/AaronSaikovski/armv/pkg/utils"
-	"github.com/alexflint/go-arg"
-)
-
-// checkParams checks the input arguments for validity.
-//
-// No parameters.
-// Returns an error.
-func checkParams() error {
-	//Get the args input data
-	p := arg.MustParse(&args)
-
-	//check for valid subscription Id
-	if !utils.CheckValidSubscriptionID(args.SourceSubscriptionId) {
-		p.Fail("Invalid Source Subscription ID format: - should be: '0000-0000-0000-000000000000'.")
-	}
-
-	//check for valid subscription Id
-	if !utils.CheckValidSubscriptionID(args.TargetSubscriptionId) {
-		p.Fail("Invalid Target Subscription ID format: - should be: '0000-0000-0000-000000000000'.")
-	}
-	return nil
+type ErrorResponse struct {
+	Error struct {
+		Code    string `json:"code"`
+		Message string `json:"message"`
+		Details []struct {
+			Code    string `json:"code"`
+			Target  string `json:"target"`
+			Message string `json:"message"`
+		} `json:"details"`
+	} `json:"error"`
 }
