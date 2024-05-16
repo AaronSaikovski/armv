@@ -21,16 +21,10 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
-package app
+package types
 
-type ErrorResponse struct {
-	Error struct {
-		Code    string `json:"code"`
-		Message string `json:"message"`
-		Details []struct {
-			Code    string `json:"code"`
-			Target  string `json:"target"`
-			Message string `json:"message"`
-		} `json:"details"`
-	} `json:"error"`
+type PollerResponse struct {
+	RespBody       []byte
+	RespStatusCode int
+	RespStatus     string
 }

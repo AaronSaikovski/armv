@@ -28,6 +28,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/AaronSaikovski/armv/cmd/armv/constants"
+	"github.com/AaronSaikovski/armv/cmd/armv/poller"
 	"github.com/AaronSaikovski/armv/internal/pkg/auth"
 	"github.com/AaronSaikovski/armv/internal/pkg/resourcegroups"
 	"github.com/AaronSaikovski/armv/internal/pkg/resources"
@@ -132,7 +134,6 @@ func Run(versionString string) error {
 
 	//Validate resources
 	resp, err := validation.ValidateMove(ctx, args.SourceSubscriptionId, args.SourceResourceGroup, resourceIds, targetResourceGroupId)
-
 	if err != nil {
 		return err
 	}
@@ -140,17 +141,17 @@ func Run(versionString string) error {
 	/* ********************************************************************** */
 
 	// Poll the API and show a status
-	pollResp, err := pollApi(ctx, resp)
+	pollResp, err := poller.PollApi(ctx, resp)
 	if err != nil {
 		return err
 	}
 
 	//204 == validation successful - no content
 	//409 - with error validation failed
-	if pollResp.respStatusCode == API_RESOURCE_MOVE_OK {
-		utils.OutputSuccess(pollResp.respStatus)
+	if pollResp.RespStatusCode == constants.API_RESOURCE_MOVE_OK {
+		utils.OutputSuccess(pollResp.RespStatus)
 	} else {
-		utils.OutputFail(args.SourceResourceGroup, string(pollResp.respBody))
+		utils.OutputFail(args.SourceResourceGroup, string(pollResp.RespBody))
 	}
 
 	/* ********************************************************************** */

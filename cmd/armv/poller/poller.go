@@ -21,12 +21,13 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
-package app
+package poller
 
 import (
 	"context"
 	"time"
 
+	"github.com/AaronSaikovski/armv/cmd/armv/types"
 	"github.com/AaronSaikovski/armv/pkg/utils"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"github.com/k0kubun/go-ansi"
@@ -38,7 +39,7 @@ const (
 	sleepDuration  = 5 * time.Millisecond
 )
 
-func pollApi[T any](ctx context.Context, respPoller *runtime.Poller[T]) (PollerResponse, error) {
+func PollApi[T any](ctx context.Context, respPoller *runtime.Poller[T]) (types.PollerResponse, error) {
 
 	bar := progressbar.NewOptions(progressBarMax,
 		progressbar.OptionSetWriter(ansi.NewAnsiStdout()),
@@ -55,8 +56,8 @@ func pollApi[T any](ctx context.Context, respPoller *runtime.Poller[T]) (PollerR
 		_ = bar.Finish()
 	}()
 
-	pollingLoop := func() (PollerResponse, error) {
-		var poller PollerResponse
+	pollingLoop := func() (types.PollerResponse, error) {
+		var poller types.PollerResponse
 
 		barCount := 0
 
@@ -76,14 +77,14 @@ func pollApi[T any](ctx context.Context, respPoller *runtime.Poller[T]) (PollerR
 
 			w, err := respPoller.Poll(ctx)
 			if err != nil {
-				return PollerResponse{}, err
+				return types.PollerResponse{}, err
 			}
 
 			if respPoller.Done() {
-				poller = PollerResponse{
-					respBody:       utils.FetchResponseBody(w.Body),
-					respStatusCode: w.StatusCode,
-					respStatus:     w.Status,
+				poller = types.PollerResponse{
+					RespBody:       utils.FetchResponseBody(w.Body),
+					RespStatusCode: w.StatusCode,
+					RespStatus:     w.Status,
 				}
 				return poller, nil
 			}
