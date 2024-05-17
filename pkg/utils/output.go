@@ -47,8 +47,8 @@ func OutputSuccess(respStatus string) {
 func OutputFail(SourceResourceGroup string, ErrorDetails string) {
 
 	fmt.Println(aurora.Bold(aurora.Red("\n*****************************************************************")))
-	fmt.Println(aurora.Sprintf(aurora.Red("*** Source ResourceGroup - %s ***"), aurora.Red(SourceResourceGroup)))
-	fmt.Println(aurora.Sprintf(aurora.Red("*** Error Details - %s ***"), aurora.Red(ErrorDetails)))
+	fmt.Println(aurora.Sprintf(aurora.Red("*** Source ResourceGroup - '%s' ***"), SourceResourceGroup))
+	fmt.Println(aurora.Sprintf(aurora.Red("*** Error Details: \n %s "), aurora.Red(ErrorDetails)))
 	fmt.Println(aurora.Bold(aurora.Red("*****************************************************************")))
 
 }
