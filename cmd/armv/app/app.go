@@ -152,7 +152,12 @@ func Run(versionString string) error {
 	if pollResp.RespStatusCode == constants.API_RESOURCE_MOVE_OK {
 		utils.OutputSuccess(pollResp.RespStatus)
 	} else {
-		utils.OutputFail(args.SourceResourceGroup, string(pollResp.RespBody))
+
+		resp, err := utils.PrettyJsonString(string(pollResp.RespBody))
+		if err != nil {
+			return err
+		}
+		utils.OutputFail(args.SourceResourceGroup, resp)
 	}
 
 	/* ********************************************************************** */
