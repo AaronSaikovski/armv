@@ -35,6 +35,7 @@ import (
 	"github.com/AaronSaikovski/armv/internal/pkg/resources"
 	"github.com/AaronSaikovski/armv/internal/pkg/validation"
 	"github.com/AaronSaikovski/armv/pkg/utils"
+	"github.com/logrusorgru/aurora"
 )
 
 var (
@@ -73,7 +74,7 @@ func Run(versionString string) error {
 	if !auth.GetLogin(ctx, args.SourceSubscriptionId) {
 		return fmt.Errorf("you are not logged into the azure subscription '%s', please login and retry operation", args.SourceSubscriptionId)
 	}
-	fmt.Printf("Logged into Subscription Id: %s\n", args.SourceSubscriptionId)
+	fmt.Println(aurora.Sprintf(aurora.Yellow("Logged into Subscription Id: %s\n"), args.SourceSubscriptionId))
 
 	/* ********************************************************************** */
 

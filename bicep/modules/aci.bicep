@@ -31,7 +31,7 @@ resource containerGroup 'Microsoft.ContainerInstance/containerGroups@2021-03-01'
   properties: {
     containers: [
       {
-        name: 'devtestcontainer'
+        name: 'hellotest'
         properties: {
           image: 'mcr.microsoft.com/azuredocs/aci-helloworld:latest'
           ports: [
@@ -42,7 +42,7 @@ resource containerGroup 'Microsoft.ContainerInstance/containerGroups@2021-03-01'
           resources: {
             requests: {
               cpu: 1
-              memoryInGB: 4
+              memoryInGB: 2
             }
           }
         }
