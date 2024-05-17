@@ -31,28 +31,6 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/subscription/armsubscription"
 )
 
-// GetLogin Gets the login creds for a given user context
-//
-// Parameter:
-// subscriptionID: a string representing the subscription ID.
-//
-// Return type:
-// bool
-// func GetLogin(ctx context.Context, subscriptionID string) bool {
-
-// 	cred, err := GetAzureDefaultCredential()
-// 	if err != nil {
-// 		return false
-// 	}
-
-// 	client, err := SubscriptionClientCred(cred)
-// 	if err != nil {
-// 		return false
-// 	}
-
-// 	clientErr := GetSubscriptionClient(ctx, client, subscriptionID)
-// 	return clientErr == nil
-
 // }
 func GetLogin(ctx context.Context, subscriptionID string) bool {
 	cred, err := GetAzureDefaultCredential()
@@ -68,36 +46,12 @@ func GetLogin(ctx context.Context, subscriptionID string) bool {
 	return GetSubscriptionClient(ctx, client, subscriptionID) == nil
 }
 
-// GetAzureDefaultCredential retrieves the default Azure credential.
-//
-// No parameters.
-// Returns a pointer to azidentity.DefaultAzureCredential and an error.
-
-// func GetAzureDefaultCredential() (*azidentity.DefaultAzureCredential, error) {
-// 	cred, err := azidentity.NewDefaultAzureCredential(nil)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	return cred, nil
-
 // }
 func GetAzureDefaultCredential() (*azidentity.DefaultAzureCredential, error) {
 	return azidentity.NewDefaultAzureCredential(nil)
 
 }
 
-// NewClient creates a new armresources.Client using the provided Azure SDK DefaultAzureCredential.
-//
-// Takes a subscriptionID string and a pointer to a DefaultAzureCredential as parameters.
-// Returns a pointer to an armresources.Client and an error.
-//
-//	func NewResourceClient(subscriptionID string, cred *azidentity.DefaultAzureCredential) (*armresources.Client, error) {
-//		clientFactory, err := armresources.NewClientFactory(subscriptionID, cred, nil)
-//		if err != nil {
-//			return nil, err
-//		}
-//		return clientFactory.NewClient(), nil
-//	}
 func NewResourceClient(subscriptionID string, cred *azidentity.DefaultAzureCredential) (*armresources.Client, error) {
 	clientFactory, err := armresources.NewClientFactory(subscriptionID, cred, nil)
 	if err != nil {
@@ -105,17 +59,6 @@ func NewResourceClient(subscriptionID string, cred *azidentity.DefaultAzureCrede
 	}
 	return clientFactory.NewClient(), nil
 }
-
-// SubscriptionClientCred creates a new SubscriptionsClient using the provided Azure SDK DefaultAzureCredential.
-//
-// Takes a pointer to a DefaultAzureCredential as a parameter. Returns a pointer to a SubscriptionsClient and an error.
-// func SubscriptionClientCred(cred *azidentity.DefaultAzureCredential) (*armsubscription.SubscriptionsClient, error) {
-// 	// Azure SDK Resource Management clients accept the credential as a parameter.
-// 	// The client will authenticate with the credential as necessary.
-// 	client, err := armsubscription.NewSubscriptionsClient(cred, nil)
-// 	if err != nil {
-// 		return nil, err
-// 	}
 
 //		return client, nil
 //	}
@@ -125,21 +68,6 @@ func SubscriptionClientCred(cred *azidentity.DefaultAzureCredential) (*armsubscr
 	return armsubscription.NewSubscriptionsClient(cred, nil)
 
 }
-
-// GetSubscriptionClient retrieves a subscription client.
-//
-// Takes a pointer to a SubscriptionsClient and a subscriptionID string.
-// Returns an error.
-// func GetSubscriptionClient(ctx context.Context, client *armsubscription.SubscriptionsClient, subscriptionID string) error {
-// 	_, err := client.Get(ctx, subscriptionID, nil)
-
-// 	if err != nil {
-// 		return err
-// 	}
-
-// 	return nil
-
-// }
 
 func GetSubscriptionClient(ctx context.Context, client *armsubscription.SubscriptionsClient, subscriptionID string) error {
 	_, err := client.Get(ctx, subscriptionID, nil)
