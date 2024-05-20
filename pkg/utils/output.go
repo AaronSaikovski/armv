@@ -29,9 +29,12 @@ import (
 	"github.com/logrusorgru/aurora"
 )
 
-// OutputSuccess prints a success message indicating no Azure Resource move validation issues found.
+// OutputSuccess prints a success message indicating no Azure Resource Move Validation issues found.
 //
-// No parameters.
+// Parameters:
+// - respStatus: the status of the response.
+//
+// No return value.
 func OutputSuccess(respStatus string) {
 	fmt.Println(aurora.Bold(aurora.Green("\n*****************************************************************")))
 	fmt.Println(aurora.Bold(aurora.Green("*** SUCCESS - No Azure Resource Move Validation issues found. ***")))

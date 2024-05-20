@@ -86,7 +86,7 @@ func Run(versionString string) error {
 
 	/* ********************************************************************** */
 
-	//check source and destination resource groups exists
+	// //check source and destination resource groups exists
 	srcRsgExists, err := resourcegroups.CheckResourceGroupExists(ctx, resourceGroupClient, args.SourceResourceGroup)
 	if err != nil {
 		return err
@@ -97,7 +97,7 @@ func Run(versionString string) error {
 
 	/* ********************************************************************** */
 
-	//check destination and destination resource groups exists
+	// //check destination and destination resource groups exists
 	dstRsgExists, err := resourcegroups.CheckResourceGroupExists(ctx, resourceGroupClient, args.TargetResourceGroup)
 	if err != nil {
 		return err

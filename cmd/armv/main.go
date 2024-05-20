@@ -25,7 +25,6 @@ package main
 
 import (
 	_ "embed"
-	"os"
 
 	"github.com/AaronSaikovski/armv/cmd/armv/app"
 	"github.com/AaronSaikovski/armv/pkg/utils"
@@ -41,11 +40,18 @@ var version string
 //
 // No parameters.
 // No return types.
-func main() {
+// func main() {
 
+// 	if err := app.Run(version); err != nil {
+// 		utils.HandleError(err)
+// 		os.Exit(1)
+// 	}
+// 	os.Exit(0)
+// }
+
+func main() {
 	if err := app.Run(version); err != nil {
 		utils.HandleError(err)
-		os.Exit(1)
+		//log.Fatal(err) // Logs the error message and exits with status code 1
 	}
-	os.Exit(0)
 }
