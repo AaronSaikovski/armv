@@ -35,11 +35,13 @@ dotenv: ["./envs/{{.ENV}}.env"]
 tasks:
   ## version - get the Go version
   version:
+    desc: "Get the Go version."
     cmds:
       - go version
 
   ## release - Builds the project in preparation for (local)release
   release:
+    desc: "Builds the project in preparation for (local)release."
     deps: [vet, lint, seccheck]
     cmds:
       - go generate $APPPATH
@@ -48,37 +50,44 @@ tasks:
 
   ## goreleaser - Builds the project in preparation for release
   goreleaser:
+    desc: "Builds a cross platform release using goreleaser."
     cmds:
       - goreleaser release --snapshot --clean
 
   ## build - Builds the project in preparation for debug
   build:
+    desc: "Builds the project in preparation for debug."
     cmds:
       - go build -o bin/$TARGET $APPPATH
       - file bin/$TARGET
 
   ## run - builds and runs the program on the target platform
   run:
+    desc: "Builds and runs the program on the target platform."
     cmds:
       - go run $APPPATH
 
-    ## run - builds and runs the program on the target platform
+    ## debug - builds and runs the program on the target platform
   debug:
+    desc: "Runs a debug version of the application with input parameters from the environment file."
     cmds:
       - go run $APPPATH --SourceSubscriptionId $SOURCESUBSCRIPTIONID --SourceResourceGroup $SOURCERESOURCEGROUP --TargetSubscriptionId $TARGETSUBSCRIPTIONID --TargetResourceGroup $TARGETRESOURCEGROUP
 
   ## watch - use air server for hot reloading
   watch:
+    desc: "Use air server for hot reloading."
     cmds:
       - air
 
   ## docs - updates the swagger docs
   docs:
+    desc: "Updates the swagger docs - For APIs."
     cmds:
       - swag init
 
   ## clean - Remove the old builds and any debug information
   clean:
+    desc: "Removes the old builds and any debug information from the source tree."
     cmds:
       - go clean -cache
       - go clean
@@ -87,11 +96,13 @@ tasks:
 
   ## test - executes unit tests
   test:
+    desc: "Executes unit tests."
     cmds:
       - go test -v ./test/...
 
   ## deps - fetches any external dependencies and updates
   deps:
+    desc: "Fetches any external dependencies and updates."
     cmds:
       - go mod tidy
       - go mod download
@@ -99,21 +110,25 @@ tasks:
 
   ## vet - Vet examines Go source code and reports suspicious constructs
   vet:
+    desc: "Vet examines Go source code and reports suspicious constructs."
     cmds:
       - go vet ./...
 
-  ## staticcheck - Runs static code analyzer staticcheck - currently broken
+  ## staticcheck - Runs static code analyzer staticcheck
   staticcheck:
+    desc: "Runs static code analyzer staticcheck."
     cmds:
       - staticcheck ./...
 
     ## seccheck - Code vulnerability check
   seccheck:
+    desc: "Code vulnerability scanner check."
     cmds:
       - govulncheck ./...
 
   ## lint - format code and tidy modules
   lint:
+    desc: "Lint, format and tidy code."
     cmds:
       - go fmt ./...
       - go mod tidy -v
@@ -121,15 +136,18 @@ tasks:
 
   ## generate - update build version
   generate:
+    desc: "update binary build version using gogenerate."
     cmds:
       - go generate $APPPATH
 
   ## deploy - deploy azure stack
   deploy:
+    desc: "Deploy Azure resources using Bicep for testing."
     cmds:
       - bash ./bicep/deploy.sh
 
   ## deploy - destroy azure stack
   destroy:
+    desc: "Destroy Azure resources for testing."
     cmds:
       - bash ./bicep/destroy.sh
