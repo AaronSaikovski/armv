@@ -57,15 +57,6 @@ func MarshalStructToJSON(targetStruct interface{}) ([]byte, error) {
 	return json.Marshal(&targetStruct)
 }
 
-// // source: https://gosamples.dev/pretty-print-json/
-// func PrettyJsonString(str string) (string, error) {
-// 	var prettyJSON bytes.Buffer
-// 	if err := json.Indent(&prettyJSON, []byte(str), "", "    "); err != nil {
-// 		return "", err
-// 	}
-// 	return prettyJSON.String(), nil
-// }
-
 // PrettyJsonString takes a JSON string and returns a pretty-printed version of it.
 func PrettyJsonString(str string) (string, error) {
 	var prettyJSON bytes.Buffer

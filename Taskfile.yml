@@ -33,10 +33,6 @@ env:
 dotenv: ["./envs/{{.ENV}}.env"]
 
 tasks:
-  # greet:
-  #   cmds:
-  #     - echo "Using $SOURCESUBSCRIPTIONID and endpoint $SOURCERESOURCEGROUP"
-
   ## version - get the Go version
   version:
     cmds:

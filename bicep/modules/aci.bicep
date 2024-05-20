@@ -25,39 +25,44 @@ SOFTWARE.
 @description('Location for all resources.')
 param location string = resourceGroup().location
 
-resource containerGroup 'Microsoft.ContainerInstance/containerGroups@2021-03-01' = {
-  name: 'devtestaci'
-  location: location
-  properties: {
-    containers: [
-      {
-        name: 'hellotest'
-        properties: {
-          image: 'mcr.microsoft.com/azuredocs/aci-helloworld:latest'
-          ports: [
-            {
-              port: 80
-            }
-          ]
-          resources: {
-            requests: {
-              cpu: 1
-              memoryInGB: 2
+@description('ACi Count')
+param aciCount int = 1
+
+resource containerGroup 'Microsoft.ContainerInstance/containerGroups@2021-03-01' = [
+  for i in range(0, aciCount): {
+    name: '${i}aci${uniqueString(resourceGroup().id)}'
+    location: location
+    properties: {
+      containers: [
+        {
+          name: '${i}acitest${uniqueString(resourceGroup().id)}'
+          properties: {
+            image: 'mcr.microsoft.com/azuredocs/aci-helloworld:latest'
+            ports: [
+              {
+                port: 80
+              }
+            ]
+            resources: {
+              requests: {
+                cpu: 1
+                memoryInGB: 2
+              }
             }
           }
         }
-      }
-    ]
-    restartPolicy: 'OnFailure'
-    osType: 'Linux'
-    ipAddress: {
-      type: 'Public'
-      ports: [
-        {
-          protocol: 'TCP'
-          port: 80
-        }
       ]
+      restartPolicy: 'OnFailure'
+      osType: 'Linux'
+      ipAddress: {
+        type: 'Public'
+        ports: [
+          {
+            protocol: 'TCP'
+            port: 80
+          }
+        ]
+      }
     }
   }
-}
+]

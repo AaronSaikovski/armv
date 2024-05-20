@@ -51,6 +51,9 @@ module webApp './modules/webapp.bicep' = {
 module containerInstance 'modules/aci.bicep' = {
   name: 'acimodule'
   scope: resourceGroup(sourceRsg.name)
+  params: {
+    aciCount: 1
+  }
 }
 // module storageAcct './modules/storage.bicep' = {
 //   name:'storagemodule'
