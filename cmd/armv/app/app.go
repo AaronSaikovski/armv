@@ -140,7 +140,7 @@ func Run(versionString string) error {
 
 	/* ********************************************************************** */
 
-	// Poll the API and show a status
+	// Poll the API and show a status...this is a blocking call
 	pollResp, err := poller.PollApi(ctx, resp)
 	if err != nil {
 		return err

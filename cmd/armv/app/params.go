@@ -30,26 +30,6 @@ import (
 	"github.com/alexflint/go-arg"
 )
 
-// checkParams checks the input arguments for validity.
-//
-// No parameters.
-// // Returns an error.
-// func checkParams() error {
-// 	//Get the args input data
-// 	p := arg.MustParse(&args)
-
-// 	//check for valid subscription Id
-// 	if !utils.CheckValidSubscriptionID(args.SourceSubscriptionId) {
-// 		p.Fail("Invalid Source Subscription ID format: - should be: '0000-0000-0000-000000000000'.")
-// 	}
-
-// 	//check for valid subscription Id
-// 	if !utils.CheckValidSubscriptionID(args.TargetSubscriptionId) {
-// 		p.Fail("Invalid Target Subscription ID format: - should be: '0000-0000-0000-000000000000'.")
-// 	}
-// 	return nil
-// }
-
 // checkParams validates the input arguments for validity.
 //
 // It retrieves the args input data using arg.MustParse(&args) and defines a helper function validateSubscriptionID to validate the subscription ID format.

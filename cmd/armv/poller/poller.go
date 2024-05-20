@@ -39,71 +39,6 @@ const (
 	sleepDuration  = 5 * time.Millisecond
 )
 
-//ORIGINAL CODE
-// PollApi is a function that polls the AzureRM Validation API indefinitely until it receives a response.
-//
-// It takes the following parameters:
-// - ctx: the context.Context object for cancellation and timeout control.
-// - respPoller: a pointer to the runtime.Poller[T] object that handles the polling.
-//
-// It returns the following:
-// - types.PollerResponse: the response from the API.
-// - error: an error if any occurred during the polling process.
-// func PollApi[T any](ctx context.Context, respPoller *runtime.Poller[T]) (types.PollerResponse, error) {
-
-// 	bar := progressbar.NewOptions(progressBarMax,
-// 		progressbar.OptionSetWriter(ansi.NewAnsiStdout()),
-// 		progressbar.OptionEnableColorCodes(true),
-// 		progressbar.OptionSetDescription("[cyan][reset] Polling AzureRM Validation API..."),
-// 		progressbar.OptionSetTheme(progressbar.Theme{
-// 			Saucer:        "[green]=[reset]",
-// 			SaucerHead:    "[green]>[reset]",
-// 			SaucerPadding: " ",
-// 			BarStart:      "[",
-// 			BarEnd:        "]",
-// 		}))
-// 	defer func() {
-// 		_ = bar.Finish()
-// 	}()
-
-// 	pollingLoop := func() (types.PollerResponse, error) {
-// 		var poller types.PollerResponse
-
-// 		barCount := 0
-
-// 		for {
-
-// 			defer func() {
-// 				_ = bar.Add(1)
-// 			}()
-
-// 			barCount++
-// 			time.Sleep(sleepDuration)
-
-// 			if barCount >= progressBarMax {
-// 				bar.Reset()
-// 				barCount = 0
-// 			}
-
-// 			w, err := respPoller.Poll(ctx)
-// 			if err != nil {
-// 				return types.PollerResponse{}, err
-// 			}
-
-// 			if respPoller.Done() {
-// 				poller = types.PollerResponse{
-// 					RespBody:       utils.FetchResponseBody(w.Body),
-// 					RespStatusCode: w.StatusCode,
-// 					RespStatus:     w.Status,
-// 				}
-// 				return poller, nil
-// 			}
-// 		}
-// 	}
-
-// 	return pollingLoop()
-// }
-
 // OPTIMISED CODE
 // PollApi is a function that polls the AzureRM Validation API indefinitely until it receives a response.
 //
@@ -118,7 +53,7 @@ func PollApi[T any](ctx context.Context, respPoller *runtime.Poller[T]) (types.P
 	bar := progressbar.NewOptions(progressBarMax,
 		progressbar.OptionSetWriter(ansi.NewAnsiStdout()),
 		progressbar.OptionEnableColorCodes(true),
-		progressbar.OptionSetDescription("[cyan][reset] Polling AzureRM Validation API..."),
+		progressbar.OptionSetDescription("[cyan][reset] Running Validation..."),
 		progressbar.OptionSetTheme(progressbar.Theme{
 			Saucer:        "[green]=[reset]",
 			SaucerHead:    "[green]>[reset]",

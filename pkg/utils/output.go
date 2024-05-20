@@ -37,7 +37,7 @@ import (
 // No return value.
 func OutputSuccess(respStatus string) {
 	fmt.Println(aurora.Bold(aurora.Green("\n*****************************************************************")))
-	fmt.Println(aurora.Bold(aurora.Green("*** SUCCESS - No Azure Resource Move Validation issues found. ***")))
+	fmt.Println(aurora.Bold(aurora.Green("*** SUCCESS - No Azure Resource Validation issues found. ***")))
 	fmt.Println(aurora.Sprintf(aurora.Green("*** Response Status OK - %s ***"), aurora.Green(respStatus)))
 	fmt.Println(aurora.Bold(aurora.Green("*****************************************************************")))
 }

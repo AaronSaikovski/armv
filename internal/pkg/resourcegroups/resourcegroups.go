@@ -31,6 +31,15 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources"
 )
 
+// GetResourceGroupClient creates a new instance of the armresources.ResourceGroupsClient for the given azidentity.DefaultAzureCredential and subscriptionID.
+//
+// Parameters:
+// - cred: The azidentity.DefaultAzureCredential used to authenticate the client.
+// - subscriptionID: The ID of the subscription to create the client for.
+//
+// Returns:
+// - *armresources.ResourceGroupsClient: The created client instance.
+// - error: An error if the client creation fails.
 func GetResourceGroupClient(cred *azidentity.DefaultAzureCredential, subscriptionID string) (*armresources.ResourceGroupsClient, error) {
 	// Create a new Resource Groups client factory
 	resourcesClientFactory, err := armresources.NewClientFactory(subscriptionID, cred, nil)

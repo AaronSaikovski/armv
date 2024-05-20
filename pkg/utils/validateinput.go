@@ -41,13 +41,7 @@ func validateId(inputId string) bool {
 // subscriptionID: a string representing a subscription ID
 // bool: returns true if the subscription ID is valid, false otherwise
 func CheckValidSubscriptionID(subscriptionID string) bool {
-
-	//check for empty string
-	if subscriptionID == "" {
-		return false
-	}
 	return validateId(subscriptionID)
-
 }
 
 // CheckValidTenantID checks if the provided tenant ID is valid.
@@ -55,12 +49,5 @@ func CheckValidSubscriptionID(subscriptionID string) bool {
 // tenantID: a string representing a tenant ID
 // bool: returns true if the tenant ID is valid, false otherwise
 func CheckValidTenantID(tenantID string) bool {
-
-	//check for empty string
-	if tenantID == "" {
-		return false
-	}
-
 	return validateId(tenantID)
-
 }
