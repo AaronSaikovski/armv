@@ -89,11 +89,7 @@ func ValidateMove(ctx context.Context, sourceSubscriptionID string, sourceResour
 	//get move params struct
 	moveParams := moveInfoParams(resourceIds, targetResourceGroup)
 
-	//validate moce
-	resp, err := validateMoveResources(ctx, sourceSubscriptionID, sourceResourceGroupName, moveParams)
-	if err != nil {
-		return nil, err
-	}
+	//validate move
+	return validateMoveResources(ctx, sourceSubscriptionID, sourceResourceGroupName, moveParams)
 
-	return resp, nil
 }

@@ -35,7 +35,7 @@ import (
 func OutputSuccess(respStatus string) {
 	fmt.Println(aurora.Bold(aurora.Green("\n*****************************************************************")))
 	fmt.Println(aurora.Bold(aurora.Green("*** SUCCESS - No Azure Resource Move Validation issues found. ***")))
-	fmt.Println(aurora.Sprintf(aurora.Green("*** Response Status - %s ***"), aurora.Green(respStatus)))
+	fmt.Println(aurora.Sprintf(aurora.Green("*** Response Status OK - %s ***"), aurora.Green(respStatus)))
 	fmt.Println(aurora.Bold(aurora.Green("*****************************************************************")))
 }
 
@@ -47,7 +47,8 @@ func OutputSuccess(respStatus string) {
 func OutputFail(SourceResourceGroup string, ErrorDetails string) {
 
 	fmt.Println(aurora.Bold(aurora.Red("\n*****************************************************************")))
-	fmt.Println(aurora.Sprintf(aurora.Red("*** Source ResourceGroup - %s ***"), aurora.Red(SourceResourceGroup)))
-	fmt.Println(aurora.Sprintf(aurora.Red("*** Error Details - %s ***"), aurora.Red(ErrorDetails)))
+	fmt.Println(aurora.Sprintf(aurora.Red("*** Source ResourceGroup - '%s' ***"), SourceResourceGroup))
+	fmt.Println(aurora.Sprintf(aurora.Red("*** Error Details: \n %s "), aurora.Red(ErrorDetails)))
 	fmt.Println(aurora.Bold(aurora.Red("*****************************************************************")))
+
 }

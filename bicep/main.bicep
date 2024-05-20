@@ -1,7 +1,7 @@
 /*
 MIT License
 
-# Copyright (c) 2024 Aaron Saikovski
+Copyright (c) 2024 Aaron Saikovski
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -21,14 +21,45 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
-package app
+targetScope = 'subscription'
 
-const (
-	//API return codes
-	API_SUCCESS            int = 202
-	API_RESOURCE_MOVE_OK   int = 204
-	API_RESOURCE_MOVE_FAIL int = 409
+param sourcersg string = 'src-rsg'
+param destrsg string = 'dest-rsg'
+param resourceGroupLocation string = 'australiaeast'
 
-	//Progress bar Max
-	PROGRESS_BAR_MAX int = 100
-)
+module sourceRsg './modules/resourcegroup.bicep' = {
+  name: sourcersg
+  params: {
+    name: sourcersg
+    location: resourceGroupLocation
+  }
+}
+
+module destinationRsg './modules/resourcegroup.bicep' = {
+  name: destrsg
+  params: {
+    name: destrsg
+    location: resourceGroupLocation
+  }
+}
+
+module webApp './modules/webapp.bicep' = {
+  name: 'webappmodule'
+  scope: resourceGroup(sourceRsg.name)
+}
+
+module containerInstance 'modules/aci.bicep' = {
+  name: 'acimodule'
+  scope: resourceGroup(sourceRsg.name)
+  params: {
+    aciCount: 1
+  }
+}
+// module storageAcct './modules/storage.bicep' = {
+//   name:'storagemodule'
+//   params: {
+
+//       storageLocation:resourceGroupLocation
+//   }
+//   scope: resourceGroup(sourceRsg.name)
+// }

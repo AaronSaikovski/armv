@@ -21,10 +21,14 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
-package app
+package constants
 
-type PollerResponse struct {
-	respBody       []byte
-	respStatusCode int
-	respStatus     string
-}
+const (
+	//API return codes
+	API_SUCCESS            int = 202
+	API_RESOURCE_MOVE_OK   int = 204
+	API_RESOURCE_MOVE_FAIL int = 409
+
+	//Progress bar Max
+	PROGRESS_BAR_MAX int = 100
+)

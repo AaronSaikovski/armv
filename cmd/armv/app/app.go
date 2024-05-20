@@ -28,11 +28,14 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/AaronSaikovski/armv/cmd/armv/constants"
+	"github.com/AaronSaikovski/armv/cmd/armv/poller"
 	"github.com/AaronSaikovski/armv/internal/pkg/auth"
 	"github.com/AaronSaikovski/armv/internal/pkg/resourcegroups"
 	"github.com/AaronSaikovski/armv/internal/pkg/resources"
 	"github.com/AaronSaikovski/armv/internal/pkg/validation"
 	"github.com/AaronSaikovski/armv/pkg/utils"
+	"github.com/logrusorgru/aurora"
 )
 
 var (
@@ -71,7 +74,7 @@ func Run(versionString string) error {
 	if !auth.GetLogin(ctx, args.SourceSubscriptionId) {
 		return fmt.Errorf("you are not logged into the azure subscription '%s', please login and retry operation", args.SourceSubscriptionId)
 	}
-	fmt.Printf("Logged into Subscription Id: %s\n", args.SourceSubscriptionId)
+	fmt.Println(aurora.Sprintf(aurora.Yellow("Logged into Subscription Id: %s\n"), args.SourceSubscriptionId))
 
 	/* ********************************************************************** */
 
@@ -132,66 +135,29 @@ func Run(versionString string) error {
 
 	//Validate resources
 	resp, err := validation.ValidateMove(ctx, args.SourceSubscriptionId, args.SourceResourceGroup, resourceIds, targetResourceGroupId)
-
 	if err != nil {
 		return err
 	}
 
 	/* ********************************************************************** */
 
-	// barCount := 0
-	// bar := progressbar.NewOptions(PROGRESS_BAR_MAX,
-	// 	progressbar.OptionSetWriter(ansi.NewAnsiStdout()), //you should install "github.com/k0kubun/go-ansi"
-	// 	progressbar.OptionEnableColorCodes(true),
-	// 	//progressbar.OptionSetWidth(50),
-	// 	progressbar.OptionSetDescription("[cyan][reset] Polling AzureRM Validation API..."),
-	// 	progressbar.OptionSetTheme(progressbar.Theme{
-	// 		Saucer:        "[green]=[reset]",
-	// 		SaucerHead:    "[green]>[reset]",
-	// 		SaucerPadding: " ",
-	// 		BarStart:      "[",
-	// 		BarEnd:        "]",
-	// 	}))
-
-	// // //polling loop
-	// for {
-	// 	bar.Add(1)
-	// 	barCount += 1
-	// 	time.Sleep(5 * time.Millisecond)
-	// 	if barCount >= PROGRESS_BAR_MAX {
-	// 		bar.Reset()
-	// 		barCount = 0
-	// 	}
-
-	// 	//poll the response
-	// 	w, err := resp.Poll(ctx)
-	// 	if err != nil {
-	// 		return err
-	// 	}
-
-	// 	//if done. update response codes
-	// 	if resp.Done() {
-	// 		respBody = utils.FetchResponseBody(w.Body)
-	// 		respStatusCode = w.StatusCode
-	// 		respStatus = w.Status
-	// 		bar.Finish()
-	// 		break
-	// 	}
-
-	// }
-
 	// Poll the API and show a status
-	pollResp, err := pollApi(ctx, resp)
+	pollResp, err := poller.PollApi(ctx, resp)
 	if err != nil {
 		return err
 	}
 
 	//204 == validation successful - no content
 	//409 - with error validation failed
-	if pollResp.respStatusCode == API_RESOURCE_MOVE_OK {
-		utils.OutputSuccess(pollResp.respStatus)
+	if pollResp.RespStatusCode == constants.API_RESOURCE_MOVE_OK {
+		utils.OutputSuccess(pollResp.RespStatus)
 	} else {
-		utils.OutputFail(args.SourceResourceGroup, string(pollResp.respBody))
+
+		resp, err := utils.PrettyJsonString(string(pollResp.RespBody))
+		if err != nil {
+			return err
+		}
+		utils.OutputFail(args.SourceResourceGroup, resp)
 	}
 
 	/* ********************************************************************** */

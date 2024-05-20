@@ -21,38 +21,20 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-az login
+# az login
 
-az account list --output table
+# az account list --output table
 
-az account set --subscription "<SUBSCRIPTION_ID>"
+# az account set --subscription "<SUBSCRIPTION_ID>"
 
-templateFile="main.bicep"
-paramsFile="main.parameters.json"
+templateFile="./bicep/main.bicep"
+paramsFile="./bicep/main.parameters.json"
 today=$(date +"%d-%b-%Y")
 deploymentName="sub-scope-"$today
-location="australia east"
+location="australiaeast"
 
 az deployment sub create \
     --name $deploymentName \
     --location $location \
     --template-file $templateFile \
     --parameters $paramsFile
-
-
-
-
-# delete all resource groups
-az group delete --name "src-rsg" --yes --no-wait
-az group delete --name "dest-rsg" --yes --no-wait
-
-# Get a list of all resource groups
-# rgs=$(az group list --query '[].name' -o tsv)
-
-
-
-# # Loop through each resource group and delete it
-# for rg in $rgs; do
-#     echo "Deleting resource group $rg ..."
-#     az group delete --name $rg --yes --no-wait
-# done

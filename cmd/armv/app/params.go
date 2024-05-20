@@ -28,10 +28,10 @@ import (
 	"github.com/alexflint/go-arg"
 )
 
-// checkParams checks the parameters of the function.
+// checkParams checks the input arguments for validity.
 //
-// It does not take any parameters.
-// It returns an error.
+// No parameters.
+// Returns an error.
 func checkParams() error {
 	//Get the args input data
 	p := arg.MustParse(&args)

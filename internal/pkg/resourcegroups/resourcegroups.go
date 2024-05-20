@@ -31,30 +31,6 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources"
 )
 
-var (
-	resourceGroupClient *armresources.ResourceGroupsClient
-)
-
-// GetResourceGroupClient retrieves an Azure Resource Groups client.
-//
-// Takes in Azure credentials and a subscription ID. Returns a ResourceGroupsClient pointer and an error.
-
-// func GetResourceGroupClient(cred *azidentity.DefaultAzureCredential, subscriptionID string) (*armresources.ResourceGroupsClient, error) { //move to interface
-
-// 	// Create a new Resource Groups client
-// 	resourcesClientFactory, err := armresources.NewClientFactory(subscriptionID, cred, nil)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	// Create a new Resource Groups client
-// 	resourceGroupClient = resourcesClientFactory.NewResourceGroupsClient()
-// 	if resourceGroupClient == nil {
-// 		return nil, err
-// 	}
-
-//		return resourceGroupClient, nil
-//	}
 func GetResourceGroupClient(cred *azidentity.DefaultAzureCredential, subscriptionID string) (*armresources.ResourceGroupsClient, error) {
 	// Create a new Resource Groups client factory
 	resourcesClientFactory, err := armresources.NewClientFactory(subscriptionID, cred, nil)
@@ -77,13 +53,6 @@ func GetResourceGroupClient(cred *azidentity.DefaultAzureCredential, subscriptio
 // resourceGroupName: The name of the resource group to retrieve.
 // Returns a pointer to armresources.ResourceGroup and an error.
 // func GetResourceGroup(ctx context.Context, resourceGroupClient *armresources.ResourceGroupsClient, resourceGroupName string) (*armresources.ResourceGroup, error) {
-
-//		resourceGroupResp, err := resourceGroupClient.Get(ctx, resourceGroupName, nil)
-//		if err != nil {
-//			return nil, err
-//		}
-//		return &resourceGroupResp.ResourceGroup, nil
-//	}
 func GetResourceGroup(ctx context.Context, resourceGroupClient *armresources.ResourceGroupsClient, resourceGroupName string) (*armresources.ResourceGroup, error) {
 	resourceGroupResp, err := resourceGroupClient.Get(ctx, resourceGroupName, nil)
 	if err != nil {
@@ -112,19 +81,6 @@ func GetResourceGroupId(ctx context.Context, resourceGroupClient *armresources.R
 // ctx - the context within which the function is executed.
 // []*armresources.ResourceGroup, error - returns a slice of resource groups and an error if any.
 // func ListResourceGroup(ctx context.Context, resourceGroupClient *armresources.ResourceGroupsClient) ([]*armresources.ResourceGroup, error) {
-
-// 	resultPager := resourceGroupClient.NewListPager(nil)
-
-//		resourceGroups := make([]*armresources.ResourceGroup, 0)
-//		for resultPager.More() {
-//			pageResp, err := resultPager.NextPage(ctx)
-//			if err != nil {
-//				return nil, err
-//			}
-//			resourceGroups = append(resourceGroups, pageResp.ResourceGroupListResult.Value...)
-//		}
-//		return resourceGroups, nil
-//	}
 func ListResourceGroup(ctx context.Context, resourceGroupClient *armresources.ResourceGroupsClient) ([]*armresources.ResourceGroup, error) {
 	resultPager := resourceGroupClient.NewListPager(nil)
 
