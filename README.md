@@ -63,7 +63,7 @@ az account set --subscription "XXXX-XXXX-XXXX-XXXX"
 
 The toolchain is driven by using [Taskfile](https://taskfile.dev/) and all commands are managed via the file `Taskfile.yml`
 
-The list of commands is as follows: \
+The list of commands is as follows: 
 
 ```bash
 * build:             Builds the project in preparation for debug.
