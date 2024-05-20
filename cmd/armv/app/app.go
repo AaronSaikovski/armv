@@ -121,7 +121,6 @@ func Run(versionString string) error {
 	if err != nil {
 		return err
 	}
-	//fmt.Printf("Resource Ids: %s\n", resourceIds)
 
 	/* ********************************************************************** */
 

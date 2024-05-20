@@ -31,7 +31,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/subscription/armsubscription"
 )
 
-// }
+
 func GetLogin(ctx context.Context, subscriptionID string) bool {
 	cred, err := GetAzureDefaultCredential()
 	if err != nil {
