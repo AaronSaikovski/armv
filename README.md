@@ -1,6 +1,8 @@
 <div align="center">
 
-# ARMV - <u>A</u>zure <u>R</u>esource <u>M</u>oveability <u>V</u>alidator - v0.1.0-alpha.1-release
+# ARMV - <u>A</u>zure <u>R</u>esource <u>M</u>oveability <u>V</u>alidator
+
+### v0.1.0-alpha.1-release
 
 [![Build Status](https://github.com/AaronSaikovski/armv/workflows/build/badge.svg)](https://github.com/AaronSaikovski/armv/actions)
 [![Licence](https://img.shields.io/github/license/AaronSaikovski/armv)](LICENSE)
@@ -17,7 +19,7 @@ This CLI utility performs a validation on whether the specified Azure resources 
 The resources to be moved must be in the same source resource group in the source subscription being used. \
 The target resource group may be in a different subscription. \
 If validation succeeds, it returns HTTP response code 204 (no content), If validation fails, it returns HTTP response code 409 (Conflict) with an error message. \
-If the operation fails it outputs a detailed json error report similar to this example: \
+If the operation fails it outputs a detailed json error report similar to this example:
 
 ```json
 {
@@ -59,7 +61,7 @@ az account set --subscription "XXXX-XXXX-XXXX-XXXX"
 
 ## Installation:
 
-The toolchain is driven by using [Taskfile](https://taskfile.dev/) and all commands are managed via the file `Taskfile.yml` 
+The toolchain is driven by using [Taskfile](https://taskfile.dev/) and all commands are managed via the file `Taskfile.yml`
 
 The list of commands is as follows: \
 
