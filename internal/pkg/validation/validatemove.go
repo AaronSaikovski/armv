@@ -95,8 +95,7 @@ func ValidateMove(ctx context.Context, sourceSubscriptionID string, sourceResour
 
 }
 
-func ValidateMoveChan(ctx context.Context,
-	sourceSubscriptionID string, sourceResourceGroupName string, resourceIds []*string, targetResourceGroup *string, resultCh chan<- *runtime.Poller[armresources.ClientValidateMoveResourcesResponse], errorCh chan<- error, wg *sync.WaitGroup) {
+func ValidateMoveChan(ctx context.Context, sourceSubscriptionID string, sourceResourceGroupName string, resourceIds []*string, targetResourceGroup *string, resultCh chan<- *runtime.Poller[armresources.ClientValidateMoveResourcesResponse], errorCh chan<- error, wg *sync.WaitGroup) {
 	defer wg.Done() // Signal that this goroutine is done
 
 	//get move params struct
