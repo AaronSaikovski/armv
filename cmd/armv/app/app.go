@@ -26,14 +26,21 @@ package app
 import (
 	"context"
 	"fmt"
+	"os"
+	"os/signal"
+	"sync"
+	"syscall"
 	"time"
 
 	"github.com/AaronSaikovski/armv/cmd/armv/poller"
+	"github.com/AaronSaikovski/armv/cmd/armv/types"
 	"github.com/AaronSaikovski/armv/internal/pkg/auth"
 	"github.com/AaronSaikovski/armv/internal/pkg/resourcegroups"
 	"github.com/AaronSaikovski/armv/internal/pkg/resources"
 	"github.com/AaronSaikovski/armv/internal/pkg/validation"
 	"github.com/AaronSaikovski/armv/pkg/utils"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources"
 	"github.com/logrusorgru/aurora"
 )
 
@@ -132,22 +139,63 @@ func Run(versionString string) error {
 	/* ********************************************************************** */
 
 	//Validate resources
-	resp, err := validation.ValidateMove(ctx, args.SourceSubscriptionId, args.SourceResourceGroup, resourceIds, targetResourceGroupId)
-	if err != nil {
-		return err
+	// resp, err := validation.ValidateMove(ctx, args.SourceSubscriptionId, args.SourceResourceGroup, resourceIds, targetResourceGroupId)
+	// if err != nil {
+	// 	return err
+	// }
+
+	var wg sync.WaitGroup // Create a WaitGroup
+
+	// Create unbuffered channels to receive results and errors
+	validateResults := make(chan *runtime.Poller[armresources.ClientValidateMoveResourcesResponse])
+	validateErrors := make(chan error)
+	wg.Add(1) // Increment the WaitGroup counter
+
+	go validation.ValidateMoveChan(ctx, args.SourceSubscriptionId, args.SourceResourceGroup, resourceIds, targetResourceGroupId, validateResults, validateErrors, &wg)
+
+	// Close the results and errors channels once all goroutines are done
+	go func() {
+		wg.Wait()
+		close(validateResults)
+		close(validateErrors)
+	}()
+
+	if <-validateErrors != nil {
+		return <-validateErrors
 	}
 
 	/* ********************************************************************** */
 
 	// Poll the API and show a status...this is a blocking call
-	pollResp, err := poller.PollApi(ctx, resp)
-	if err != nil {
-		return err
+	// pollResp, err := poller.PollApi(ctx, <-validateResults)
+	// //pollResp, err := poller.PollApi(ctx, resp)
+	// if err != nil {
+	// 	return err
+	// }
+
+	pollResults := make(chan types.PollerResponse)
+	pollErrors := make(chan error)
+	wg.Add(1) // Increment the WaitGroup counter
+
+	go poller.PollApiChan(ctx, <-validateResults, pollResults, pollErrors, &wg)
+
+	// Create a channel to receive OS signals
+	signalCh := make(chan os.Signal, 1)
+	signal.Notify(signalCh, syscall.SIGINT, syscall.SIGTERM)
+
+	go func() {
+		wg.Wait()
+		close(pollResults)
+		close(pollErrors)
+	}()
+
+	if <-pollErrors != nil {
+		return <-pollErrors
 	}
 
 	//Show response output
-	respErr := poller.PollResponse(pollResp)
-	if err != nil {
+	respErr := poller.PollResponse(<-pollResults)
+	if respErr != nil {
 		return respErr
 	}
 
