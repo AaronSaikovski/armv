@@ -42,15 +42,16 @@ func OutputSuccess(respStatus string) {
 	fmt.Println(aurora.Bold(aurora.Green("*****************************************************************")))
 }
 
-// OutputFail prints an error message with the specified SourceResourceGroup and ErrorDetails.
+// OutputFail prints an error message with the specified ErrorDetails.
 //
 // Parameters:
-// - SourceResourceGroup: the name of the source resource group.
 // - ErrorDetails: details about the error that occurred.
-func OutputFail(SourceResourceGroup string, ErrorDetails string) {
+//
+// No return value.
+func OutputFail(ErrorDetails string) {
 
 	fmt.Println(aurora.Bold(aurora.Red("\n*****************************************************************")))
-	fmt.Println(aurora.Sprintf(aurora.Red("*** Source ResourceGroup - '%s' ***"), SourceResourceGroup))
+	//fmt.Println(aurora.Sprintf(aurora.Red("*** Source ResourceGroup - '%s' ***"), SourceResourceGroup))
 	fmt.Println(aurora.Sprintf(aurora.Red("*** Error Details: \n %s "), aurora.Red(ErrorDetails)))
 	fmt.Println(aurora.Bold(aurora.Red("*****************************************************************")))
 

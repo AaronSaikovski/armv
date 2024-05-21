@@ -37,9 +37,15 @@ import (
 const (
 	progressBarMax = 100
 	sleepDuration  = 5 * time.Millisecond
+	//API return codes
+	API_SUCCESS            int = 202
+	API_RESOURCE_MOVE_OK   int = 204
+	API_RESOURCE_MOVE_FAIL int = 409
+
+	//Progress bar Max
+	PROGRESS_BAR_MAX int = 100
 )
 
-// OPTIMISED CODE
 // PollApi is a function that polls the AzureRM Validation API indefinitely until it receives a response.
 //
 // It takes the following parameters:
@@ -89,4 +95,30 @@ func PollApi[T any](ctx context.Context, respPoller *runtime.Poller[T]) (types.P
 			}, nil
 		}
 	}
+}
+
+// PollResponse handles the response from the polling API.
+//
+// It takes a PollerResponse object as input and checks the status code of the response.
+// If the status code is API_RESOURCE_MOVE_OK, it calls the OutputSuccess function from the utils package.
+// Otherwise, it calls the PrettyJsonString function from the utils package to format the response body as a JSON string.
+// If there is an error formatting the JSON string, it returns the error.
+// Otherwise, it calls the OutputFail function from the utils package with the formatted JSON string.
+//
+// The function returns an error if there is an error formatting the JSON string, otherwise it returns nil.
+func PollResponse(pollResp types.PollerResponse) error {
+	//204 == validation successful - no content
+	//409 - with error validation failed
+	if pollResp.RespStatusCode == API_RESOURCE_MOVE_OK {
+		utils.OutputSuccess(pollResp.RespStatus)
+	} else {
+
+		resp, err := utils.PrettyJsonString(string(pollResp.RespBody))
+		if err != nil {
+			return err
+		}
+		utils.OutputFail(resp)
+	}
+
+	return nil
 }

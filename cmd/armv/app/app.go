@@ -28,7 +28,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/AaronSaikovski/armv/cmd/armv/constants"
 	"github.com/AaronSaikovski/armv/cmd/armv/poller"
 	"github.com/AaronSaikovski/armv/internal/pkg/auth"
 	"github.com/AaronSaikovski/armv/internal/pkg/resourcegroups"
@@ -86,7 +85,7 @@ func Run(versionString string) error {
 
 	/* ********************************************************************** */
 
-	// //check source and destination resource groups exists
+	// check source and destination resource groups exists
 	srcRsgExists, err := resourcegroups.CheckResourceGroupExists(ctx, resourceGroupClient, args.SourceResourceGroup)
 	if err != nil {
 		return err
@@ -97,7 +96,7 @@ func Run(versionString string) error {
 
 	/* ********************************************************************** */
 
-	// //check destination and destination resource groups exists
+	// check destination and destination resource groups exists
 	dstRsgExists, err := resourcegroups.CheckResourceGroupExists(ctx, resourceGroupClient, args.TargetResourceGroup)
 	if err != nil {
 		return err
@@ -146,17 +145,10 @@ func Run(versionString string) error {
 		return err
 	}
 
-	//204 == validation successful - no content
-	//409 - with error validation failed
-	if pollResp.RespStatusCode == constants.API_RESOURCE_MOVE_OK {
-		utils.OutputSuccess(pollResp.RespStatus)
-	} else {
-
-		resp, err := utils.PrettyJsonString(string(pollResp.RespBody))
-		if err != nil {
-			return err
-		}
-		utils.OutputFail(args.SourceResourceGroup, resp)
+	//Show response output
+	respErr := poller.PollResponse(pollResp)
+	if err != nil {
+		return respErr
 	}
 
 	/* ********************************************************************** */
