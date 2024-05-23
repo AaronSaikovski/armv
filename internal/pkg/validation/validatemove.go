@@ -25,7 +25,6 @@ package validation
 
 import (
 	"context"
-	"sync"
 
 	"github.com/AaronSaikovski/armv/internal/pkg/auth"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
@@ -93,22 +92,4 @@ func ValidateMove(ctx context.Context, sourceSubscriptionID string, sourceResour
 	//validate move
 	return validateMoveResources(ctx, sourceSubscriptionID, sourceResourceGroupName, moveParams)
 
-}
-
-func ValidateMoveChan(ctx context.Context, sourceSubscriptionID string, sourceResourceGroupName string, resourceIds []*string, targetResourceGroup *string, resultCh chan<- *runtime.Poller[armresources.ClientValidateMoveResourcesResponse], errorCh chan<- error, wg *sync.WaitGroup) {
-	defer wg.Done() // Signal that this goroutine is done
-
-	//get move params struct
-	moveParams := moveInfoParams(resourceIds, targetResourceGroup)
-
-	//validate move
-	result, err := validateMoveResources(ctx, sourceSubscriptionID, sourceResourceGroupName, moveParams)
-
-	// Send the err back via the channel
-	if err != nil {
-		errorCh <- err
-	}
-
-	// Send the result back via the channel
-	resultCh <- result
 }

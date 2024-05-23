@@ -10,7 +10,7 @@ require (
 	github.com/alexflint/go-arg v1.5.0
 	github.com/k0kubun/go-ansi v0.0.0-20180517002512-3bf9e2903213
 	github.com/logrusorgru/aurora v2.0.3+incompatible
-	github.com/schollz/progressbar/v3 v3.14.2
+	github.com/schollz/progressbar/v3 v3.14.3
 )
 
 require (

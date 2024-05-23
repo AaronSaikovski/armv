@@ -26,10 +26,6 @@ package app
 import (
 	"context"
 	"fmt"
-	"os"
-	"os/signal"
-	"sync"
-	"syscall"
 	"time"
 
 	"github.com/AaronSaikovski/armv/cmd/armv/poller"
@@ -39,8 +35,6 @@ import (
 	"github.com/AaronSaikovski/armv/internal/pkg/resources"
 	"github.com/AaronSaikovski/armv/internal/pkg/validation"
 	"github.com/AaronSaikovski/armv/pkg/utils"
-	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
-	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources"
 	"github.com/logrusorgru/aurora"
 )
 
@@ -131,11 +125,6 @@ func Run(versionString string) error {
 	/* ********************************************************************** */
 
 	// Get all resource IDs from source resource group
-	// resourceIds, err := resources.GetResourceIds(ctx, resourcesClient, azureResourceInfo.SourceResourceGroup)
-	// if err != nil {
-	// 	return err
-	// }
-
 	azureResourceInfo.ResourceIds, err = resources.GetResourceIds(ctx, resourcesClient, azureResourceInfo.SourceResourceGroup)
 	if err != nil {
 		return err
@@ -150,63 +139,22 @@ func Run(versionString string) error {
 
 	/* ********************************************************************** */
 
-	//Validate resources
-	// resp, err := validation.ValidateMove(ctx, args.SourceSubscriptionId, args.SourceResourceGroup, resourceIds, targetResourceGroupId)
-	// if err != nil {
-	// 	return err
-	// }
-
-	var wg sync.WaitGroup // Create a WaitGroup
-
-	// Create unbuffered channels to receive results and errors
-	validateResults := make(chan *runtime.Poller[armresources.ClientValidateMoveResourcesResponse])
-	validateErrors := make(chan error)
-	wg.Add(1) // Increment the WaitGroup counter
-
-	go validation.ValidateMoveChan(ctx, args.SourceSubscriptionId, args.SourceResourceGroup, azureResourceInfo.ResourceIds, targetResourceGroupId, validateResults, validateErrors, &wg)
-
-	// Close the results and errors channels once all goroutines are done
-	go func() {
-		wg.Wait()
-		close(validateResults)
-		close(validateErrors)
-	}()
-
-	if <-validateErrors != nil {
-		return <-validateErrors
+	//Validate resources - return runtime poller
+	resp, err := validation.ValidateMove(ctx, args.SourceSubscriptionId, args.SourceResourceGroup, azureResourceInfo.ResourceIds, targetResourceGroupId)
+	if err != nil {
+		return err
 	}
 
 	/* ********************************************************************** */
 
 	// Poll the API and show a status...this is a blocking call
-	// pollResp, err := poller.PollApi(ctx, <-validateResults)
-	// //pollResp, err := poller.PollApi(ctx, resp)
-	// if err != nil {
-	// 	return err
-	// }
-
-	pollResults := make(chan types.PollerResponse)
-	pollErrors := make(chan error)
-	wg.Add(1) // Increment the WaitGroup counter
-
-	go poller.PollApiChan(ctx, <-validateResults, pollResults, pollErrors, &wg)
-
-	// Create a channel to receive OS signals
-	signalCh := make(chan os.Signal, 1)
-	signal.Notify(signalCh, syscall.SIGINT, syscall.SIGTERM)
-
-	go func() {
-		wg.Wait()
-		close(pollResults)
-		close(pollErrors)
-	}()
-
-	if <-pollErrors != nil {
-		return <-pollErrors
+	pollResp, err := poller.PollApi(ctx, resp)
+	if err != nil {
+		return err
 	}
 
 	//Show response output
-	respErr := poller.PollResponse(<-pollResults)
+	respErr := poller.PollResponse(pollResp)
 	if respErr != nil {
 		return respErr
 	}

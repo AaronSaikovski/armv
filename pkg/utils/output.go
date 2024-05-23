@@ -51,8 +51,8 @@ func OutputSuccess(respStatus string) {
 func OutputFail(ErrorDetails string) {
 
 	fmt.Println(aurora.Bold(aurora.Red("\n*****************************************************************")))
-	//fmt.Println(aurora.Sprintf(aurora.Red("*** Source ResourceGroup - '%s' ***"), SourceResourceGroup))
-	fmt.Println(aurora.Sprintf(aurora.Red("*** Error Details: \n %s "), aurora.Red(ErrorDetails)))
-	fmt.Println(aurora.Bold(aurora.Red("*****************************************************************")))
+	fmt.Println(aurora.Bold(aurora.Red("*** Validation Error Report ***")))
+	fmt.Println(aurora.Bold(aurora.Red(ErrorDetails)))
+	fmt.Println(aurora.Bold(aurora.Red("\n*****************************************************************")))
 
 }
