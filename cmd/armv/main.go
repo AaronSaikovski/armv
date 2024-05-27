@@ -25,7 +25,6 @@ package main
 
 import (
 	_ "embed"
-	"os"
 
 	"github.com/AaronSaikovski/armv/cmd/armv/app"
 	"github.com/AaronSaikovski/armv/pkg/utils"
@@ -39,13 +38,12 @@ var version string
 
 // main is the entry point of the program.
 //
-// No parameters.
-// No return types.
+// It calls the Run function of the app package, passing the version variable as an argument.
+// If an error occurs during the execution of the Run function, it calls the HandleError function of the utils package,
+// passing the error as an argument.
+// The commented out line logs the error message and exits with status code 1.
 func main() {
-
 	if err := app.Run(version); err != nil {
 		utils.HandleError(err)
-		os.Exit(1)
 	}
-	os.Exit(0)
 }

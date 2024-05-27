@@ -24,26 +24,35 @@ SOFTWARE.
 package app
 
 import (
+	"fmt"
+
 	"github.com/AaronSaikovski/armv/pkg/utils"
 	"github.com/alexflint/go-arg"
 )
 
-// checkParams checks the input arguments for validity.
+// checkParams validates the input arguments for validity.
 //
-// No parameters.
-// Returns an error.
+// It retrieves the args input data using arg.MustParse(&args) and defines a helper function validateSubscriptionID to validate the subscription ID format.
+// The helper function checks if the subscription ID is valid using utils.CheckValidSubscriptionID and fails if it is not.
+// The function then validates the Source and Target Subscription IDs using the validateSubscriptionID function.
+// Finally, it returns nil indicating that there were no errors.
+//
+// Returns:
+// - error: nil if there are no errors, otherwise an error indicating the invalid subscription ID format.
 func checkParams() error {
-	//Get the args input data
+	// Get the args input data
 	p := arg.MustParse(&args)
 
-	//check for valid subscription Id
-	if !utils.CheckValidSubscriptionID(args.SourceSubscriptionId) {
-		p.Fail("Invalid Source Subscription ID format: - should be: '0000-0000-0000-000000000000'.")
+	// Helper function to validate subscription ID
+	validateSubscriptionID := func(id, name string) {
+		if !utils.CheckValidSubscriptionID(id) {
+			p.Fail(fmt.Sprintf("Invalid %s Subscription ID format: - should be: '0000-0000-0000-000000000000'.", name))
+		}
 	}
 
-	//check for valid subscription Id
-	if !utils.CheckValidSubscriptionID(args.TargetSubscriptionId) {
-		p.Fail("Invalid Target Subscription ID format: - should be: '0000-0000-0000-000000000000'.")
-	}
+	// Validate Source and Target Subscription IDs
+	validateSubscriptionID(args.SourceSubscriptionId, "Source")
+	validateSubscriptionID(args.TargetSubscriptionId, "Target")
+
 	return nil
 }

@@ -58,6 +58,13 @@ func MarshalStructToJSON(targetStruct interface{}) ([]byte, error) {
 }
 
 // PrettyJsonString takes a JSON string and returns a pretty-printed version of it.
+//
+// Parameters:
+// - str: the JSON string to be pretty-printed.
+//
+// Returns:
+// - string: the pretty-printed JSON string.
+// - error: an error if the pretty-printing process fails.
 func PrettyJsonString(str string) (string, error) {
 	var prettyJSON bytes.Buffer
 	if err := json.Indent(&prettyJSON, []byte(str), "", "    "); err != nil {

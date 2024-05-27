@@ -28,10 +28,10 @@ import (
 	"io"
 )
 
-// FetchResponseBody Get the response body from a HTTP response.
+// FetchResponseBody retrieves the response body from an io.Reader.
 //
-// resp io.Reader - the HTTP response reader.
-// []byte - returns the response body as a byte slice.
+// It takes an io.Reader as a parameter and returns a byte slice containing the response body.
+// If there is an error reading the response body, it returns nil.
 func FetchResponseBody(resp io.Reader) []byte {
 	respBody, err := io.ReadAll(resp)
 
