@@ -47,6 +47,9 @@ var (
 func Run(versionString string) error {
 
 	startTime := time.Now()
+	defer func() {
+		fmt.Printf("Elapsed time: %.2f seconds\n", time.Since(startTime).Seconds())
+	}()
 
 	//set the version build info
 	args.SetVersion(versionString)
@@ -59,9 +62,15 @@ func Run(versionString string) error {
 	/* ********************************************************************** */
 
 	//populate the AzureResourceInfo struct
-	azureResourceInfo.SourceSubscriptionId = args.SourceSubscriptionId
-	azureResourceInfo.SourceResourceGroup = args.SourceResourceGroup
-	azureResourceInfo.TargetResourceGroup = args.TargetResourceGroup
+	// azureResourceInfo.SourceSubscriptionId = args.SourceSubscriptionId
+	// azureResourceInfo.SourceResourceGroup = args.SourceResourceGroup
+	// azureResourceInfo.TargetResourceGroup = args.TargetResourceGroup
+
+	azureResourceInfo = types.AzureResourceInfo{
+		SourceSubscriptionId: args.SourceSubscriptionId,
+		SourceResourceGroup:  args.SourceResourceGroup,
+		TargetResourceGroup:  args.TargetResourceGroup,
+	}
 
 	/* ********************************************************************** */
 
@@ -74,7 +83,8 @@ func Run(versionString string) error {
 	// Get default cred
 	cred, err := auth.GetAzureDefaultCredential()
 	if err != nil {
-		return err
+		//return err
+		return fmt.Errorf("failed to get Azure default credential: %w", err)
 	}
 
 	/* ********************************************************************** */
@@ -89,7 +99,8 @@ func Run(versionString string) error {
 	//Get the resource group client
 	resourceGroupClient, err := resourcegroups.GetResourceGroupClient(cred, azureResourceInfo.SourceSubscriptionId)
 	if err != nil {
-		return err
+		//return err
+		return fmt.Errorf("failed to get resource group client: %w", err)
 	}
 
 	/* ********************************************************************** */
@@ -127,14 +138,16 @@ func Run(versionString string) error {
 	// Get all resource IDs from source resource group
 	azureResourceInfo.ResourceIds, err = resources.GetResourceIds(ctx, resourcesClient, azureResourceInfo.SourceResourceGroup)
 	if err != nil {
-		return err
+		//return err
+		return fmt.Errorf("failed to get resource IDs: %w", err)
 	}
 	/* ********************************************************************** */
 
 	// get the target resource group ID
 	targetResourceGroupId, err := resourcegroups.GetResourceGroupId(ctx, resourceGroupClient, azureResourceInfo.TargetResourceGroup)
 	if err != nil {
-		return err
+		//return err
+		return fmt.Errorf("failed to get target resource group ID: %w", err)
 	}
 
 	/* ********************************************************************** */
@@ -142,7 +155,8 @@ func Run(versionString string) error {
 	//Validate resources - return runtime poller
 	resp, err := validation.ValidateMove(ctx, args.SourceSubscriptionId, args.SourceResourceGroup, azureResourceInfo.ResourceIds, targetResourceGroupId)
 	if err != nil {
-		return err
+		//return err
+		return fmt.Errorf("failed to validate resource move: %w", err)
 	}
 
 	/* ********************************************************************** */
@@ -150,17 +164,19 @@ func Run(versionString string) error {
 	// Poll the API and show a status...this is a blocking call
 	pollResp, err := poller.PollApi(ctx, resp)
 	if err != nil {
-		return err
+		//return err
+		return fmt.Errorf("failed to poll API: %w", err)
 	}
 
 	//Show response output
 	respErr := poller.PollResponse(pollResp)
 	if respErr != nil {
-		return respErr
+		//return respErr
+		return fmt.Errorf("poll response error: %w", err)
 	}
 
 	/* ********************************************************************** */
 
-	fmt.Printf("Elapsed time: %.2f seconds\n", time.Since(startTime).Seconds())
+	//fmt.Printf("Elapsed time: %.2f seconds\n", time.Since(startTime).Seconds())
 	return nil
 }

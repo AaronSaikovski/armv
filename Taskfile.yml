@@ -57,6 +57,7 @@ tasks:
   ## build - Builds the project in preparation for debug
   build:
     desc: "Builds the project in preparation for debug."
+    deps: [clean]
     cmds:
       - go build -o bin/$TARGET $APPPATH
       - file bin/$TARGET

@@ -25,7 +25,6 @@ package poller
 
 import (
 	"context"
-	"sync"
 	"time"
 
 	"github.com/AaronSaikovski/armv/cmd/armv/types"
@@ -98,49 +97,49 @@ func PollApi[T any](ctx context.Context, respPoller *runtime.Poller[T]) (types.P
 	}
 }
 
-func PollApiChan[T any](ctx context.Context, respPoller *runtime.Poller[T], resultCh chan<- types.PollerResponse, errorCh chan<- error, wg *sync.WaitGroup) {
-	defer wg.Done() // Signal that this goroutine is done
+// func PollApiChan[T any](ctx context.Context, respPoller *runtime.Poller[T], resultCh chan<- types.PollerResponse, errorCh chan<- error, wg *sync.WaitGroup) {
+// 	defer wg.Done() // Signal that this goroutine is done
 
-	bar := progressbar.NewOptions(progressBarMax,
-		progressbar.OptionSetWriter(ansi.NewAnsiStdout()),
-		progressbar.OptionEnableColorCodes(true),
-		progressbar.OptionSetDescription("[cyan][reset] Running Validation..."),
-		progressbar.OptionSetTheme(progressbar.Theme{
-			Saucer:        "[green]=[reset]",
-			SaucerHead:    "[green]>[reset]",
-			SaucerPadding: " ",
-			BarStart:      "[",
-			BarEnd:        "]",
-		}))
-	defer func() {
-		_ = bar.Finish()
-	}()
+// 	bar := progressbar.NewOptions(progressBarMax,
+// 		progressbar.OptionSetWriter(ansi.NewAnsiStdout()),
+// 		progressbar.OptionEnableColorCodes(true),
+// 		progressbar.OptionSetDescription("[cyan][reset] Running Validation..."),
+// 		progressbar.OptionSetTheme(progressbar.Theme{
+// 			Saucer:        "[green]=[reset]",
+// 			SaucerHead:    "[green]>[reset]",
+// 			SaucerPadding: " ",
+// 			BarStart:      "[",
+// 			BarEnd:        "]",
+// 		}))
+// 	defer func() {
+// 		_ = bar.Finish()
+// 	}()
 
-	barCount := 0
-	for {
-		barCount++
-		_ = bar.Add(1)
-		time.Sleep(sleepDuration)
+// 	barCount := 0
+// 	for {
+// 		barCount++
+// 		_ = bar.Add(1)
+// 		time.Sleep(sleepDuration)
 
-		if barCount >= progressBarMax {
-			bar.Reset()
-			barCount = 0
-		}
+// 		if barCount >= progressBarMax {
+// 			bar.Reset()
+// 			barCount = 0
+// 		}
 
-		w, err := respPoller.Poll(ctx)
-		if err != nil {
-			errorCh <- err
-		}
+// 		w, err := respPoller.Poll(ctx)
+// 		if err != nil {
+// 			errorCh <- err
+// 		}
 
-		if respPoller.Done() {
-			resultCh <- types.PollerResponse{
-				RespBody:       utils.FetchResponseBody(w.Body),
-				RespStatusCode: w.StatusCode,
-				RespStatus:     w.Status,
-			}
-		}
-	}
-}
+// 		if respPoller.Done() {
+// 			resultCh <- types.PollerResponse{
+// 				RespBody:       utils.FetchResponseBody(w.Body),
+// 				RespStatusCode: w.StatusCode,
+// 				RespStatus:     w.Status,
+// 			}
+// 		}
+// 	}
+// }
 
 // PollResponse handles the response from the polling API.
 //
