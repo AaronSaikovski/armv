@@ -2,7 +2,7 @@
 
 # ARMV - <u>A</u>zure <u>R</u>esource <u>M</u>oveability <u>V</u>alidator
 
-### v0.2.0-beta.1-release
+### v0.3.0-beta.2-release
 
 [![Build Status](https://github.com/AaronSaikovski/armv/workflows/build/badge.svg)](https://github.com/AaronSaikovski/armv/actions)
 [![Licence](https://img.shields.io/github/license/AaronSaikovski/armv)](LICENSE)
