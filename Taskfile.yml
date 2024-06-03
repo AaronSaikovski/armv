@@ -57,7 +57,7 @@ tasks:
   ## build - Builds the project in preparation for debug
   build:
     desc: "Builds the project in preparation for debug."
-    deps: [clean]
+    #deps: [clean]
     cmds:
       - go build -o bin/$TARGET $APPPATH
       - file bin/$TARGET
@@ -147,7 +147,7 @@ tasks:
     cmds:
       - bash ./bicep/deploy.sh
 
-  ## deploy - destroy azure stack
+  ## destroy - destroy azure stack
   destroy:
     desc: "Destroy Azure resources for testing."
     cmds:

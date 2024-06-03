@@ -27,11 +27,9 @@ var (
 	VersionString string
 
 	infoString string = `
-   		*** Azure Resource Movability Validator (ARMV)* **
-		This utility checks whether the specified Azure resources can be moved to the target location in the same tenant.  
-		If validation succeeds, it returns HTTP response code 204 (no content).
-		If validation fails, it returns HTTP response code 409 (Conflict) with an error message. 
-		** This only performs a read of resources and NO changes are made. **
+		**ARMV - Azure Resource Movability Validator**
+		This tool checks whether the resources in a source resource group can be moved to the target resource group in the same subscription.
+		** Performs a READ only operation only and NO changes are made. **
     `
 )
 
@@ -50,7 +48,7 @@ func (Args) Description() string {
 
 // Version - Version info
 func (Args) Version() string {
-	return VersionString
+	return "Version: " + VersionString
 }
 
 // set version string
