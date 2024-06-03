@@ -21,10 +21,30 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
-package types
+package poller
 
-type PollerResponse struct {
-	RespBody       []byte
-	RespStatusCode int
-	RespStatus     string
+import (
+	"github.com/AaronSaikovski/armv/pkg/utils"
+)
+
+// pollResponse handles the response from the polling API.
+//
+// It takes a PollerResponse object as input and checks the status code of the response.
+// If the status code is API_RESOURCE_MOVE_OK, it calls the OutputSuccess function from the utils package.
+// Otherwise, it calls the PrettyJsonString function from the utils package to format the response body as a JSON string.
+// If there is an error formatting the JSON string, it returns the error.
+// Otherwise, it calls the OutputFail function from the utils package with the formatted JSON string.
+//
+// The function returns an error if there is an error formatting the JSON string, otherwise it returns nil.
+func (pollResp *PollerResponseData) displayOutput() {
+	//204 == validation successful - no content
+	//409 - with error validation failed
+	if pollResp.RespStatusCode == API_RESOURCE_MOVE_OK {
+		utils.OutputSuccess(pollResp.RespStatus)
+	} else {
+
+		resp, _ := utils.PrettyJsonString(string(pollResp.RespBody))
+		utils.OutputFail(resp)
+	}
+
 }

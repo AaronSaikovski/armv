@@ -21,32 +21,21 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
-package validation
+package poller
 
 import (
-	"context"
-
-	"github.com/AaronSaikovski/armv/internal/pkg/auth"
-	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
-	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
-	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources"
+	"time"
 )
 
-func (res *AzureResourceMoveInfo) ValidateMove(ctx context.Context, cred *azidentity.DefaultAzureCredential) (*runtime.Poller[armresources.ClientValidateMoveResourcesResponse], error) {
+const (
+	progressBarMax = 100
+	sleepDuration  = 5 * time.Millisecond
 
-	//move params struct
-	moveInfo := armresources.MoveInfo{
-		Resources:           res.ResourceIds,
-		TargetResourceGroup: res.TargetResourceGroupId,
-	}
+	//API return codes
+	API_SUCCESS            int = 202
+	API_RESOURCE_MOVE_OK   int = 204
+	API_RESOURCE_MOVE_FAIL int = 409
 
-	// Create a client
-	client, err := auth.NewResourceClient(res.SourceSubscriptionId, cred)
-	if err != nil {
-		return nil, err
-	}
-
-	// Validate move resources
-	return client.BeginValidateMoveResources(ctx, res.SourceResourceGroup, moveInfo, nil)
-
-}
+	//Progress bar Max
+	PROGRESS_BAR_MAX int = 100
+)

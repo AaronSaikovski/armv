@@ -21,11 +21,12 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
-package types
+package validation
 
-type AzureResourceInfo struct {
-	SourceSubscriptionId string
-	SourceResourceGroup  string
-	TargetResourceGroup  string
-	ResourceIds          []*string
+type AzureResourceMoveInfo struct {
+	SourceSubscriptionId  string
+	SourceResourceGroup   string
+	TargetResourceGroup   string
+	TargetResourceGroupId *string
+	ResourceIds           []*string
 }
