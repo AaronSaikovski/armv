@@ -147,7 +147,7 @@ tasks:
     cmds:
       - bash ./bicep/deploy.sh
 
-  ## deploy - destroy azure stack
+  ## destroy - destroy azure stack
   destroy:
     desc: "Destroy Azure resources for testing."
     cmds:

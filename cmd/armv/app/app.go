@@ -35,6 +35,7 @@ import (
 	"github.com/AaronSaikovski/armv/internal/pkg/resources"
 	"github.com/AaronSaikovski/armv/internal/pkg/validation"
 	"github.com/AaronSaikovski/armv/pkg/utils"
+	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/logrusorgru/aurora"
 )
 
@@ -62,10 +63,6 @@ func Run(versionString string) error {
 	/* ********************************************************************** */
 
 	//populate the AzureResourceInfo struct
-	// azureResourceInfo.SourceSubscriptionId = args.SourceSubscriptionId
-	// azureResourceInfo.SourceResourceGroup = args.SourceResourceGroup
-	// azureResourceInfo.TargetResourceGroup = args.TargetResourceGroup
-
 	azureResourceInfo = types.AzureResourceInfo{
 		SourceSubscriptionId: args.SourceSubscriptionId,
 		SourceResourceGroup:  args.SourceResourceGroup,
@@ -81,15 +78,24 @@ func Run(versionString string) error {
 	/* ********************************************************************** */
 
 	// Get default cred
-	cred, err := auth.GetAzureDefaultCredential()
+	//cred, err := auth.GetAzureDefaultCredential()
+	cred, err := func() (*azidentity.DefaultAzureCredential, error) {
+		return azidentity.NewDefaultAzureCredential(nil)
+	}()
+
 	if err != nil {
-		//return err
 		return fmt.Errorf("failed to get Azure default credential: %w", err)
 	}
 
 	/* ********************************************************************** */
 	// check we are logged into the Azure source subscription
-	if !auth.GetLogin(ctx, args.SourceSubscriptionId) {
+	login, err := auth.CheckLogin(ctx, cred, args.SourceSubscriptionId)
+
+	if err != nil {
+		return fmt.Errorf("getlogin error: %w", err)
+	}
+
+	if !login {
 		return fmt.Errorf("you are not logged into the azure subscription '%s', please login and retry operation", azureResourceInfo.SourceSubscriptionId)
 	}
 	fmt.Println(aurora.Sprintf(aurora.Yellow("Logged into Subscription Id: %s\n"), azureResourceInfo.SourceSubscriptionId))
@@ -99,7 +105,6 @@ func Run(versionString string) error {
 	//Get the resource group client
 	resourceGroupClient, err := resourcegroups.GetResourceGroupClient(cred, azureResourceInfo.SourceSubscriptionId)
 	if err != nil {
-		//return err
 		return fmt.Errorf("failed to get resource group client: %w", err)
 	}
 
@@ -171,12 +176,10 @@ func Run(versionString string) error {
 	//Show response output
 	respErr := poller.PollResponse(pollResp)
 	if respErr != nil {
-		//return respErr
 		return fmt.Errorf("poll response error: %w", err)
 	}
 
 	/* ********************************************************************** */
 
-	//fmt.Printf("Elapsed time: %.2f seconds\n", time.Since(startTime).Seconds())
 	return nil
 }

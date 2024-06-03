@@ -39,22 +39,22 @@ import (
 //
 // Returns:
 // - bool: True if the user is logged into the subscription, false otherwise.
-func GetLogin(ctx context.Context, subscriptionID string) bool {
-	cred, err := GetAzureDefaultCredential()
-	if err != nil {
-		return false
-	}
+func CheckLogin(ctx context.Context, cred *azidentity.DefaultAzureCredential, subscriptionID string) (bool, error) {
+	// cred, err := GetAzureDefaultCredential()
+	// if err != nil {
+	// 	return false, err
+	// }
 
 	client, err := SubscriptionClientCred(cred)
 	if err != nil {
-		return false
+		return false, err
 	}
 
 	if err := GetSubscriptionClient(ctx, client, subscriptionID); err != nil {
-		return false
+		return false, err
 	}
 
-	return true
+	return true, nil
 }
 
 // GetAzureDefaultCredential returns a new instance of the azidentity.DefaultAzureCredential.
