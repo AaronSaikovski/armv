@@ -21,6 +21,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
+<<<<<<<< HEAD:cmd/armv/poller/constants.go
 package poller
 
 import (
@@ -39,3 +40,14 @@ const (
 	//Progress bar Max
 	PROGRESS_BAR_MAX int = 100
 )
+========
+package validation
+
+type AzureResourceMoveInfo struct {
+	SourceSubscriptionId  string
+	SourceResourceGroup   string
+	TargetResourceGroup   string
+	TargetResourceGroupId *string
+	ResourceIds           []*string
+}
+>>>>>>>> 64e343d (optimised code and added types):internal/pkg/validation/azureresourcemoveinfo.go
