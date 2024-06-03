@@ -40,11 +40,6 @@ import (
 // Returns:
 // - bool: True if the user is logged into the subscription, false otherwise.
 func CheckLogin(ctx context.Context, cred *azidentity.DefaultAzureCredential, subscriptionID string) (bool, error) {
-	// cred, err := GetAzureDefaultCredential()
-	// if err != nil {
-	// 	return false, err
-	// }
-
 	client, err := SubscriptionClientCred(cred)
 	if err != nil {
 		return false, err
