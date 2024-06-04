@@ -1,6 +1,6 @@
 module github.com/AaronSaikovski/armv
 
-go 1.22.3
+go 1.22.4
 
 require (
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.12.0
