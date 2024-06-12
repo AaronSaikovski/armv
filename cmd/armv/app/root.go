@@ -69,12 +69,6 @@ func Run(ctx context.Context, versionString string) error {
 
 	/* ********************************************************************** */
 
-	// Create a context with cancellation capability
-	// ctx, cancel := context.WithCancel(context.Background())
-	// defer cancel()
-
-	/* ********************************************************************** */
-
 	// Get default cred
 	cred, err := func() (*azidentity.DefaultAzureCredential, error) {
 		return azidentity.NewDefaultAzureCredential(nil)
