@@ -43,7 +43,7 @@ var (
 )
 
 // run - main run method
-func Run(versionString string) error {
+func Run(ctx context.Context, versionString string) error {
 
 	startTime := time.Now()
 	defer func() {
@@ -70,8 +70,8 @@ func Run(versionString string) error {
 	/* ********************************************************************** */
 
 	// Create a context with cancellation capability
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	// ctx, cancel := context.WithCancel(context.Background())
+	// defer cancel()
 
 	/* ********************************************************************** */
 
