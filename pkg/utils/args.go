@@ -48,7 +48,7 @@ func (Args) Description() string {
 
 // Version - Version info
 func (Args) Version() string {
-	return "Version: " + VersionString
+	return "ARMV version: " + VersionString
 }
 
 // set version string

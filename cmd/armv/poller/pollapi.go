@@ -88,6 +88,7 @@ func PollApi[T any](ctx context.Context, respPoller *runtime.Poller[T]) error {
 			}
 
 			pollResp.displayOutput()
+			ctx.Done()
 			return nil
 
 		}
