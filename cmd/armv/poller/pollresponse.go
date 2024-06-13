@@ -42,7 +42,6 @@ func (pollResp *PollerResponseData) displayOutput() {
 	if pollResp.RespStatusCode == API_RESOURCE_MOVE_OK {
 		utils.OutputSuccess(pollResp.RespStatus)
 	} else {
-
 		resp, _ := utils.PrettyJsonString(string(pollResp.RespBody))
 		utils.OutputFail(resp)
 	}
