@@ -2,7 +2,7 @@
 
 # ARMV - <u>A</u>zure <u>R</u>esource <u>M</u>oveability <u>V</u>alidator
 
-### v0.3.1-beta-release
+### v0.3.2-beta-release
 
 [![Build Status](https://github.com/AaronSaikovski/armv/workflows/build/badge.svg)](https://github.com/AaronSaikovski/armv/actions)
 [![Licence](https://img.shields.io/github/license/AaronSaikovski/armv)](LICENSE)
@@ -63,7 +63,7 @@ az account set --subscription "XXXX-XXXX-XXXX-XXXX"
 
 The toolchain is driven by using [Taskfile](https://taskfile.dev/) and all commands are managed via the file `Taskfile.yml`
 
-The list of commands is as follows: 
+The list of commands is as follows:
 
 ```bash
 * build:             Builds the project in preparation for debug.
