@@ -89,7 +89,7 @@ func Run(ctx context.Context, versionString string) error {
 	/* ********************************************************************** */
 
 	//Validate resources - return runtime poller
-	resp, err := azureResourceMoveInfo.ValidateMove(ctx, cred)
+	resp, err := azureResourceMoveInfo.ValidateMove(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to validate resource move: %w", err)
 	}

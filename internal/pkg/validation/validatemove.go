@@ -28,25 +28,24 @@ import (
 
 	"github.com/AaronSaikovski/armv/internal/pkg/auth"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
-	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources"
 )
 
-func (res *AzureResourceMoveInfo) ValidateMove(ctx context.Context, cred *azidentity.DefaultAzureCredential) (*runtime.Poller[armresources.ClientValidateMoveResourcesResponse], error) {
+func (azureResourceMoveInfo *AzureResourceMoveInfo) ValidateMove(ctx context.Context) (*runtime.Poller[armresources.ClientValidateMoveResourcesResponse], error) {
 
 	//move params struct
 	moveInfo := armresources.MoveInfo{
-		Resources:           res.ResourceIds,
-		TargetResourceGroup: res.TargetResourceGroupId,
+		Resources:           azureResourceMoveInfo.ResourceIds,
+		TargetResourceGroup: azureResourceMoveInfo.TargetResourceGroupId,
 	}
 
 	// Create a client
-	client, err := auth.NewResourceClient(res.SourceSubscriptionId, cred)
+	client, err := auth.NewResourceClient(azureResourceMoveInfo.SourceSubscriptionId, azureResourceMoveInfo.Credentials)
 	if err != nil {
 		return nil, err
 	}
 
 	// Validate move resources
-	return client.BeginValidateMoveResources(ctx, res.SourceResourceGroup, moveInfo, nil)
+	return client.BeginValidateMoveResources(ctx, azureResourceMoveInfo.SourceResourceGroup, moveInfo, nil)
 
 }
