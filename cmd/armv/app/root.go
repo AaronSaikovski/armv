@@ -30,12 +30,8 @@ import (
 
 	"github.com/AaronSaikovski/armv/cmd/armv/poller"
 	"github.com/AaronSaikovski/armv/internal/pkg/auth"
-	"github.com/AaronSaikovski/armv/internal/pkg/resourcegroups"
-	"github.com/AaronSaikovski/armv/internal/pkg/resources"
 	"github.com/AaronSaikovski/armv/internal/pkg/validation"
 	"github.com/AaronSaikovski/armv/pkg/utils"
-	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
-	"github.com/logrusorgru/aurora"
 )
 
 var (
@@ -69,79 +65,25 @@ func Run(ctx context.Context, versionString string) error {
 
 	/* ********************************************************************** */
 
-	// Get default cred
-	cred, err := func() (*azidentity.DefaultAzureCredential, error) {
-		return azidentity.NewDefaultAzureCredential(nil)
-	}()
-
+	// Get default credentials
+	cred, err := auth.GetAzureDefaultCredential()
 	if err != nil {
 		return fmt.Errorf("failed to get Azure default credential: %w", err)
 	}
 
+	//assign credential
+	azureResourceMoveInfo.Credentials = cred
+
 	/* ********************************************************************** */
 	// check we are logged into the Azure source subscription
-	login, err := auth.CheckLogin(ctx, cred, args.SourceSubscriptionId)
-
-	if err != nil {
-		return fmt.Errorf("getlogin error: %w", err)
-	}
-
-	if !login {
-		return fmt.Errorf("you are not logged into the azure subscription '%s', please login and retry operation", azureResourceMoveInfo.SourceSubscriptionId)
-	}
-	fmt.Println(aurora.Sprintf(aurora.Yellow("Logged into Subscription Id: %s\n"), azureResourceMoveInfo.SourceSubscriptionId))
+	checkLogin(ctx, &azureResourceMoveInfo)
 
 	/* ********************************************************************** */
 
-	//Get the resource group client
-	resourceGroupClient, err := resourcegroups.GetResourceGroupClient(cred, azureResourceMoveInfo.SourceSubscriptionId)
-	if err != nil {
-		return fmt.Errorf("failed to get resource group client: %w", err)
-	}
-
-	/* ********************************************************************** */
-
-	// check source and destination resource groups exists
-	srcRsgExists, err := resourcegroups.CheckResourceGroupExists(ctx, resourceGroupClient, azureResourceMoveInfo.SourceResourceGroup)
-	if err != nil {
-		return err
-	}
-	if !srcRsgExists {
-		return fmt.Errorf("source resource group '%s' does not exist", args.SourceResourceGroup)
-	}
-
-	/* ********************************************************************** */
-
-	// check destination and destination resource groups exists
-	dstRsgExists, err := resourcegroups.CheckResourceGroupExists(ctx, resourceGroupClient, azureResourceMoveInfo.TargetResourceGroup)
-	if err != nil {
-		return err
-	}
-	if !dstRsgExists {
-		return fmt.Errorf("destination resource group '%s' does not exist", args.TargetResourceGroup)
-	}
-
-	/* ********************************************************************** */
-
-	// Get resource client
-	resourcesClient, err := resources.GetResourcesClient(cred, azureResourceMoveInfo.SourceSubscriptionId)
-	if err != nil {
-		return err
-	}
-
-	/* ********************************************************************** */
-
-	// Get all resource IDs from source resource group
-	azureResourceMoveInfo.ResourceIds, err = resources.GetResourceIds(ctx, resourcesClient, azureResourceMoveInfo.SourceResourceGroup)
-	if err != nil {
-		return fmt.Errorf("failed to get resource IDs: %w", err)
-	}
-	/* ********************************************************************** */
-
-	// get the target resource group ID
-	azureResourceMoveInfo.TargetResourceGroupId, err = resourcegroups.GetResourceGroupId(ctx, resourceGroupClient, azureResourceMoveInfo.TargetResourceGroup)
-	if err != nil {
-		return fmt.Errorf("failed to get target resource group ID: %w", err)
+	//Get the resource group info
+	rsgErr := getResourceGroupInfo(ctx, &azureResourceMoveInfo)
+	if rsgErr != nil {
+		return rsgErr
 	}
 
 	/* ********************************************************************** */

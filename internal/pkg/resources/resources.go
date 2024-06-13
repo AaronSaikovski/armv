@@ -37,13 +37,15 @@ var (
 // GetResourcesClient returns a new instance of the armresources.Client for the given Azure credential and subscription ID.
 //
 // Parameters:
+// - ctx: The context within which the function is being executed.
 // - cred: The Azure credential used to authenticate the client.
 // - subscriptionID: The ID of the subscription to create the client for.
 //
 // Returns:
 // - *armresources.Client: The created client instance.
 // - error: An error if the client creation fails.
-func GetResourcesClient(cred *azidentity.DefaultAzureCredential, subscriptionID string) (*armresources.Client, error) {
+
+func GetResourcesClient(ctx context.Context, cred *azidentity.DefaultAzureCredential, subscriptionID string) (*armresources.Client, error) {
 	resourcesClientFactory, err := armresources.NewClientFactory(subscriptionID, cred, nil)
 	if err != nil {
 		return nil, err

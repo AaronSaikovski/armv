@@ -23,10 +23,13 @@ SOFTWARE.
 */
 package validation
 
+import "github.com/Azure/azure-sdk-for-go/sdk/azidentity"
+
 type AzureResourceMoveInfo struct {
 	SourceSubscriptionId  string
 	SourceResourceGroup   string
 	TargetResourceGroup   string
 	TargetResourceGroupId *string
 	ResourceIds           []*string
+	Credentials           *azidentity.DefaultAzureCredential
 }
