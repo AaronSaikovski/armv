@@ -24,6 +24,7 @@ SOFTWARE.
 package main
 
 import (
+	"context"
 	_ "embed"
 
 	"github.com/AaronSaikovski/armv/cmd/armv/app"
@@ -43,7 +44,12 @@ var version string
 // passing the error as an argument.
 // The commented out line logs the error message and exits with status code 1.
 func main() {
-	if err := app.Run(version); err != nil {
+
+	// Create a context with cancellation capability
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	if err := app.Run(ctx, version); err != nil {
 		utils.HandleError(err)
 	}
 }

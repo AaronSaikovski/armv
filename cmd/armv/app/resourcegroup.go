@@ -26,81 +26,32 @@ package app
 import (
 	"context"
 	"fmt"
-	"time"
 
-	"github.com/AaronSaikovski/armv/cmd/armv/poller"
-	"github.com/AaronSaikovski/armv/internal/pkg/auth"
 	"github.com/AaronSaikovski/armv/internal/pkg/resourcegroups"
 	"github.com/AaronSaikovski/armv/internal/pkg/resources"
 	"github.com/AaronSaikovski/armv/internal/pkg/validation"
-	"github.com/AaronSaikovski/armv/pkg/utils"
-	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
-	"github.com/logrusorgru/aurora"
 )
 
-var (
-	args utils.Args
-)
-
-// run - main run method
-func Run(versionString string) error {
-
-	startTime := time.Now()
-	defer func() {
-		fmt.Printf("Elapsed time: %.2f seconds\n", time.Since(startTime).Seconds())
-	}()
-
-	//set the version build info
-	args.SetVersion(versionString)
-
-	// check params
-	if err := checkParams(); err != nil {
-		return err
-	}
-
-	/* ********************************************************************** */
-
-	//populate the AzureResourceInfo struct
-	azureResourceMoveInfo := validation.AzureResourceMoveInfo{
-		SourceSubscriptionId: args.SourceSubscriptionId,
-		SourceResourceGroup:  args.SourceResourceGroup,
-		TargetResourceGroup:  args.TargetResourceGroup,
-	}
-
-	/* ********************************************************************** */
-
-	// Create a context with cancellation capability
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	/* ********************************************************************** */
-
-	// Get default cred
-	cred, err := func() (*azidentity.DefaultAzureCredential, error) {
-		return azidentity.NewDefaultAzureCredential(nil)
-	}()
-
-	if err != nil {
-		return fmt.Errorf("failed to get Azure default credential: %w", err)
-	}
-
-	/* ********************************************************************** */
-	// check we are logged into the Azure source subscription
-	login, err := auth.CheckLogin(ctx, cred, args.SourceSubscriptionId)
-
-	if err != nil {
-		return fmt.Errorf("getlogin error: %w", err)
-	}
-
-	if !login {
-		return fmt.Errorf("you are not logged into the azure subscription '%s', please login and retry operation", azureResourceMoveInfo.SourceSubscriptionId)
-	}
-	fmt.Println(aurora.Sprintf(aurora.Yellow("Logged into Subscription Id: %s\n"), azureResourceMoveInfo.SourceSubscriptionId))
-
+// GetResourceGroupInfo retrieves information about the source and destination resource groups.
+//
+// It takes the following parameters:
+// - ctx: the context.Context object for controlling the execution flow.
+// - azureResourceMoveInfo: a pointer to the validation.AzureResourceMoveInfo struct containing the necessary information for the move operation.
+//
+// It returns an error if any of the following steps fail:
+// - Retrieving the resource group client.
+// - Checking if the source resource group exists.
+// - Checking if the destination resource group exists.
+// - Retrieving the resource client.
+// - Retrieving the resource IDs from the source resource group.
+// - Retrieving the target resource group ID.
+//
+// The function populates the azureResourceMoveInfo struct with the retrieved information.
+func getResourceGroupInfo(ctx context.Context, azureResourceMoveInfo *validation.AzureResourceMoveInfo) error {
 	/* ********************************************************************** */
 
 	//Get the resource group client
-	resourceGroupClient, err := resourcegroups.GetResourceGroupClient(cred, azureResourceMoveInfo.SourceSubscriptionId)
+	resourceGroupClient, err := resourcegroups.GetResourceGroupClient(ctx, azureResourceMoveInfo.Credentials, azureResourceMoveInfo.SourceSubscriptionId)
 	if err != nil {
 		return fmt.Errorf("failed to get resource group client: %w", err)
 	}
@@ -130,7 +81,7 @@ func Run(versionString string) error {
 	/* ********************************************************************** */
 
 	// Get resource client
-	resourcesClient, err := resources.GetResourcesClient(cred, azureResourceMoveInfo.SourceSubscriptionId)
+	resourcesClient, err := resources.GetResourcesClient(ctx, azureResourceMoveInfo.Credentials, azureResourceMoveInfo.SourceSubscriptionId)
 	if err != nil {
 		return err
 	}
@@ -150,23 +101,8 @@ func Run(versionString string) error {
 		return fmt.Errorf("failed to get target resource group ID: %w", err)
 	}
 
-	/* ********************************************************************** */
-
-	//Validate resources - return runtime poller
-	resp, err := azureResourceMoveInfo.ValidateMove(ctx, cred)
-	if err != nil {
-		return fmt.Errorf("failed to validate resource move: %w", err)
-	}
-
-	/* ********************************************************************** */
-
-	// Poll the API and show a status...this is a blocking call
-	pollErr := poller.PollApi(ctx, resp)
-	if pollErr != nil {
-		return fmt.Errorf("failed to poll API: %w", pollErr)
-	}
-
-	/* ********************************************************************** */
-
+	ctx.Done()
 	return nil
+	/* ********************************************************************** */
+
 }

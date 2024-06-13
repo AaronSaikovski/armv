@@ -33,11 +33,11 @@ env:
 dotenv: ["./envs/{{.ENV}}.env"]
 
 tasks:
-  ## version - get the Go version
+  ## version - get the app version
   version:
-    desc: "Get the Go version."
+    desc: "Get the app version."
     cmds:
-      - go version
+      -  go run $APPPATH --version
 
   ## release - Builds the project in preparation for (local)release
   release:
