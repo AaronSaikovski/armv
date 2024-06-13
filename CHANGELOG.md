@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## v1.0.0. (2023-05-29)
+## v0.3.1. (2024-06-13)
 
-- initial version
-- fixed makefile
+- initial version for testing
+- major refactor and performance optimsations

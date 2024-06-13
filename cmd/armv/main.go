@@ -26,16 +26,9 @@ package main
 import (
 	"context"
 	_ "embed"
-	"time"
 
 	"github.com/AaronSaikovski/armv/cmd/armv/app"
 	"github.com/AaronSaikovski/armv/pkg/utils"
-)
-
-const (
-
-	//Context default timeout
-	contextTimeout = (time.Second * 120)
 )
 
 //ref: https://levelup.gitconnected.com/a-better-way-than-ldflags-to-add-a-build-version-to-your-go-binaries-2258ce419d2d
@@ -53,7 +46,7 @@ var version string
 func main() {
 
 	// Create a context with cancellation capability
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(contextTimeout))
+	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	if err := app.Run(ctx, version); err != nil {
