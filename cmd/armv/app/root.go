@@ -104,5 +104,7 @@ func Run(ctx context.Context, versionString string) error {
 
 	/* ********************************************************************** */
 
+	ctx.Done()
+
 	return nil
 }

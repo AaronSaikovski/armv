@@ -52,4 +52,6 @@ func checkLogin(ctx context.Context, azureResourceMoveInfo *validation.AzureReso
 	}
 	fmt.Println(aurora.Sprintf(aurora.Yellow("Logged into Subscription Id: %s\n"), azureResourceMoveInfo.SourceSubscriptionId))
 
+	ctx.Done()
+
 }
