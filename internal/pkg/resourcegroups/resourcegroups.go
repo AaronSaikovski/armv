@@ -40,7 +40,7 @@ import (
 // Returns:
 // - *armresources.ResourceGroupsClient: The created client instance.
 // - error: An error if the client creation fails.
-func GetResourceGroupClient(cred *azidentity.DefaultAzureCredential, subscriptionID string) (*armresources.ResourceGroupsClient, error) {
+func GetResourceGroupClient(ctx context.Context, cred *azidentity.DefaultAzureCredential, subscriptionID string) (*armresources.ResourceGroupsClient, error) {
 	// Create a new Resource Groups client factory
 	resourcesClientFactory, err := armresources.NewClientFactory(subscriptionID, cred, nil)
 	if err != nil {

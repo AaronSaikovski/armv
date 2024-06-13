@@ -21,31 +21,37 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
-package validation
+package app
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/AaronSaikovski/armv/internal/pkg/auth"
-	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
-	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources"
+	"github.com/AaronSaikovski/armv/internal/pkg/validation"
+	"github.com/logrusorgru/aurora"
 )
 
-func (azureResourceMoveInfo *AzureResourceMoveInfo) ValidateMove(ctx context.Context) (*runtime.Poller[armresources.ClientValidateMoveResourcesResponse], error) {
+// CheckLogin checks if the user is logged into the Azure source subscription.
+//
+// It takes the following parameters:
+// - ctx: the context.Context object for the function.
+// - azureResourceMoveInfo: a pointer to a validation.AzureResourceMoveInfo object containing the necessary information for the login check.
+//
+// It does not return any values.
+func checkLogin(ctx context.Context, azureResourceMoveInfo *validation.AzureResourceMoveInfo) {
 
-	//move params struct
-	moveInfo := armresources.MoveInfo{
-		Resources:           azureResourceMoveInfo.ResourceIds,
-		TargetResourceGroup: azureResourceMoveInfo.TargetResourceGroupId,
-	}
+	// check we are logged into the Azure source subscription
+	login, err := auth.CheckLogin(ctx, azureResourceMoveInfo.Credentials, azureResourceMoveInfo.SourceSubscriptionId)
 
-	// Create a client
-	client, err := auth.NewResourceClient(azureResourceMoveInfo.SourceSubscriptionId, azureResourceMoveInfo.Credentials)
 	if err != nil {
-		return nil, err
+		fmt.Println(aurora.Sprintf(aurora.Red("login error: %w\n"), err))
 	}
+	if !login {
+		fmt.Println(aurora.Sprintf(aurora.Red("you are not logged into the azure subscription '%s', please login and retry operation"), azureResourceMoveInfo.SourceSubscriptionId))
+	}
+	fmt.Println(aurora.Sprintf(aurora.Yellow("Logged into Subscription Id: %s\n"), azureResourceMoveInfo.SourceSubscriptionId))
 
-	// Validate move resources
-	return client.BeginValidateMoveResources(ctx, azureResourceMoveInfo.SourceResourceGroup, moveInfo, nil)
+	ctx.Done()
 
 }
