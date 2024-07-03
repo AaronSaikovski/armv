@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## v0.3.1. (2024-06-13)
+## v1.0.0. (2024-07-03)
 
-- initial version for testing
-- major refactor and performance optimsations
+- initial version 1.0.0 release
+

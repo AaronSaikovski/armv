@@ -2,14 +2,14 @@
 
 # ARMV - <u>A</u>zure <u>R</u>esource <u>M</u>oveability <u>V</u>alidator
 
-### v0.3.2-beta-release
+### v1.0.0-release
 
 [![Build Status](https://github.com/AaronSaikovski/armv/workflows/build/badge.svg)](https://github.com/AaronSaikovski/armv/actions)
 [![Licence](https://img.shields.io/github/license/AaronSaikovski/armv)](LICENSE)
 
 </div>
 
-**PLEASE NOTE THAT THIS UTILITY IS STILL IN BETA AND UNDERGOING EXTENSIVE TESTING - PLEASE REPORT ALL BUGS AND ISSUES [HERE](https://github.com/AaronSaikovski/armv/issues)**
+**PLEASE REPORT ALL BUGS AND ISSUES [HERE](https://github.com/AaronSaikovski/armv/issues)**
 
 **<u>NOTE: THIS TOOL WILL NOT PERFORM THE MOVE OPERATION BUT WILL GENERATE A MOVE REPORT FOR FURTHER ANALYSIS.</u>**
 
@@ -107,4 +107,4 @@ To get started type,
 ## Known issues and limitations
 
 - Currently this utility only supports subscriptions and resource groups under the same single tenant.
-- No know bugs or known issues - if found, please report [here](https://github.com/AaronSaikovski/armv/issues)
+- No known bugs or known issues - if found, please report [here](https://github.com/AaronSaikovski/armv/issues)

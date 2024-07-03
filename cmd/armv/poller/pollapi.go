@@ -59,9 +59,9 @@ func PollApi[T any](ctx context.Context, respPoller *runtime.Poller[T]) error {
 			BarStart:      "[",
 			BarEnd:        "]",
 		}))
-	defer func() {
-		_ = bar.Finish()
-	}()
+	// defer func() {
+	// 	_ = bar.Finish()
+	// }()
 
 	barCount := 0
 	for {
@@ -80,6 +80,8 @@ func PollApi[T any](ctx context.Context, respPoller *runtime.Poller[T]) error {
 		}
 
 		if respPoller.Done() {
+
+			_ = bar.Finish()
 
 			pollResp = PollerResponseData{
 				RespBody:       utils.FetchResponseBody(w.Body),

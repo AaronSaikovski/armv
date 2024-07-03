@@ -28,8 +28,7 @@ var (
 
 	infoString string = `
 	**ARMV - Azure Resource Movability Validator**
-	This tool checks whether the resources in a source resource group can be moved to the target resource group in the same subscription.
-	** Performs a READ only operation only and NO changes are made. **
+	Performs a Read-Only check whether resources in a source resource group can be moved to a target resource group in the same subscription.
 	`
 )
 
