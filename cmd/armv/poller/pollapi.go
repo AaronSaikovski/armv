@@ -98,6 +98,27 @@ func PollApi[T any](ctx context.Context, respPoller *runtime.Poller[T]) error {
 	}
 }
 
+// progressBar creates and returns a new progress bar with custom options.
+//
+// No parameters.
+// Returns a pointer to progressbar.ProgressBar.
+func progressBar() *progressbar.ProgressBar {
+
+	bar := progressbar.NewOptions(progressBarMax,
+		progressbar.OptionSetWriter(ansi.NewAnsiStdout()),
+		progressbar.OptionEnableColorCodes(true),
+		progressbar.OptionSetDescription("[cyan][reset] Running Validation..."),
+		progressbar.OptionSetTheme(progressbar.Theme{
+			Saucer:        "[green]=[reset]",
+			SaucerHead:    "[green]>[reset]",
+			SaucerPadding: " ",
+			BarStart:      "[",
+			BarEnd:        "]",
+		}))
+
+	return bar
+}
+
 // ** EXPERIMENTAL CODE **
 // PollApiNew is a function that polls the AzureRM Validation API indefinitely until it receives a response.
 //
@@ -117,17 +138,19 @@ func PollApiNew[T any](ctx context.Context, respPoller *runtime.Poller[T]) error
 
 		defer wg.Done() // Signal that this goroutine is done
 
-		bar := progressbar.NewOptions(progressBarMax,
-			progressbar.OptionSetWriter(ansi.NewAnsiStdout()),
-			progressbar.OptionEnableColorCodes(true),
-			progressbar.OptionSetDescription("[cyan][reset] Running Validation..."),
-			progressbar.OptionSetTheme(progressbar.Theme{
-				Saucer:        "[green]=[reset]",
-				SaucerHead:    "[green]>[reset]",
-				SaucerPadding: " ",
-				BarStart:      "[",
-				BarEnd:        "]",
-			}))
+		// bar := progressbar.NewOptions(progressBarMax,
+		// 	progressbar.OptionSetWriter(ansi.NewAnsiStdout()),
+		// 	progressbar.OptionEnableColorCodes(true),
+		// 	progressbar.OptionSetDescription("[cyan][reset] Running Validation..."),
+		// 	progressbar.OptionSetTheme(progressbar.Theme{
+		// 		Saucer:        "[green]=[reset]",
+		// 		SaucerHead:    "[green]>[reset]",
+		// 		SaucerPadding: " ",
+		// 		BarStart:      "[",
+		// 		BarEnd:        "]",
+		// 	}))
+
+		bar := progressBar()
 
 		barCount := 0
 		for {
