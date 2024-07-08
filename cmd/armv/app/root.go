@@ -97,15 +97,15 @@ func Run(ctx context.Context, versionString string) error {
 	/* ********************************************************************** */
 
 	// Poll the API and show a status...this is a blocking call
-	pollErr := poller.PollApi(ctx, resp)
-	if pollErr != nil {
-		return fmt.Errorf("failed to poll API: %w", pollErr)
-	}
-
-	// _, pollErr := poller.PollApiNew(ctx, resp)
+	// pollErr := poller.PollApi(ctx, resp)
 	// if pollErr != nil {
 	// 	return fmt.Errorf("failed to poll API: %w", pollErr)
 	// }
+
+	pollErr := poller.PollApiNew(ctx, resp)
+	if pollErr != nil {
+		return fmt.Errorf("failed to poll API: %w", pollErr)
+	}
 
 	/* ********************************************************************** */
 

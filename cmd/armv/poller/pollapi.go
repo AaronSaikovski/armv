@@ -25,6 +25,7 @@ package poller
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"github.com/AaronSaikovski/armv/pkg/utils"
@@ -107,13 +108,14 @@ func PollApi[T any](ctx context.Context, respPoller *runtime.Poller[T]) error {
 // It returns the following:
 // - <-chan PollerResponseData: a channel that receives PollerResponseData objects.
 // - error: an error if any occurred during the polling process.
-func PollApiNew[T any](ctx context.Context, respPoller *runtime.Poller[T]) (<-chan PollerResponseData, error) {
+func PollApiNew[T any](ctx context.Context, respPoller *runtime.Poller[T]) error {
 
-	respChan := make(chan PollerResponseData)
+	wg := new(sync.WaitGroup)
+	wg.Add(1)
 
-	defer close(respChan)
+	go func() error {
 
-	go func()error {
+		defer wg.Done() // Signal that this goroutine is done
 
 		bar := progressbar.NewOptions(progressBarMax,
 			progressbar.OptionSetWriter(ansi.NewAnsiStdout()),
@@ -129,6 +131,7 @@ func PollApiNew[T any](ctx context.Context, respPoller *runtime.Poller[T]) (<-ch
 
 		barCount := 0
 		for {
+
 			barCount++
 			_ = bar.Add(1)
 			time.Sleep(sleepDuration)
@@ -140,8 +143,7 @@ func PollApiNew[T any](ctx context.Context, respPoller *runtime.Poller[T]) (<-ch
 
 			w, err := respPoller.Poll(ctx)
 			if err != nil {
-				respChan <- PollerResponseData{}
-				return  err
+				return err
 			}
 
 			if respPoller.Done() {
@@ -154,15 +156,17 @@ func PollApiNew[T any](ctx context.Context, respPoller *runtime.Poller[T]) (<-ch
 					RespStatus:     w.Status,
 				}
 				pollResp.displayOutput()
-				respChan <- pollResp
 
 				ctx.Done()
-				//return respChan, nil
+
+				return nil
 
 			}
 
 		}
 	}()
 
-	return respChan, nil
+	wg.Wait()
+
+	return nil
 }
