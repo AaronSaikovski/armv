@@ -102,6 +102,11 @@ func Run(ctx context.Context, versionString string) error {
 		return fmt.Errorf("failed to poll API: %w", pollErr)
 	}
 
+	// _, pollErr := poller.PollApiNew(ctx, resp)
+	// if pollErr != nil {
+	// 	return fmt.Errorf("failed to poll API: %w", pollErr)
+	// }
+
 	/* ********************************************************************** */
 
 	ctx.Done()
