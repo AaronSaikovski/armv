@@ -151,8 +151,9 @@ func PollApiNew[T any](ctx context.Context, respPoller *runtime.Poller[T]) error
 			err := bar.Add(1)
 			if err != nil {
 				errChan <- err
+				return
 			}
-			
+
 			time.Sleep(sleepDuration)
 
 			if barCount >= progressBarMax {
@@ -163,6 +164,7 @@ func PollApiNew[T any](ctx context.Context, respPoller *runtime.Poller[T]) error
 			w, err := respPoller.Poll(ctx)
 			if err != nil {
 				errChan <- err
+				return
 			}
 
 			if respPoller.Done() {
@@ -170,18 +172,22 @@ func PollApiNew[T any](ctx context.Context, respPoller *runtime.Poller[T]) error
 				err := bar.Finish()
 				if err != nil {
 					errChan <- err
+					return
 				}
 
-				pollResp = PollerResponseData{
-					RespBody:       utils.FetchResponseBody(w.Body),
-					RespStatusCode: w.StatusCode,
-					RespStatus:     w.Status,
-				}
+				// create new PollerResponseData
+				pollResp = NewPollerResponseData(utils.FetchResponseBody(w.Body), w.StatusCode, w.Status)
+
+				// pollResp = PollerResponseData{
+				// 	RespBody:       utils.FetchResponseBody(w.Body),
+				// 	RespStatusCode: w.StatusCode,
+				// 	RespStatus:     w.Status,
+				// }
 				pollResp.displayOutput()
 
 				ctx.Done()
 
-				return //nil
+				return
 
 			}
 
