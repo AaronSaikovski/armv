@@ -134,29 +134,25 @@ func PollApiNew[T any](ctx context.Context, respPoller *runtime.Poller[T]) error
 	wg := new(sync.WaitGroup)
 	wg.Add(1)
 
-	go func() error {
+	//error channel
+	errChan := make(chan error, 1)
+
+	go func() {
 
 		defer wg.Done() // Signal that this goroutine is done
 
-		// bar := progressbar.NewOptions(progressBarMax,
-		// 	progressbar.OptionSetWriter(ansi.NewAnsiStdout()),
-		// 	progressbar.OptionEnableColorCodes(true),
-		// 	progressbar.OptionSetDescription("[cyan][reset] Running Validation..."),
-		// 	progressbar.OptionSetTheme(progressbar.Theme{
-		// 		Saucer:        "[green]=[reset]",
-		// 		SaucerHead:    "[green]>[reset]",
-		// 		SaucerPadding: " ",
-		// 		BarStart:      "[",
-		// 		BarEnd:        "]",
-		// 	}))
-
+		//progress bar
 		bar := progressBar()
 
 		barCount := 0
 		for {
 
 			barCount++
-			_ = bar.Add(1)
+			err := bar.Add(1)
+			if err != nil {
+				errChan <- err
+			}
+			
 			time.Sleep(sleepDuration)
 
 			if barCount >= progressBarMax {
@@ -166,12 +162,15 @@ func PollApiNew[T any](ctx context.Context, respPoller *runtime.Poller[T]) error
 
 			w, err := respPoller.Poll(ctx)
 			if err != nil {
-				return err
+				errChan <- err
 			}
 
 			if respPoller.Done() {
 
-				_ = bar.Finish()
+				err := bar.Finish()
+				if err != nil {
+					errChan <- err
+				}
 
 				pollResp = PollerResponseData{
 					RespBody:       utils.FetchResponseBody(w.Body),
@@ -182,7 +181,7 @@ func PollApiNew[T any](ctx context.Context, respPoller *runtime.Poller[T]) error
 
 				ctx.Done()
 
-				return nil
+				return //nil
 
 			}
 
@@ -190,6 +189,12 @@ func PollApiNew[T any](ctx context.Context, respPoller *runtime.Poller[T]) error
 	}()
 
 	wg.Wait()
+	close(errChan)
+
+	// Check for errors
+	if err := <-errChan; err != nil {
+		return err
+	}
 
 	return nil
 }
