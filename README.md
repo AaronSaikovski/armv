@@ -101,7 +101,7 @@ To get started type,
 ## Usage
 
 ```bash
-./armv --SourceSubscriptionId SOURCESUBSCRIPTIONID --SourceResourceGroup SOURCERESOURCEGROUP --TargetSubscriptionId TARGETSUBSCRIPTIONID --TargetResourceGroup TARGETRESOURCEGROUP
+./armv --SourceSubscriptionId SOURCESUBSCRIPTIONID --SourceResourceGroup SOURCERESOURCEGROUP --TargetSubscriptionId TARGETSUBSCRIPTIONID --TargetResourceGroup TARGETRESOURCEGROUP --debug
 ```
 
 ## Known issues and limitations

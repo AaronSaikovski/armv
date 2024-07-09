@@ -30,14 +30,13 @@ import (
 
 	"github.com/AaronSaikovski/armv/pkg/utils"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
-	"github.com/k0kubun/go-ansi"
-	"github.com/schollz/progressbar/v3"
 )
 
 var (
 	pollResp = PollerResponseData{}
 )
 
+// ** OLD Sync Code **
 // PollApi is a function that polls the AzureRM Validation API indefinitely until it receives a response.
 //
 // It takes the following parameters:
@@ -47,89 +46,65 @@ var (
 // It returns the following:
 // - types.PollerResponse: the response from the API.
 // - error: an error if any occurred during the polling process.
+// func PollApi[T any](ctx context.Context, respPoller *runtime.Poller[T]) error {
+
+// 	bar := progressbar.NewOptions(progressBarMax,
+// 		progressbar.OptionSetWriter(ansi.NewAnsiStdout()),
+// 		progressbar.OptionEnableColorCodes(true),
+// 		progressbar.OptionSetDescription("[cyan][reset] Running Validation..."),
+// 		progressbar.OptionSetTheme(progressbar.Theme{
+// 			Saucer:        "[green]=[reset]",
+// 			SaucerHead:    "[green]>[reset]",
+// 			SaucerPadding: " ",
+// 			BarStart:      "[",
+// 			BarEnd:        "]",
+// 		}))
+// 	// defer func() {
+// 	// 	_ = bar.Finish()
+// 	// }()
+
+// 	barCount := 0
+// 	for {
+// 		barCount++
+// 		_ = bar.Add(1)
+// 		time.Sleep(sleepDuration)
+
+// 		if barCount >= progressBarMax {
+// 			bar.Reset()
+// 			barCount = 0
+// 		}
+
+// 		w, err := respPoller.Poll(ctx)
+// 		if err != nil {
+// 			return err
+// 		}
+
+// 		if respPoller.Done() {
+
+// 			_ = bar.Finish()
+
+// 			pollResp = PollerResponseData{
+// 				RespBody:       utils.FetchResponseBody(w.Body),
+// 				RespStatusCode: w.StatusCode,
+// 				RespStatus:     w.Status,
+// 			}
+
+// 			pollResp.displayOutput()
+// 			ctx.Done()
+// 			return nil
+
+// 		}
+// 	}
+// }
+
+// PollApi polls the API and displays the response.
+//
+// It takes a context.Context and a *runtime.Poller[T] as parameters.
+// The context is used for cancellation and timeout control.
+// The respPoller is used to handle the polling.
+//
+// It returns an error if any occurred during the polling process.
 func PollApi[T any](ctx context.Context, respPoller *runtime.Poller[T]) error {
-
-	bar := progressbar.NewOptions(progressBarMax,
-		progressbar.OptionSetWriter(ansi.NewAnsiStdout()),
-		progressbar.OptionEnableColorCodes(true),
-		progressbar.OptionSetDescription("[cyan][reset] Running Validation..."),
-		progressbar.OptionSetTheme(progressbar.Theme{
-			Saucer:        "[green]=[reset]",
-			SaucerHead:    "[green]>[reset]",
-			SaucerPadding: " ",
-			BarStart:      "[",
-			BarEnd:        "]",
-		}))
-	// defer func() {
-	// 	_ = bar.Finish()
-	// }()
-
-	barCount := 0
-	for {
-		barCount++
-		_ = bar.Add(1)
-		time.Sleep(sleepDuration)
-
-		if barCount >= progressBarMax {
-			bar.Reset()
-			barCount = 0
-		}
-
-		w, err := respPoller.Poll(ctx)
-		if err != nil {
-			return err
-		}
-
-		if respPoller.Done() {
-
-			_ = bar.Finish()
-
-			pollResp = PollerResponseData{
-				RespBody:       utils.FetchResponseBody(w.Body),
-				RespStatusCode: w.StatusCode,
-				RespStatus:     w.Status,
-			}
-
-			pollResp.displayOutput()
-			ctx.Done()
-			return nil
-
-		}
-	}
-}
-
-// progressBar creates and returns a new progress bar with custom options.
-//
-// No parameters.
-// Returns a pointer to progressbar.ProgressBar.
-func progressBar() *progressbar.ProgressBar {
-
-	bar := progressbar.NewOptions(progressBarMax,
-		progressbar.OptionSetWriter(ansi.NewAnsiStdout()),
-		progressbar.OptionEnableColorCodes(true),
-		progressbar.OptionSetDescription("[cyan][reset] Running Validation..."),
-		progressbar.OptionSetTheme(progressbar.Theme{
-			Saucer:        "[green]=[reset]",
-			SaucerHead:    "[green]>[reset]",
-			SaucerPadding: " ",
-			BarStart:      "[",
-			BarEnd:        "]",
-		}))
-
-	return bar
-}
-
-// ** EXPERIMENTAL CODE **
-// PollApiNew is a function that polls the AzureRM Validation API indefinitely until it receives a response.
-//
-// It takes the following parameters:
-// - ctx: the context.Context object for cancellation and timeout control.
-// - respPoller: a pointer to the runtime.Poller[T] object that handles the polling.
-//
-// It returns the following:
-// - <-chan PollerResponseData: a channel that receives PollerResponseData objects.
-// - error: an error if any occurred during the polling process.
-func PollApiNew[T any](ctx context.Context, respPoller *runtime.Poller[T]) error {
 
 	wg := new(sync.WaitGroup)
 	wg.Add(1)
@@ -178,13 +153,10 @@ func PollApiNew[T any](ctx context.Context, respPoller *runtime.Poller[T]) error
 				// create new PollerResponseData
 				pollResp = NewPollerResponseData(utils.FetchResponseBody(w.Body), w.StatusCode, w.Status)
 
-				// pollResp = PollerResponseData{
-				// 	RespBody:       utils.FetchResponseBody(w.Body),
-				// 	RespStatusCode: w.StatusCode,
-				// 	RespStatus:     w.Status,
-				// }
+				// display output
 				pollResp.displayOutput()
 
+				// close context
 				ctx.Done()
 
 				return
@@ -194,7 +166,10 @@ func PollApiNew[T any](ctx context.Context, respPoller *runtime.Poller[T]) error
 		}
 	}()
 
+	// Wait for the goroutine to finish
 	wg.Wait()
+
+	// Close the error channel
 	close(errChan)
 
 	// Check for errors

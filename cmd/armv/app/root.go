@@ -41,11 +41,6 @@ var (
 // run - main run method
 func Run(ctx context.Context, versionString string) error {
 
-	startTime := time.Now()
-	defer func() {
-		fmt.Printf("Elapsed time: %.2f seconds\n", time.Since(startTime).Seconds())
-	}()
-
 	//set the version build info
 	args.SetVersion(versionString)
 
@@ -54,14 +49,24 @@ func Run(ctx context.Context, versionString string) error {
 		return err
 	}
 
+	//Debug
+	if args.Debug {
+		startTime := time.Now()
+		defer func() {
+			fmt.Printf("Elapsed time: %.2f seconds\n", time.Since(startTime).Seconds())
+		}()
+	}
+
 	/* ********************************************************************** */
 
 	//populate the AzureResourceInfo struct
-	azureResourceMoveInfo := validation.AzureResourceMoveInfo{
-		SourceSubscriptionId: args.SourceSubscriptionId,
-		SourceResourceGroup:  args.SourceResourceGroup,
-		TargetResourceGroup:  args.TargetResourceGroup,
-	}
+	azureResourceMoveInfo := validation.NewAzureResourceMoveInfo(
+		args.SourceSubscriptionId,
+		args.SourceResourceGroup,
+		args.TargetResourceGroup,
+		nil,
+		nil,
+		nil)
 
 	/* ********************************************************************** */
 
@@ -96,13 +101,8 @@ func Run(ctx context.Context, versionString string) error {
 
 	/* ********************************************************************** */
 
-	// Poll the API and show a status...this is a blocking call
-	// pollErr := poller.PollApi(ctx, resp)
-	// if pollErr != nil {
-	// 	return fmt.Errorf("failed to poll API: %w", pollErr)
-	// }
-
-	pollErr := poller.PollApiNew(ctx, resp)
+	// Poll the API and show a status.
+	pollErr := poller.PollApi(ctx, resp)
 	if pollErr != nil {
 		return fmt.Errorf("failed to poll API: %w", pollErr)
 	}
