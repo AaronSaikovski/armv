@@ -1,8 +1,6 @@
 <div align="center">
 
-# ARMV - <u>A</u>zure <u>R</u>esource <u>M</u>oveability <u>V</u>alidator
-
-### v1.0.1-release
+# ARMV - <u>A</u>zure <u>R</u>esource <u>M</u>oveability <u>V</u>alidator - v1.1.0
 
 [![Build Status](https://github.com/AaronSaikovski/armv/workflows/build/badge.svg)](https://github.com/AaronSaikovski/armv/actions)
 [![Licence](https://img.shields.io/github/license/AaronSaikovski/armv)](LICENSE)
