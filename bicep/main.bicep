@@ -26,6 +26,7 @@ targetScope = 'subscription'
 param sourcersg string = 'src-rsg'
 param destrsg string = 'dest-rsg'
 param resourceGroupLocation string = 'australiaeast'
+param aciCount int = 1
 
 module sourceRsg './modules/resourcegroup.bicep' = {
   name: sourcersg
@@ -52,7 +53,7 @@ module containerInstance 'modules/aci.bicep' = {
   name: 'acimodule'
   scope: resourceGroup(sourceRsg.name)
   params: {
-    aciCount: 2
+    aciCount: aciCount
   }
 }
 // module storageAcct './modules/storage.bicep' = {

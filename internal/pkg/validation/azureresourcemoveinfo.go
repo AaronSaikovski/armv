@@ -33,3 +33,20 @@ type AzureResourceMoveInfo struct {
 	ResourceIds           []*string
 	Credentials           *azidentity.DefaultAzureCredential
 }
+
+func NewAzureResourceMoveInfo(
+	sourceSubscriptionId string,
+	sourceResourceGroup string,
+	targetResourceGroup string,
+	targetResourceGroupId *string,
+	resourceIds []*string,
+	credentials *azidentity.DefaultAzureCredential) AzureResourceMoveInfo {
+	return AzureResourceMoveInfo{
+		SourceSubscriptionId:  sourceSubscriptionId,
+		SourceResourceGroup:   sourceResourceGroup,
+		TargetResourceGroup:   targetResourceGroup,
+		TargetResourceGroupId: targetResourceGroupId,
+		ResourceIds:           resourceIds,
+		Credentials:           credentials,
+	}
+}

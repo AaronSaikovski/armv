@@ -37,7 +37,7 @@ tasks:
   version:
     desc: "Get the app version."
     cmds:
-      -  go run $APPPATH --version
+      - go run $APPPATH --version
 
   ## release - Builds the project in preparation for (local)release
   release:
@@ -72,7 +72,7 @@ tasks:
   debug:
     desc: "Runs a debug version of the application with input parameters from the environment file."
     cmds:
-      - go run $APPPATH --SourceSubscriptionId $SOURCESUBSCRIPTIONID --SourceResourceGroup $SOURCERESOURCEGROUP --TargetSubscriptionId $TARGETSUBSCRIPTIONID --TargetResourceGroup $TARGETRESOURCEGROUP
+      - go run $APPPATH --SourceSubscriptionId $SOURCESUBSCRIPTIONID --SourceResourceGroup $SOURCERESOURCEGROUP --TargetSubscriptionId $TARGETSUBSCRIPTIONID --TargetResourceGroup $TARGETRESOURCEGROUP --debug
 
   ## watch - use air server for hot reloading
   watch:

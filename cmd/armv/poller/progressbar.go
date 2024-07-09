@@ -23,17 +23,28 @@ SOFTWARE.
 */
 package poller
 
-type PollerResponseData struct {
-	RespBody       []byte
-	RespStatusCode int
-	RespStatus     string
-}
+import (
+	"github.com/k0kubun/go-ansi"
+	"github.com/schollz/progressbar/v3"
+)
 
-func NewPollerResponseData(respBody []byte, respStatusCode int, respStatus string) PollerResponseData {
+// progressBar creates and returns a new progress bar with custom options.
+//
+// No parameters.
+// Returns a pointer to progressbar.ProgressBar.
+func progressBar() *progressbar.ProgressBar {
 
-	return PollerResponseData{
-		RespBody:       respBody,
-		RespStatusCode: respStatusCode,
-		RespStatus:     respStatus,
-	}
+	bar := progressbar.NewOptions(progressBarMax,
+		progressbar.OptionSetWriter(ansi.NewAnsiStdout()),
+		progressbar.OptionEnableColorCodes(true),
+		progressbar.OptionSetDescription("[cyan][reset] Running Validation..."),
+		progressbar.OptionSetTheme(progressbar.Theme{
+			Saucer:        "[green]=[reset]",
+			SaucerHead:    "[green]>[reset]",
+			SaucerPadding: " ",
+			BarStart:      "[",
+			BarEnd:        "]",
+		}))
+
+	return bar
 }

@@ -1,8 +1,6 @@
 <div align="center">
 
-# ARMV - <u>A</u>zure <u>R</u>esource <u>M</u>oveability <u>V</u>alidator
-
-### v1.0.0-release
+# ARMV - <u>A</u>zure <u>R</u>esource <u>M</u>oveability <u>V</u>alidator - v1.1.0
 
 [![Build Status](https://github.com/AaronSaikovski/armv/workflows/build/badge.svg)](https://github.com/AaronSaikovski/armv/actions)
 [![Licence](https://img.shields.io/github/license/AaronSaikovski/armv)](LICENSE)
@@ -101,7 +99,7 @@ To get started type,
 ## Usage
 
 ```bash
-./armv --SourceSubscriptionId SOURCESUBSCRIPTIONID --SourceResourceGroup SOURCERESOURCEGROUP --TargetSubscriptionId TARGETSUBSCRIPTIONID --TargetResourceGroup TARGETRESOURCEGROUP
+./armv --SourceSubscriptionId SOURCESUBSCRIPTIONID --SourceResourceGroup SOURCERESOURCEGROUP --TargetSubscriptionId TARGETSUBSCRIPTIONID --TargetResourceGroup TARGETRESOURCEGROUP --debug
 ```
 
 ## Known issues and limitations
