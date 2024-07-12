@@ -39,6 +39,7 @@ type Args struct {
 	TargetSubscriptionId string `arg:"required,--TargetSubscriptionId" help:"Target Subscription Id."`
 	TargetResourceGroup  string `arg:"required,--TargetResourceGroup" help:"Target Resource Group."`
 	Debug                bool   `arg:",--debug" help:"Debug flags"`
+	OutputPath           string `arg:",--outpath" help:"output path to write results"`
 }
 
 // Description - App description

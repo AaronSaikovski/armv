@@ -32,10 +32,12 @@ import (
 	"github.com/AaronSaikovski/armv/internal/pkg/auth"
 	"github.com/AaronSaikovski/armv/internal/pkg/validation"
 	"github.com/AaronSaikovski/armv/pkg/utils"
+	"github.com/logrusorgru/aurora"
 )
 
 var (
-	args utils.Args
+	args       utils.Args
+	outputPath string = "./output" // default output path
 )
 
 // run - main run method
@@ -55,6 +57,11 @@ func Run(ctx context.Context, versionString string) error {
 		defer func() {
 			fmt.Printf("Elapsed time: %.2f seconds\n", time.Since(startTime).Seconds())
 		}()
+	}
+
+	// Set output path
+	if args.OutputPath != "" {
+		outputPath = args.OutputPath
 	}
 
 	/* ********************************************************************** */
@@ -102,10 +109,14 @@ func Run(ctx context.Context, versionString string) error {
 	/* ********************************************************************** */
 
 	// Poll the API and show a status.
-	pollErr := poller.PollApi(ctx, resp)
+	pollErr := poller.PollApi(ctx, resp, outputPath)
 	if pollErr != nil {
 		return fmt.Errorf("failed to poll API: %w", pollErr)
 	}
+
+	/* ********************************************************************** */
+
+	fmt.Println(aurora.Sprintf(aurora.Yellow("\n\n***  Output file written to: - %s ***"), outputPath))
 
 	/* ********************************************************************** */
 
