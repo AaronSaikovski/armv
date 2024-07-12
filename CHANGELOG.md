@@ -3,7 +3,6 @@
 ## v1.2.0. (2024-07-12)
 
 - Added writing to output file instead of the console.
--
 
 ## v1.1.0. (2024-07-08)
 
