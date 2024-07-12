@@ -31,6 +31,9 @@ out.txt
 
 .idea/
 
+./output/*
+/output
+
 
 /envs/dev.env
 

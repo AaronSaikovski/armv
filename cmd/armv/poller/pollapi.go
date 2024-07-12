@@ -99,12 +99,12 @@ var (
 
 // PollApi polls the API and displays the response.
 //
-// It takes a context.Context and a *runtime.Poller[T] as parameters.
+// It takes a context.Context, a *runtime.Poller[T], and a string as parameters.
 // The context is used for cancellation and timeout control.
 // The respPoller is used to handle the polling.
-//
+// The outputPath is the path where the output is written.
 // It returns an error if any occurred during the polling process.
-func PollApi[T any](ctx context.Context, respPoller *runtime.Poller[T]) error {
+func PollApi[T any](ctx context.Context, respPoller *runtime.Poller[T], outputPath string) error {
 
 	wg := new(sync.WaitGroup)
 	wg.Add(1)
@@ -153,8 +153,9 @@ func PollApi[T any](ctx context.Context, respPoller *runtime.Poller[T]) error {
 				// create new PollerResponseData
 				pollResp = NewPollerResponseData(utils.FetchResponseBody(w.Body), w.StatusCode, w.Status)
 
-				// display output
-				pollResp.displayOutput()
+				//output
+				//pollResp.displayOutput()
+				pollResp.writeOutput(outputPath)
 
 				// close context
 				ctx.Done()

@@ -1,6 +1,6 @@
 <div align="center">
 
-# ARMV - <u>A</u>zure <u>R</u>esource <u>M</u>oveability <u>V</u>alidator - v1.1.0
+# ARMV - <u>A</u>zure <u>R</u>esource <u>M</u>oveability <u>V</u>alidator - v1.2.0
 
 [![Build Status](https://github.com/AaronSaikovski/armv/workflows/build/badge.svg)](https://github.com/AaronSaikovski/armv/actions)
 [![Licence](https://img.shields.io/github/license/AaronSaikovski/armv)](LICENSE)
@@ -17,7 +17,8 @@ This CLI utility performs a validation on whether the specified Azure resources 
 The resources to be moved must be in the same source resource group in the source subscription being used. \
 The target resource group may be in a different subscription. \
 If validation succeeds, it returns HTTP response code 204 (no content), If validation fails, it returns HTTP response code 409 (Conflict) with an error message. \
-If the operation fails it outputs a detailed json error report similar to this example:
+All output will be written to a file found in `./output` with the filename being the date and time of the validation operation. \
+If the move operation fails it outputs` a detailed json error report similar to this example:
 
 ```json
 {
@@ -99,7 +100,12 @@ To get started type,
 ## Usage
 
 ```bash
-./armv --SourceSubscriptionId SOURCESUBSCRIPTIONID --SourceResourceGroup SOURCERESOURCEGROUP --TargetSubscriptionId TARGETSUBSCRIPTIONID --TargetResourceGroup TARGETRESOURCEGROUP --debug
+./armv --SourceSubscriptionId SOURCE_SUBSCRIPTION_ID \
+       --SourceResourceGroup SOURCE_RESOURCE_GROUP \
+       --TargetSubscriptionId TARGET_SUBSCRIPTION_ID \
+       --TargetResourceGroup TARGET_RESOURCE_GROUP \
+       --outpath - path to write output file - defaults to ./output
+       --debug - shows extra debug information
 ```
 
 ## Known issues and limitations

@@ -24,6 +24,9 @@ SOFTWARE.
 package poller
 
 import (
+	"fmt"
+	"time"
+
 	"github.com/AaronSaikovski/armv/pkg/utils"
 )
 
@@ -36,14 +39,31 @@ import (
 // Otherwise, it calls the OutputFail function from the utils package with the formatted JSON string.
 //
 // The function returns an error if there is an error formatting the JSON string, otherwise it returns nil.
-func (pollResp *PollerResponseData) displayOutput() {
-	//204 == validation successful - no content
-	//409 - with error validation failed
+// func (pollResp *PollerResponseData) displayOutput() {
+// 	//204 == validation successful - no content
+// 	//409 - with error validation failed
+// 	if pollResp.RespStatusCode == API_RESOURCE_MOVE_OK {
+// 		utils.OutputSuccess(pollResp.RespStatus)
+// 	} else {
+// 		resp, _ := utils.PrettyJsonString(string(pollResp.RespBody))
+// 		utils.OutputFail(resp)
+// 	}
+
+// }
+
+// writeOutput writes the output to a file with a timestamp in the filename.
+//
+// No parameters.
+// No return values.
+func (pollResp *PollerResponseData) writeOutput(outputPath string) {
+	fileName := "output-" + time.Time.Format(time.Now(), ("2006-01-02-15-04-05")) + ".txt"
+
 	if pollResp.RespStatusCode == API_RESOURCE_MOVE_OK {
-		utils.OutputSuccess(pollResp.RespStatus)
+		infoString := fmt.Sprintf("*** SUCCESS - No Azure Resource Validation issues found. ***\n*** Response Status Code OK: %s ***", pollResp.RespStatus)
+		utils.WriteOutputFile(outputPath, fileName, infoString)
 	} else {
 		resp, _ := utils.PrettyJsonString(string(pollResp.RespBody))
-		utils.OutputFail(resp)
+		utils.WriteOutputFile(outputPath, fileName, resp)
 	}
 
 }
