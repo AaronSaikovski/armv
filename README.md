@@ -1,6 +1,6 @@
 <div align="center">
 
-# ARMV - <u>A</u>zure <u>R</u>esource <u>M</u>oveability <u>V</u>alidator - v1.2.0
+# ARMV - <u>A</u>zure <u>R</u>esource <u>M</u>oveability <u>V</u>alidator - v1.2.1
 
 [![Build Status](https://github.com/AaronSaikovski/armv/workflows/build/badge.svg)](https://github.com/AaronSaikovski/armv/actions)
 [![Licence](https://img.shields.io/github/license/AaronSaikovski/armv)](LICENSE)
@@ -42,7 +42,7 @@ This tool utilises the native [Microsoft Go Azure SDK](https://learn.microsoft.c
 
 ### Software Requirements:
 
-- [Go v1.22.X](https://www.go.dev/dl/) or later needs to be installed to build the code.
+- [Go v1.23.X](https://www.go.dev/dl/) or later needs to be installed to build the code.
 - [Azure CLI tools](https://learn.microsoft.com/en-us/cli/azure/) 2.50 or later
 - [Taskfile](https://taskfile.dev/) to run the build chain commands listed below.
 
