@@ -22,6 +22,7 @@ builds:
       - linux
       - windows
       - darwin
+    main: ./cmd/armv ##change this for your package
 
 archives:
   - format: tar.gz
