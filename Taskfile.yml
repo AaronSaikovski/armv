@@ -26,7 +26,7 @@ version: "3"
 
 #ENV VARS
 env:
-  TARGET: armv #Change this to suit
+  TARGET: armv.exe #Change this to suit
   APPPATH: ./cmd/armv/main.go #Change this to suit
   ENV: dev
 
@@ -46,7 +46,7 @@ tasks:
     cmds:
       - go generate $APPPATH
       - go build -ldflags="-s -w" -o bin/$TARGET $APPPATH
-      - file bin/$TARGET
+      - #file bin/$TARGET
 
   ## goreleaser - Builds the project in preparation for release
   goreleaser:
@@ -60,7 +60,7 @@ tasks:
     #deps: [clean]
     cmds:
       - go build -o bin/$TARGET $APPPATH
-      - file bin/$TARGET
+      #- file bin/$TARGET
 
   ## run - builds and runs the program on the target platform
   run:
