@@ -27,7 +27,7 @@ version: "3"
 #ENV VARS
 env:
   TARGET: armv.exe #Change this to suit
-  APPPATH: ./cmd/armv/main.go #Change this to suit
+  APPPATH: .\cmd\armv\main.go #Change this to suit cmd\armv\main.go
   ENV: dev
 
 dotenv: ["./envs/{{.ENV}}.env"]
@@ -92,8 +92,8 @@ tasks:
     cmds:
       - go clean -cache
       - go clean
-      - rm -rf dist
-      - rm bin/$TARGET
+      #- rm -rf dist
+      #- rm bin/$TARGET
 
   ## test - executes unit tests
   test:
