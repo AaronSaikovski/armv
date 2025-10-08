@@ -30,13 +30,10 @@ import (
 
 const (
 	progressBarMax = 100
-	sleepDuration  = 5 * time.Millisecond
+	sleepDuration  = 2 * time.Second // Reduced CPU usage and API calls - Azure long-running operations typically take minutes
 
 	//API return codes
 	API_SUCCESS            int = 202
 	API_RESOURCE_MOVE_OK   int = 204
 	API_RESOURCE_MOVE_FAIL int = 409
-
-	//Progress bar Max
-	PROGRESS_BAR_MAX int = 100
 )

@@ -27,13 +27,15 @@ import (
 	"regexp"
 )
 
+// uuidPattern is compiled once at package initialization for performance
+var uuidPattern = regexp.MustCompile(`^(\{{0,1}([0-9a-fA-F]){8}-([0-9a-fA-F]){4}-([0-9a-fA-F]){4}-([0-9a-fA-F]){4}-([0-9a-fA-F]){12}\}{0,1})$`)
+
 // validateId checks if the inputId string matches the specified pattern.
 //
 // inputId - the string to validate.
 // bool - returns true if the inputId matches the pattern, false otherwise.
 func validateId(inputId string) bool {
-	pattern := regexp.MustCompile(`^(\{{0,1}([0-9a-fA-F]){8}-([0-9a-fA-F]){4}-([0-9a-fA-F]){4}-([0-9a-fA-F]){4}-([0-9a-fA-F]){12}\}{0,1})$`)
-	return pattern.MatchString(inputId)
+	return uuidPattern.MatchString(inputId)
 }
 
 // CheckValidSubscriptionID checks if the provided subscription ID is valid.

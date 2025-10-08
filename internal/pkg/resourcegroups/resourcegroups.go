@@ -93,7 +93,8 @@ func GetResourceGroupId(ctx context.Context, resourceGroupClient *armresources.R
 func ListResourceGroup(ctx context.Context, resourceGroupClient *armresources.ResourceGroupsClient) ([]*armresources.ResourceGroup, error) {
 	resultPager := resourceGroupClient.NewListPager(nil)
 
-	var resourceGroups []*armresources.ResourceGroup
+	// Pre-allocate with reasonable initial capacity
+	resourceGroups := make([]*armresources.ResourceGroup, 0, 16)
 	for resultPager.More() {
 		pageResp, err := resultPager.NextPage(ctx)
 		if err != nil {

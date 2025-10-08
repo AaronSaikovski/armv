@@ -30,14 +30,13 @@ import (
 
 // FetchResponseBody retrieves the response body from an io.Reader.
 //
-// It takes an io.Reader as a parameter and returns a byte slice containing the response body.
-// If there is an error reading the response body, it returns nil.
-func FetchResponseBody(resp io.Reader) []byte {
+// It takes an io.Reader as a parameter and returns a byte slice containing the response body and an error.
+// If there is an error reading the response body, it returns nil and the error.
+func FetchResponseBody(resp io.Reader) ([]byte, error) {
 	respBody, err := io.ReadAll(resp)
-
 	if err != nil {
-		return nil
+		return nil, err
 	}
 
-	return respBody
+	return respBody, nil
 }

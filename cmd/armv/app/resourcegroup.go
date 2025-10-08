@@ -101,7 +101,6 @@ func getResourceGroupInfo(ctx context.Context, azureResourceMoveInfo *validation
 		return fmt.Errorf("failed to get target resource group ID: %w", err)
 	}
 
-	ctx.Done()
 	return nil
 	/* ********************************************************************** */
 

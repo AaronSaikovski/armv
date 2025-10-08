@@ -88,14 +88,15 @@ func Run(ctx context.Context, versionString string) error {
 
 	/* ********************************************************************** */
 	// check we are logged into the Azure source subscription
-	checkLogin(ctx, &azureResourceMoveInfo)
+	if err := checkLogin(ctx, &azureResourceMoveInfo); err != nil {
+		return err
+	}
 
 	/* ********************************************************************** */
 
 	//Get the resource group info
-	rsgErr := getResourceGroupInfo(ctx, &azureResourceMoveInfo)
-	if rsgErr != nil {
-		return rsgErr
+	if err := getResourceGroupInfo(ctx, &azureResourceMoveInfo); err != nil {
+		return err
 	}
 
 	/* ********************************************************************** */
@@ -109,18 +110,15 @@ func Run(ctx context.Context, versionString string) error {
 	/* ********************************************************************** */
 
 	// Poll the API and show a status.
-	pollErr := poller.PollApi(ctx, resp, outputPath)
-	if pollErr != nil {
-		return fmt.Errorf("failed to poll API: %w", pollErr)
+	if err := poller.PollApi(ctx, resp, outputPath); err != nil {
+		return fmt.Errorf("failed to poll API: %w", err)
 	}
 
 	/* ********************************************************************** */
 
-	fmt.Println(aurora.Sprintf(aurora.Yellow("\n\n***  Output file written to: - %s ***"), outputPath))
+	fmt.Println(aurora.Yellow(fmt.Sprintf("\n\n***  Output file written to: - %s ***", outputPath)))
 
 	/* ********************************************************************** */
-
-	ctx.Done()
 
 	return nil
 }

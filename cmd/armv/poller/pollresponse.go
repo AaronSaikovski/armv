@@ -54,16 +54,18 @@ import (
 // writeOutput writes the output to a file with a timestamp in the filename.
 //
 // No parameters.
-// No return values.
-func (pollResp *PollerResponseData) writeOutput(outputPath string) {
-	fileName := "output-" + time.Time.Format(time.Now(), ("2006-01-02-15-04-05")) + ".txt"
+// Returns an error if writing fails.
+func (pollResp *PollerResponseData) writeOutput(outputPath string) error {
+	fileName := "output-" + time.Now().Format("2006-01-02-15-04-05") + ".txt"
 
 	if pollResp.RespStatusCode == API_RESOURCE_MOVE_OK {
 		infoString := fmt.Sprintf("*** SUCCESS - No Azure Resource Validation issues found. ***\n*** Response Status Code OK: %s ***", pollResp.RespStatus)
-		utils.WriteOutputFile(outputPath, fileName, infoString)
-	} else {
-		resp, _ := utils.PrettyJsonString(string(pollResp.RespBody))
-		utils.WriteOutputFile(outputPath, fileName, resp)
+		return utils.WriteOutputFile(outputPath, fileName, infoString)
 	}
 
+	resp, err := utils.PrettyJsonString(string(pollResp.RespBody))
+	if err != nil {
+		return fmt.Errorf("failed to format JSON output: %w", err)
+	}
+	return utils.WriteOutputFile(outputPath, fileName, resp)
 }

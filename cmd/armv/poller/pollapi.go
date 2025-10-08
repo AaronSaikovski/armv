@@ -25,15 +25,10 @@ package poller
 
 import (
 	"context"
-	"sync"
 	"time"
 
 	"github.com/AaronSaikovski/armv/pkg/utils"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
-)
-
-var (
-	pollResp = PollerResponseData{}
 )
 
 // ** OLD Sync Code **
@@ -106,77 +101,52 @@ var (
 // It returns an error if any occurred during the polling process.
 func PollApi[T any](ctx context.Context, respPoller *runtime.Poller[T], outputPath string) error {
 
-	wg := new(sync.WaitGroup)
-	wg.Add(1)
+	//progress bar
+	bar := progressBar()
 
-	//error channel
-	errChan := make(chan error, 1)
+	barCount := 0
+	for {
 
-	go func() {
+		barCount++
+		if err := bar.Add(1); err != nil {
+			return err
+		}
 
-		defer wg.Done() // Signal that this goroutine is done
+		time.Sleep(sleepDuration)
 
-		//progress bar
-		bar := progressBar()
+		if barCount >= progressBarMax {
+			bar.Reset()
+			barCount = 0
+		}
 
-		barCount := 0
-		for {
+		w, err := respPoller.Poll(ctx)
+		if err != nil {
+			return err
+		}
 
-			barCount++
-			err := bar.Add(1)
+		if respPoller.Done() {
+
+			if err := bar.Finish(); err != nil {
+				return err
+			}
+
+			// create new PollerResponseData
+			respBody, err := utils.FetchResponseBody(w.Body)
 			if err != nil {
-				errChan <- err
-				return
+				return err
 			}
 
-			time.Sleep(sleepDuration)
+			pollResp := NewPollerResponseData(respBody, w.StatusCode, w.Status)
 
-			if barCount >= progressBarMax {
-				bar.Reset()
-				barCount = 0
+			//output
+			//pollResp.displayOutput()
+			if err := pollResp.writeOutput(outputPath); err != nil {
+				return err
 			}
 
-			w, err := respPoller.Poll(ctx)
-			if err != nil {
-				errChan <- err
-				return
-			}
-
-			if respPoller.Done() {
-
-				err := bar.Finish()
-				if err != nil {
-					errChan <- err
-					return
-				}
-
-				// create new PollerResponseData
-				pollResp = NewPollerResponseData(utils.FetchResponseBody(w.Body), w.StatusCode, w.Status)
-
-				//output
-				//pollResp.displayOutput()
-				pollResp.writeOutput(outputPath)
-
-				// close context
-				ctx.Done()
-
-				return
-
-			}
+			return nil
 
 		}
-	}()
 
-	// Wait for the goroutine to finish
-	wg.Wait()
-
-	// Close the error channel
-	close(errChan)
-
-	// Check for errors
-	if err := <-errChan; err != nil {
-		return err
 	}
-
-	return nil
 }

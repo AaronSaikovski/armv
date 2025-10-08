@@ -38,20 +38,19 @@ import (
 // - ctx: the context.Context object for the function.
 // - azureResourceMoveInfo: a pointer to a validation.AzureResourceMoveInfo object containing the necessary information for the login check.
 //
-// It does not return any values.
-func checkLogin(ctx context.Context, azureResourceMoveInfo *validation.AzureResourceMoveInfo) {
+// Returns an error if login check fails or user is not logged in.
+func checkLogin(ctx context.Context, azureResourceMoveInfo *validation.AzureResourceMoveInfo) error {
 
 	// check we are logged into the Azure source subscription
 	login, err := auth.CheckLogin(ctx, azureResourceMoveInfo.Credentials, azureResourceMoveInfo.SourceSubscriptionId)
 
 	if err != nil {
-		fmt.Println(aurora.Sprintf(aurora.Red("login error: %w\n"), err))
+		return fmt.Errorf("login error: %w", err)
 	}
 	if !login {
-		fmt.Println(aurora.Sprintf(aurora.Red("you are not logged into the azure subscription '%s', please login and retry operation"), azureResourceMoveInfo.SourceSubscriptionId))
+		return fmt.Errorf("you are not logged into the azure subscription '%s', please login and retry operation", azureResourceMoveInfo.SourceSubscriptionId)
 	}
-	fmt.Println(aurora.Sprintf(aurora.Yellow("Logged into Subscription Id: %s\n"), azureResourceMoveInfo.SourceSubscriptionId))
+	fmt.Println(aurora.Yellow(fmt.Sprintf("Logged into Subscription Id: %s", azureResourceMoveInfo.SourceSubscriptionId)))
 
-	ctx.Done()
-
+	return nil
 }

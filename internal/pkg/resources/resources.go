@@ -25,13 +25,10 @@ package resources
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources"
-)
-
-var (
-	resourcesClient *armresources.Client
 )
 
 // GetResourcesClient returns a new instance of the armresources.Client for the given Azure credential and subscription ID.
@@ -50,10 +47,10 @@ func GetResourcesClient(ctx context.Context, cred *azidentity.DefaultAzureCreden
 	if err != nil {
 		return nil, err
 	}
-	resourcesClient = resourcesClientFactory.NewClient()
+	resourcesClient := resourcesClientFactory.NewClient()
 
 	if resourcesClient == nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create resources client")
 	}
 
 	return resourcesClient, nil
@@ -69,7 +66,8 @@ func GetResources(ctx context.Context, resourcesClient *armresources.Client, res
 
 	resourcePager := resourcesClient.NewListByResourceGroupPager(resourceGroupName, nil)
 
-	resourceItems := make([]*armresources.GenericResourceExpanded, 0)
+	// Pre-allocate with reasonable initial capacity to reduce allocations
+	resourceItems := make([]*armresources.GenericResourceExpanded, 0, 32)
 
 	for resourcePager.More() {
 
@@ -93,16 +91,16 @@ func GetResources(ctx context.Context, resourcesClient *armresources.Client, res
 // resourceGroupName: the name of the resource group.
 // []*string, error: returns a slice of pointers to resource IDs and an error if any.
 func GetResourceIds(ctx context.Context, resourcesClient *armresources.Client, resourceGroupName string) ([]*string, error) {
-	resourceIds := make([]*string, 0)
 	resourcesList, err := GetResources(ctx, resourcesClient, resourceGroupName)
 	if err != nil {
 		return nil, err
 	}
 
+	// Pre-allocate exact capacity since we know the size
+	resourceIds := make([]*string, 0, len(resourcesList))
+
 	for _, val := range resourcesList {
-		// Copying pointer to the ID string
-		id := *val.ID
-		resourceIds = append(resourceIds, &id)
+		resourceIds = append(resourceIds, val.ID)
 	}
 
 	return resourceIds, nil
