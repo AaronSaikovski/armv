@@ -25,8 +25,16 @@ package utils
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
+)
+
+const (
+	// Directory permission: owner rwx, group r-x, others ---
+	dirPermission os.FileMode = 0750
+	// File permission: owner rw-, group r--, others ---
+	filePermission os.FileMode = 0640
 )
 
 // CheckExists checks if a file or folder exists at the specified filePath.
@@ -50,12 +58,11 @@ func CheckExists(filePath string) bool {
 func MakeFolder(folderName string) error {
 
 	if !CheckExists(folderName) {
-		if err := os.Mkdir(folderName, 0750); err != nil {
-			return err
+		if err := os.Mkdir(folderName, dirPermission); err != nil {
+			return fmt.Errorf("failed to create directory %s: %w", folderName, err)
 		}
 	}
 	return nil
-
 }
 
 // WriteOutputFile writes the output to a file with the specified filename.
@@ -67,13 +74,13 @@ func WriteOutputFile(outputPath string, filename string, output string) error {
 
 	//create the folder if it doesn't exist
 	if err := MakeFolder(outputPath); err != nil {
-		return err
+		return fmt.Errorf("output directory creation failed: %w", err)
 	}
 
 	//write the output to the file
 	fullPath := filepath.Join(outputPath, filename)
-	if err := os.WriteFile(fullPath, []byte(output), 0640); err != nil {
-		return err
+	if err := os.WriteFile(fullPath, []byte(output), filePermission); err != nil {
+		return fmt.Errorf("failed to write file %s: %w", fullPath, err)
 	}
 
 	return nil

@@ -30,7 +30,8 @@ import (
 
 const (
 	progressBarMax = 100
-	sleepDuration  = 2 * time.Second // Reduced CPU usage and API calls - Azure long-running operations typically take minutes
+	sleepDuration  = 2 * time.Second  // Reduced CPU usage and API calls - Azure long-running operations typically take minutes
+	pollingTimeout = 30 * time.Minute // Maximum time to wait for polling to complete
 
 	//API return codes
 	API_SUCCESS            int = 202

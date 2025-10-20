@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(go build ./...)",
+      "Bash(go test ./...)",
+      "Bash(go vet ./...)",
+      "Bash(go test ./... -v)",
+      "Bash(go get -u github.com/spf13/cobra@latest)",
+      "Bash(go get -u github.com/spf13/viper@latest)",
+      "Bash(go mod tidy)",
+      "Bash(go build -o armv.exe)",
+      "Bash(./armv.exe --help)",
+      "Bash(./armv.exe --version)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

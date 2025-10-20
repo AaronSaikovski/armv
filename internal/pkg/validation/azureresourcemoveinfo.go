@@ -21,6 +21,9 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
+
+// Package validation provides Azure resource move validation functionality.
+// It handles the validation of whether resources can be moved between resource groups.
 package validation
 
 import "github.com/Azure/azure-sdk-for-go/sdk/azidentity"

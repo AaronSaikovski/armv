@@ -21,6 +21,9 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
+
+// Package resources provides functions for managing Azure resources within resource groups,
+// including listing resources and extracting resource IDs with optimized memory allocation.
 package resources
 
 import (
@@ -34,7 +37,6 @@ import (
 // GetResourcesClient returns a new instance of the armresources.Client for the given Azure credential and subscription ID.
 //
 // Parameters:
-// - ctx: The context within which the function is being executed.
 // - cred: The Azure credential used to authenticate the client.
 // - subscriptionID: The ID of the subscription to create the client for.
 //
@@ -42,7 +44,7 @@ import (
 // - *armresources.Client: The created client instance.
 // - error: An error if the client creation fails.
 
-func GetResourcesClient(ctx context.Context, cred *azidentity.DefaultAzureCredential, subscriptionID string) (*armresources.Client, error) {
+func GetResourcesClient(cred *azidentity.DefaultAzureCredential, subscriptionID string) (*armresources.Client, error) {
 	resourcesClientFactory, err := armresources.NewClientFactory(subscriptionID, cred, nil)
 	if err != nil {
 		return nil, err
@@ -96,11 +98,11 @@ func GetResourceIds(ctx context.Context, resourcesClient *armresources.Client, r
 		return nil, err
 	}
 
-	// Pre-allocate exact capacity since we know the size
-	resourceIds := make([]*string, 0, len(resourcesList))
+	// Pre-allocate exact size since we know it - more efficient than append
+	resourceIds := make([]*string, len(resourcesList))
 
-	for _, val := range resourcesList {
-		resourceIds = append(resourceIds, val.ID)
+	for i, val := range resourcesList {
+		resourceIds[i] = val.ID
 	}
 
 	return resourceIds, nil

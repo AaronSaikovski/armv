@@ -21,11 +21,13 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
+
+// Package resourcegroups provides functions for interacting with Azure Resource Groups,
+// including client creation, resource group retrieval, listing, and existence checks.
 package resourcegroups
 
 import (
 	"context"
-	"errors"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources"
@@ -40,7 +42,7 @@ import (
 // Returns:
 // - *armresources.ResourceGroupsClient: The created client instance.
 // - error: An error if the client creation fails.
-func GetResourceGroupClient(ctx context.Context, cred *azidentity.DefaultAzureCredential, subscriptionID string) (*armresources.ResourceGroupsClient, error) {
+func GetResourceGroupClient(cred *azidentity.DefaultAzureCredential, subscriptionID string) (*armresources.ResourceGroupsClient, error) {
 	// Create a new Resource Groups client factory
 	resourcesClientFactory, err := armresources.NewClientFactory(subscriptionID, cred, nil)
 	if err != nil {
@@ -48,12 +50,7 @@ func GetResourceGroupClient(ctx context.Context, cred *azidentity.DefaultAzureCr
 	}
 
 	// Create a new Resource Groups client
-	resourceGroupClient := resourcesClientFactory.NewResourceGroupsClient()
-	if resourceGroupClient == nil {
-		return nil, errors.New("failed to create resource group client")
-	}
-
-	return resourceGroupClient, nil
+	return resourcesClientFactory.NewResourceGroupsClient(), nil
 }
 
 // GetResourceGroup retrieves a resource group using the provided resource group name.
@@ -61,7 +58,6 @@ func GetResourceGroupClient(ctx context.Context, cred *azidentity.DefaultAzureCr
 // ctx: The context within which the function is being executed.
 // resourceGroupName: The name of the resource group to retrieve.
 // Returns a pointer to armresources.ResourceGroup and an error.
-// func GetResourceGroup(ctx context.Context, resourceGroupClient *armresources.ResourceGroupsClient, resourceGroupName string) (*armresources.ResourceGroup, error) {
 func GetResourceGroup(ctx context.Context, resourceGroupClient *armresources.ResourceGroupsClient, resourceGroupName string) (*armresources.ResourceGroup, error) {
 	resourceGroupResp, err := resourceGroupClient.Get(ctx, resourceGroupName, nil)
 	if err != nil {
@@ -89,7 +85,6 @@ func GetResourceGroupId(ctx context.Context, resourceGroupClient *armresources.R
 //
 // ctx - the context within which the function is executed.
 // []*armresources.ResourceGroup, error - returns a slice of resource groups and an error if any.
-// func ListResourceGroup(ctx context.Context, resourceGroupClient *armresources.ResourceGroupsClient) ([]*armresources.ResourceGroup, error) {
 func ListResourceGroup(ctx context.Context, resourceGroupClient *armresources.ResourceGroupsClient) ([]*armresources.ResourceGroup, error) {
 	resultPager := resourceGroupClient.NewListPager(nil)
 

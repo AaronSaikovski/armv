@@ -21,6 +21,10 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
+
+// Package app provides the main application logic for Azure Resource Movability Validator.
+// It orchestrates the validation workflow including authentication, resource group checks,
+// and resource move validation operations.
 package app
 
 import (
@@ -35,42 +39,43 @@ import (
 	"github.com/logrusorgru/aurora"
 )
 
-var (
-	args       utils.Args
-	outputPath string = "./output" // default output path
+const (
+	// DefaultOutputPath is the default directory for output files
+	DefaultOutputPath = "./output"
 )
 
-// run - main run method
-func Run(ctx context.Context, versionString string) error {
+// Config holds the application configuration
+type Config struct {
+	Args       utils.Args
+	OutputPath string
+}
 
-	//set the version build info
-	args.SetVersion(versionString)
+// run - main run method (package-private, called by cobra command)
+func run(ctx context.Context, cfg *Config) error {
 
-	// check params
-	if err := checkParams(); err != nil {
-		return err
+	// Validate subscription IDs
+	if !utils.CheckValidSubscriptionID(cfg.Args.SourceSubscriptionId) {
+		return fmt.Errorf("invalid Source Subscription ID format: should be '0000-0000-0000-000000000000'")
+	}
+	if !utils.CheckValidSubscriptionID(cfg.Args.TargetSubscriptionId) {
+		return fmt.Errorf("invalid Target Subscription ID format: should be '0000-0000-0000-000000000000'")
 	}
 
 	//Debug
-	if args.Debug {
+	if cfg.Args.Debug {
 		startTime := time.Now()
 		defer func() {
 			fmt.Printf("Elapsed time: %.2f seconds\n", time.Since(startTime).Seconds())
 		}()
 	}
 
-	// Set output path
-	if args.OutputPath != "" {
-		outputPath = args.OutputPath
-	}
-
 	/* ********************************************************************** */
 
 	//populate the AzureResourceInfo struct
 	azureResourceMoveInfo := validation.NewAzureResourceMoveInfo(
-		args.SourceSubscriptionId,
-		args.SourceResourceGroup,
-		args.TargetResourceGroup,
+		cfg.Args.SourceSubscriptionId,
+		cfg.Args.SourceResourceGroup,
+		cfg.Args.TargetResourceGroup,
 		nil,
 		nil,
 		nil)
@@ -110,13 +115,13 @@ func Run(ctx context.Context, versionString string) error {
 	/* ********************************************************************** */
 
 	// Poll the API and show a status.
-	if err := poller.PollApi(ctx, resp, outputPath); err != nil {
+	if err := poller.PollApi(ctx, resp, cfg.OutputPath); err != nil {
 		return fmt.Errorf("failed to poll API: %w", err)
 	}
 
 	/* ********************************************************************** */
 
-	fmt.Println(aurora.Yellow(fmt.Sprintf("\n\n***  Output file written to: - %s ***", outputPath)))
+	fmt.Println(aurora.Yellow(fmt.Sprintf("\n\n***  Output file written to: - %s ***", cfg.OutputPath)))
 
 	/* ********************************************************************** */
 

@@ -21,38 +21,39 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
+
+// Package utils provides utility functions and structures for command-line argument parsing,
+// version management, and common helper functions for the ARMV application.
 package utils
 
 var (
-	VersionString string
-
-	infoString string = `
-	**ARMV - Azure Resource Movability Validator**
-	Performs a Read-Only check whether resources in a source resource group can be moved to a target resource group in the same subscription.
-	`
+	versionString string
 )
 
-// Args - struct using go-arg- https://github.com/alexflint/go-arg
+const (
+	// AppDescription is the application description
+	AppDescription = `ARMV - Azure Resource Movability Validator
+
+Performs a Read-Only check whether resources in a source resource group
+can be moved to a target resource group in the same subscription.`
+)
+
+// Args holds the command-line arguments
 type Args struct {
-	SourceSubscriptionId string `arg:"required,--SourceSubscriptionId" help:"Source Subscription Id."`
-	SourceResourceGroup  string `arg:"required,--SourceResourceGroup" help:"Source Resource Group."`
-	TargetSubscriptionId string `arg:"required,--TargetSubscriptionId" help:"Target Subscription Id."`
-	TargetResourceGroup  string `arg:"required,--TargetResourceGroup" help:"Target Resource Group."`
-	Debug                bool   `arg:",--debug" help:"Debug flags"`
-	OutputPath           string `arg:",--outpath" help:"output path to write results"`
+	SourceSubscriptionId string
+	SourceResourceGroup  string
+	TargetSubscriptionId string
+	TargetResourceGroup  string
+	Debug                bool
+	OutputPath           string
 }
 
-// Description - App description
-func (Args) Description() string {
-	return infoString
+// GetVersion returns the formatted version string
+func GetVersion() string {
+	return "ARMV version: " + versionString
 }
 
-// Version - Version info
-func (Args) Version() string {
-	return "ARMV version: " + VersionString
-}
-
-// set version string
-func (Args) SetVersion(versionString string) {
-	VersionString = versionString
+// SetVersion sets the package-level version string
+func SetVersion(version string) {
+	versionString = version
 }

@@ -30,42 +30,28 @@ import (
 	"github.com/AaronSaikovski/armv/pkg/utils"
 )
 
-// pollResponse handles the response from the polling API.
-//
-// It takes a PollerResponse object as input and checks the status code of the response.
-// If the status code is API_RESOURCE_MOVE_OK, it calls the OutputSuccess function from the utils package.
-// Otherwise, it calls the PrettyJsonString function from the utils package to format the response body as a JSON string.
-// If there is an error formatting the JSON string, it returns the error.
-// Otherwise, it calls the OutputFail function from the utils package with the formatted JSON string.
-//
-// The function returns an error if there is an error formatting the JSON string, otherwise it returns nil.
-// func (pollResp *PollerResponseData) displayOutput() {
-// 	//204 == validation successful - no content
-// 	//409 - with error validation failed
-// 	if pollResp.RespStatusCode == API_RESOURCE_MOVE_OK {
-// 		utils.OutputSuccess(pollResp.RespStatus)
-// 	} else {
-// 		resp, _ := utils.PrettyJsonString(string(pollResp.RespBody))
-// 		utils.OutputFail(resp)
-// 	}
-
-// }
-
 // writeOutput writes the output to a file with a timestamp in the filename.
 //
 // No parameters.
 // Returns an error if writing fails.
 func (pollResp *PollerResponseData) writeOutput(outputPath string) error {
-	fileName := "output-" + time.Now().Format("2006-01-02-15-04-05") + ".txt"
+	fileName := fmt.Sprintf("output-%s.txt", time.Now().Format("2006-01-02-15-04-05"))
+
+	var output string
+	var err error
 
 	if pollResp.RespStatusCode == API_RESOURCE_MOVE_OK {
-		infoString := fmt.Sprintf("*** SUCCESS - No Azure Resource Validation issues found. ***\n*** Response Status Code OK: %s ***", pollResp.RespStatus)
-		return utils.WriteOutputFile(outputPath, fileName, infoString)
+		output = fmt.Sprintf("*** SUCCESS - No Azure Resource Validation issues found. ***\n*** Response Status Code OK: %s ***", pollResp.RespStatus)
+	} else {
+		output, err = utils.PrettyJsonString(string(pollResp.RespBody))
+		if err != nil {
+			return fmt.Errorf("failed to format JSON output: %w", err)
+		}
 	}
 
-	resp, err := utils.PrettyJsonString(string(pollResp.RespBody))
-	if err != nil {
-		return fmt.Errorf("failed to format JSON output: %w", err)
+	if err := utils.WriteOutputFile(outputPath, fileName, output); err != nil {
+		return fmt.Errorf("failed to write output file: %w", err)
 	}
-	return utils.WriteOutputFile(outputPath, fileName, resp)
+
+	return nil
 }
