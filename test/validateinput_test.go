@@ -22,9 +22,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-package utils
+package test
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/AaronSaikovski/armv/pkg/utils"
+)
 
 func TestCheckValidSubscriptionID(t *testing.T) {
 	tests := []struct {
@@ -76,7 +80,7 @@ func TestCheckValidSubscriptionID(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := CheckValidSubscriptionID(tt.subscriptionID)
+			got := utils.CheckValidSubscriptionID(tt.subscriptionID)
 			if got != tt.want {
 				t.Errorf("CheckValidSubscriptionID(%q) = %v, want %v", tt.subscriptionID, got, tt.want)
 			}

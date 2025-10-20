@@ -22,9 +22,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-package utils
+package test
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/AaronSaikovski/armv/pkg/utils"
+)
 
 func TestSetVersion(t *testing.T) {
 	tests := []struct {
@@ -51,8 +55,8 @@ func TestSetVersion(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			SetVersion(tt.version)
-			got := GetVersion()
+			utils.SetVersion(tt.version)
+			got := utils.GetVersion()
 			if got != tt.expected {
 				t.Errorf("GetVersion() = %v, want %v", got, tt.expected)
 			}
@@ -61,18 +65,18 @@ func TestSetVersion(t *testing.T) {
 }
 
 func TestAppDescription(t *testing.T) {
-	if AppDescription == "" {
+	if utils.AppDescription == "" {
 		t.Error("AppDescription should not be empty")
 	}
 	// Check if description contains key information
 	expectedSubstring := "Azure Resource Movability Validator"
-	if len(AppDescription) < len(expectedSubstring) {
-		t.Errorf("AppDescription is too short, got length %d", len(AppDescription))
+	if len(utils.AppDescription) < len(expectedSubstring) {
+		t.Errorf("AppDescription is too short, got length %d", len(utils.AppDescription))
 	}
 }
 
 func TestArgsStruct(t *testing.T) {
-	args := Args{
+	args := utils.Args{
 		SourceSubscriptionId: "12345678-1234-1234-1234-123456789012",
 		SourceResourceGroup:  "source-rg",
 		TargetSubscriptionId: "87654321-4321-4321-4321-210987654321",

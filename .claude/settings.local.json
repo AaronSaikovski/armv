@@ -10,7 +10,10 @@
       "Bash(go mod tidy)",
       "Bash(go build -o armv.exe)",
       "Bash(./armv.exe --help)",
-      "Bash(./armv.exe --version)"
+      "Bash(./armv.exe --version)",
+      "Bash(go test ./... -cover)",
+      "Bash(go test C:DevelopmentPersonalGoarmvtest... -v)",
+      "Bash(go test ./test/... -v)"
     ],
     "deny": [],
     "ask": []
