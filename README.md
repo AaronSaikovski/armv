@@ -1,24 +1,52 @@
 <div align="center">
 
-# ARMV - <u>A</u>zure <u>R</u>esource <u>M</u>oveability <u>V</u>alidator - v1.2.1
+# ARMV - <u>A</u>zure <u>R</u>esource <u>M</u>oveability <u>V</u>alidator
+
+**v1.2.1**
 
 [![Build Status](https://github.com/AaronSaikovski/armv/workflows/build/badge.svg)](https://github.com/AaronSaikovski/armv/actions)
 [![Licence](https://img.shields.io/github/license/AaronSaikovski/armv)](LICENSE)
 
+A lightweight, high-performance CLI utility for validating Azure resource moveability without performing the actual move operation.
+
 </div>
 
-**PLEASE REPORT ALL BUGS AND ISSUES [HERE](https://github.com/AaronSaikovski/armv/issues)**
+> **⚠️ NOTE: THIS TOOL PERFORMS READ-ONLY VALIDATION AND WILL NOT PERFORM ANY ACTUAL MOVE OPERATIONS. IT GENERATES A DETAILED VALIDATION REPORT FOR ANALYSIS.**
 
-**<u>NOTE: THIS TOOL WILL NOT PERFORM THE MOVE OPERATION BUT WILL GENERATE A MOVE REPORT FOR FURTHER ANALYSIS.</u>**
+## Overview
 
-### Description:
+ARMV is a production-ready Go CLI utility that validates whether Azure resources can be moved between resource groups and subscriptions. It acts as a comprehensive wrapper around Azure's [Validate Move Resources API](https://learn.microsoft.com/en-us/rest/api/resources/resources/validate-move-resources?view=rest-resources-2021-04-01), providing intelligent polling, detailed error reporting, and secure file operations.
 
-This CLI utility performs a validation on whether the specified Azure resources can be moved to the specified target resource group. \
-The resources to be moved must be in the same source resource group in the source subscription being used. \
-The target resource group may be in a different subscription. \
-If validation succeeds, it returns HTTP response code 204 (no content), If validation fails, it returns HTTP response code 409 (Conflict) with an error message. \
-All output will be written to a file found in `./output` with the filename being the date and time of the validation operation. \
-If the move operation fails it outputs` a detailed json error report similar to this example:
+This tool is a complete rewrite of the deprecated [pyazvalidatemoveresources](https://github.com/AaronSaikovski/pyazvalidatemoveresources) Python utility, now delivered as a fully standalone, self-contained Go binary with zero external dependencies.
+
+### Key Features
+
+- **Non-Destructive Validation**: Tests moveability without making any changes
+- **Cross-Subscription Support**: Validate moves across different subscriptions (same tenant only)
+- **Intelligent Polling**: Long-running operation polling with timeout protection (max 30 minutes)
+- **Comprehensive Error Reporting**: Detailed JSON diagnostics including tracking IDs and timestamps
+- **Progress Visualization**: Real-time progress bar during validation operations
+- **Secure File Operations**: Timestamped output files with secure permissions
+- **Debug Mode**: Optional verbose logging and timing information
+- **Production-Ready**: Fully tested, optimized memory usage, and comprehensive error handling
+
+### How It Works
+
+1. **Input Validation**: Validates subscription IDs and resource group references
+2. **Authentication**: Uses Azure CLI's stored credentials (`az login` context)
+3. **Resource Discovery**: Enumerates all resources in the source resource group
+4. **Validation**: Calls Azure's Validate Move Resources API
+5. **Polling**: Polls the long-running operation with visual progress indication
+6. **Output Generation**: Writes timestamped results to the output directory
+
+### Response Codes
+
+- **HTTP 204 (Success)**: All resources are eligible for move
+- **HTTP 409 (Conflict)**: One or more resources cannot be moved - detailed error report is generated
+
+### Example Error Report
+
+When validation fails, a detailed JSON report is generated:
 
 ```json
 {
@@ -36,79 +64,369 @@ If the move operation fails it outputs` a detailed json error report similar to 
 }
 ```
 
-The expected inputs are a source Azure SubscriptionID and Resource Group, passes these to the [Validate Move Resources API](https://learn.microsoft.com/en-us/rest/api/resources/resources/validate-move-resources?view=rest-resources-2021-04-01) and validates these source resources against the target SubscriptionID and ResourceGroup and reports accordingly.\
-The API operation has been abstracted via the Go Azure SDK and also incorporates polling operatons and error handling and types.\
-This tool utilises the native [Microsoft Go Azure SDK](https://learn.microsoft.com/en-us/azure/developer/go/overview) and is a full rewrite of the now deprecated [pyazvalidatemoveresources](https://github.com/AaronSaikovski/pyazvalidatemoveresources) tool originally written in Python and now greatly enhanced in 100% Go as a fully standalone and self-contained binary with no redistributable dependencies needed.
+## Architecture
 
-### Software Requirements:
+ARMV follows a clean, layered architecture for maintainability and extensibility:
 
-- [Go v1.23.X](https://www.go.dev/dl/) or later needs to be installed to build the code.
-- [Azure CLI tools](https://learn.microsoft.com/en-us/cli/azure/) 2.50 or later
-- [Taskfile](https://taskfile.dev/) to run the build chain commands listed below.
+### Core Layers
 
-## Azure Setup:
+| Layer | Location | Responsibility |
+|-------|----------|-----------------|
+| **CLI Layer** | `cmd/armv/app/` | Command-line interface, flag parsing, orchestration |
+| **Authentication** | `internal/pkg/auth/` | Azure credential management and SDK clients |
+| **Validation** | `internal/pkg/validation/` | Resource move validation API wrapper |
+| **Resource Management** | `internal/pkg/resourcegroups/`, `internal/pkg/resources/` | Azure resource group and resource operations |
+| **Polling** | `cmd/armv/poller/` | Long-running operation polling and result handling |
+| **Utilities** | `pkg/utils/` | Input validation, error handling, file I/O, JSON processing |
 
-You must be logged into Azure from the CLI (az login) for this program to work. This program will use the CLIs current logged in identity context. \
-Ensure you have run the following:
+### Project Structure
+
+```
+armv/
+├── cmd/armv/                          # Application entry points
+│   ├── main.go                        # CLI entry point with version embedding
+│   ├── app/                           # Application logic
+│   │   ├── root.go                   # Cobra CLI command setup
+│   │   ├── command.go                # Main validation workflow orchestration
+│   │   ├── login.go                  # Azure authentication verification
+│   │   └── resourcegroup.go          # Resource group operations
+│   └── poller/                        # Long-running operation handling
+│       ├── pollapi.go                # API polling logic with timeout
+│       ├── pollresponse.go           # Response handling and output
+│       ├── pollerresponsedata.go     # Response data structures
+│       ├── progressbar.go            # Progress bar visualization
+│       └── constants.go              # Configuration constants
+│
+├── internal/pkg/                      # Private internal packages
+│   ├── auth/                          # Azure authentication
+│   │   └── auth.go                   # Credential and client creation
+│   ├── validation/                    # Resource move validation
+│   │   ├── azureresourcemoveinfo.go  # Validation parameters struct
+│   │   └── validatemove.go           # Validation API wrapper
+│   ├── resourcegroups/                # Resource group operations
+│   │   └── resourcegroups.go         # RG client and operations
+│   └── resources/                     # Resource operations
+│       └── resources.go              # Resource enumeration and filtering
+│
+├── pkg/utils/                         # Public utility functions
+│   ├── args.go                       # CLI argument structures
+│   ├── validateinput.go              # UUID/subscription ID validation
+│   ├── errorhandler.go               # Error handling utilities
+│   ├── output.go                     # Console output formatting
+│   ├── outputfile.go                 # File I/O with secure permissions
+│   └── jsonutils.go                  # JSON marshaling/unmarshaling
+│
+├── test/                              # Comprehensive test suite
+│   ├── args_test.go
+│   ├── validateinput_test.go
+│   ├── azureresourcemoveinfo_test.go
+│   ├── command_test.go
+│   ├── pollerresponsedata_test.go
+│   ├── jsonutils_test.go
+│   └── outputfile_test.go
+│
+├── go.mod                             # Go module definition
+├── go.sum                             # Dependency checksums
+├── Taskfile.yml                       # Build task automation
+├── README.md                          # This file
+├── LICENSE                            # MIT License
+├── CHANGELOG.md                       # Version history
+└── TODO.md                            # Future enhancements
+```
+
+## Dependencies
+
+The project uses the following key Go packages:
+
+| Package | Version | Purpose |
+|---------|---------|---------|
+| `github.com/Azure/azure-sdk-for-go/sdk/azcore` | v1.19.1 | Azure SDK core functionality |
+| `github.com/Azure/azure-sdk-for-go/sdk/azidentity` | v1.13.0 | Azure credential authentication |
+| `github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources` | v1.2.0 | Azure resources API client |
+| `github.com/spf13/cobra` | v1.10.1 | CLI command framework |
+| `github.com/schollz/progressbar/v3` | v3.18.0 | Progress bar visualization |
+
+## Requirements
+
+- **Go**: [v1.25.3](https://www.go.dev/dl/) or later for building from source
+- **Azure CLI**: [v2.50](https://learn.microsoft.com/en-us/cli/azure/) or later
+- **Taskfile**: [v3.0+](https://taskfile.dev/) for build automation (optional but recommended)
+- **Azure Credentials**: Valid Azure CLI login context (`az login`)
+
+## Installation & Setup
+
+### Prerequisites: Azure Authentication
+
+Before using ARMV, you must authenticate with Azure:
 
 ```bash
+# Log in to Azure
 az login
 
-# Where "XXXX-XXXX-XXXX-XXXX" is your subscriptionID
+# Set the active subscription (replace XXXX-XXXX-XXXX-XXXX with your subscription ID)
 az account set --subscription "XXXX-XXXX-XXXX-XXXX"
 ```
 
-## Installation:
+ARMV uses the DefaultAzureCredential chain from the Azure SDK, which will use your authenticated Azure CLI context.
 
-The toolchain is driven by using [Taskfile](https://taskfile.dev/) and all commands are managed via the file `Taskfile.yml`
+### Building from Source
 
-The list of commands is as follows:
+This project uses **Taskfile** for build automation. All build commands are defined in `Taskfile.yml`.
 
-```bash
-* build:             Builds the project in preparation for debug.
-* clean:             Removes the old builds and any debug information from the source tree.
-* debug:             Runs a debug version of the application with input parameters from the environment file.
-* deploy:            Deploy Azure resources using Bicep for testing.
-* deps:              Fetches any external dependencies and updates.
-* destroy:           Destroy Azure resources for testing.
-* docs:              Updates the swagger docs - For APIs.
-* generate:          update binary build version using gogenerate.
-* goreleaser:        Builds a cross platform release using goreleaser.
-* lint:              Lint, format and tidy code.
-* release:           Builds the project in preparation for (local)release.
-* run:               Builds and runs the program on the target platform.
-* seccheck:          Code vulnerability scanner check.
-* staticcheck:       Runs static code analyzer staticcheck.
-* test:              Executes unit tests.
-* version:           Get the Go version.
-* vet:               Vet examines Go source code and reports suspicious constructs.
-* watch:             Use air server for hot reloading.
-```
-
-Execute using the taskfile utility:
+#### Available Tasks
 
 ```bash
-task <command_from_above_list>
+build            # Build debug version for your platform
+clean            # Remove builds and debug artifacts
+debug            # Run debug version with environment variables
+deploy           # Deploy test Azure resources using Bicep
+destroy          # Destroy test Azure resources
+deps             # Fetch and update dependencies
+generate         # Update binary version using go:generate
+goreleaser       # Build cross-platform release binaries
+lint             # Format, lint, and tidy code
+release          # Build optimized release binary (outputs to /bin)
+run              # Build and run the application
+seccheck         # Security vulnerability scanner
+staticcheck      # Static code analysis
+test             # Run unit tests
+version          # Display Go version
+vet              # Examine code for suspicious constructs
+watch            # Enable hot reload with air
 ```
 
-To get started type,
+#### Quick Start
 
-- `task deps` - to fetch all dependencies and update all dependencies.
-- `task build` - to build debug version for your target environment architecture.
-- `task release` - Builds a release version for your target environment architecture - outputs to /bin folder.
+```bash
+# 1. Fetch dependencies
+task deps
+
+# 2. Build debug version
+task build
+
+# 3. Build release version (outputs to ./bin)
+task release
+```
+
+#### Testing
+
+```bash
+# Run all unit tests
+task test
+
+# Run tests with verbose output
+go test ./... -v
+
+# Run tests with coverage report
+go test ./... -cover
+```
 
 ## Usage
 
+### Basic Command
+
 ```bash
-./armv --SourceSubscriptionId SOURCE_SUBSCRIPTION_ID \
-       --SourceResourceGroup SOURCE_RESOURCE_GROUP \
-       --TargetSubscriptionId TARGET_SUBSCRIPTION_ID \
-       --TargetResourceGroup TARGET_RESOURCE_GROUP \
-       --outpath - path to write output file - defaults to ./output
-       --debug - shows extra debug information
+./armv --SourceSubscriptionId <SOURCE_SUB_ID> \
+       --SourceResourceGroup <SOURCE_RG> \
+       --TargetSubscriptionId <TARGET_SUB_ID> \
+       --TargetResourceGroup <TARGET_RG>
 ```
 
-## Known issues and limitations
+### Command-Line Flags
 
-- Currently this utility only supports subscriptions and resource groups under the same single tenant.
-- No known bugs or known issues - if found, please report [here](https://github.com/AaronSaikovski/armv/issues)
+#### Required Flags
+
+| Flag | Description | Example |
+|------|-------------|---------|
+| `--SourceSubscriptionId` | Source Azure subscription ID (UUID format) | `00000000-0000-0000-0000-000000000000` |
+| `--SourceResourceGroup` | Source resource group name | `my-source-rg` |
+| `--TargetSubscriptionId` | Target Azure subscription ID (UUID format) | `00000000-0000-0000-0000-000000000001` |
+| `--TargetResourceGroup` | Target resource group name | `my-target-rg` |
+
+#### Optional Flags
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--outpath` | Directory path for output files | `./output` |
+| `--debug` | Enable debug mode with timing information | `false` |
+| `--help` | Display help information | - |
+| `--version` | Display version information | - |
+
+### Examples
+
+#### Example 1: Validate Move (Same Tenant, Different Subscription)
+
+```bash
+./armv \
+  --SourceSubscriptionId "12345678-1234-1234-1234-123456789012" \
+  --SourceResourceGroup "rg-prod-east" \
+  --TargetSubscriptionId "87654321-4321-4321-4321-210987654321" \
+  --TargetResourceGroup "rg-dev-west"
+```
+
+#### Example 2: Validate Move with Custom Output Directory
+
+```bash
+./armv \
+  --SourceSubscriptionId "12345678-1234-1234-1234-123456789012" \
+  --SourceResourceGroup "source-rg" \
+  --TargetSubscriptionId "12345678-1234-1234-1234-123456789012" \
+  --TargetResourceGroup "target-rg" \
+  --outpath "/var/log/armv-reports"
+```
+
+#### Example 3: Validate Move with Debug Output
+
+```bash
+./armv \
+  --SourceSubscriptionId "12345678-1234-1234-1234-123456789012" \
+  --SourceResourceGroup "source-rg" \
+  --TargetSubscriptionId "12345678-1234-1234-1234-123456789012" \
+  --TargetResourceGroup "target-rg" \
+  --debug
+```
+
+### Output
+
+When validation completes, a timestamped report file is created in the output directory:
+
+```
+./output/output-2024-10-30-14-30-45.txt
+```
+
+**Success Output (HTTP 204):**
+```
+Validation succeeded with HTTP code: 204
+All resources are eligible for move
+```
+
+**Failure Output (HTTP 409):**
+The output file contains a detailed JSON error report with:
+- Error code and message
+- Diagnostic information (timestamp, tracking ID, correlation ID)
+- Per-resource validation failures with specific reasons
+
+## Testing
+
+The project includes comprehensive unit tests covering:
+
+- **Input Validation** (`test/validateinput_test.go`): UUID/subscription ID validation
+- **CLI Arguments** (`test/args_test.go`): Command-line argument parsing
+- **Data Structures** (`test/azureresourcemoveinfo_test.go`): Validation parameter initialization
+- **Command Setup** (`test/command_test.go`): Cobra command configuration
+- **Response Handling** (`test/pollerresponsedata_test.go`): API response processing
+- **JSON Operations** (`test/jsonutils_test.go`): JSON serialization/deserialization
+- **File Operations** (`test/outputfile_test.go`): File I/O and permissions
+
+Run tests with:
+
+```bash
+# Run all tests
+task test
+
+# Verbose output
+go test ./... -v
+
+# With coverage
+go test ./... -cover
+```
+
+## Limitations
+
+- **Single Tenant**: Currently supports only subscriptions and resource groups within the same Azure tenant
+- **Source Resource Group**: All resources to be moved must be in the same source resource group
+- **Target Flexibility**: Target resource group can be in a different subscription (within the same tenant)
+
+## Troubleshooting
+
+### Azure Authentication Issues
+
+**Error:** `No credentials found`
+
+**Solution:** Ensure you're logged in to Azure CLI:
+```bash
+az login
+az account show  # Verify active subscription
+```
+
+### Input Validation Errors
+
+**Error:** `Invalid subscription ID format`
+
+**Solution:** Ensure subscription IDs are valid UUIDs:
+```
+Format: XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
+Example: 12345678-1234-1234-1234-123456789012
+```
+
+### Resource Group Not Found
+
+**Error:** `Resource group not found`
+
+**Solution:**
+1. Verify the resource group exists in the specified subscription
+2. Ensure you have permissions to access the resource group
+3. Check that you're using the correct subscription context
+
+### API Timeout
+
+**Error:** `Validation operation timed out after 30 minutes`
+
+**Solution:**
+- This indicates the Azure API is taking longer than expected
+- Check Azure service health: https://status.azure.com/
+- Retry the validation operation
+- Consider validating smaller batches of resources
+
+## Reporting Issues
+
+Found a bug or have a feature request? Please report it on GitHub:
+
+📋 **[Report Issues Here](https://github.com/AaronSaikovski/armv/issues)**
+
+Include the following information:
+- ARMV version (`./armv --version`)
+- Go version (`go version`)
+- Error message and output file
+- Steps to reproduce
+
+## Development
+
+### Code Quality
+
+The project maintains high code quality standards:
+
+```bash
+# Format and lint
+task lint
+
+# Security vulnerability scan
+task seccheck
+
+# Static analysis
+task staticcheck
+
+# Vet (examines code for suspicious constructs)
+task vet
+```
+
+### Git Workflow
+
+1. Create a feature branch: `git checkout -b feature/my-feature`
+2. Make changes and commit: `git commit -am "Add new feature"`
+3. Push to remote: `git push origin feature/my-feature`
+4. Create a pull request
+
+## License
+
+This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
+
+## Related Projects
+
+- **Original Tool**: [pyazvalidatemoveresources](https://github.com/AaronSaikovski/pyazvalidatemoveresources) (Python, deprecated)
+- **Azure Documentation**: [Validate Move Resources API](https://learn.microsoft.com/en-us/rest/api/resources/resources/validate-move-resources)
+- **Azure Go SDK**: [Azure SDK for Go](https://learn.microsoft.com/en-us/azure/developer/go/overview)
+
+---
+
+**Questions or feedback?** Please open an issue or check the [project repository](https://github.com/AaronSaikovski/armv)
