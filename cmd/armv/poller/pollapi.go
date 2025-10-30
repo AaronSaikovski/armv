@@ -21,81 +21,19 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
+
+// Package poller provides functionality for polling Azure long-running operations
+// and displaying progress to the user with timeout protection.
 package poller
 
 import (
 	"context"
-	"sync"
+	"fmt"
+	"io"
 	"time"
 
-	"github.com/AaronSaikovski/armv/pkg/utils"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 )
-
-var (
-	pollResp = PollerResponseData{}
-)
-
-// ** OLD Sync Code **
-// PollApi is a function that polls the AzureRM Validation API indefinitely until it receives a response.
-//
-// It takes the following parameters:
-// - ctx: the context.Context object for cancellation and timeout control.
-// - respPoller: a pointer to the runtime.Poller[T] object that handles the polling.
-//
-// It returns the following:
-// - types.PollerResponse: the response from the API.
-// - error: an error if any occurred during the polling process.
-// func PollApi[T any](ctx context.Context, respPoller *runtime.Poller[T]) error {
-
-// 	bar := progressbar.NewOptions(progressBarMax,
-// 		progressbar.OptionSetWriter(ansi.NewAnsiStdout()),
-// 		progressbar.OptionEnableColorCodes(true),
-// 		progressbar.OptionSetDescription("[cyan][reset] Running Validation..."),
-// 		progressbar.OptionSetTheme(progressbar.Theme{
-// 			Saucer:        "[green]=[reset]",
-// 			SaucerHead:    "[green]>[reset]",
-// 			SaucerPadding: " ",
-// 			BarStart:      "[",
-// 			BarEnd:        "]",
-// 		}))
-// 	// defer func() {
-// 	// 	_ = bar.Finish()
-// 	// }()
-
-// 	barCount := 0
-// 	for {
-// 		barCount++
-// 		_ = bar.Add(1)
-// 		time.Sleep(sleepDuration)
-
-// 		if barCount >= progressBarMax {
-// 			bar.Reset()
-// 			barCount = 0
-// 		}
-
-// 		w, err := respPoller.Poll(ctx)
-// 		if err != nil {
-// 			return err
-// 		}
-
-// 		if respPoller.Done() {
-
-// 			_ = bar.Finish()
-
-// 			pollResp = PollerResponseData{
-// 				RespBody:       utils.FetchResponseBody(w.Body),
-// 				RespStatusCode: w.StatusCode,
-// 				RespStatus:     w.Status,
-// 			}
-
-// 			pollResp.displayOutput()
-// 			ctx.Done()
-// 			return nil
-
-// 		}
-// 	}
-// }
 
 // PollApi polls the API and displays the response.
 //
@@ -106,77 +44,63 @@ var (
 // It returns an error if any occurred during the polling process.
 func PollApi[T any](ctx context.Context, respPoller *runtime.Poller[T], outputPath string) error {
 
-	wg := new(sync.WaitGroup)
-	wg.Add(1)
+	// Add timeout protection to prevent infinite polling
+	ctx, cancel := context.WithTimeout(ctx, pollingTimeout)
+	defer cancel()
 
-	//error channel
-	errChan := make(chan error, 1)
+	//progress bar
+	bar := progressBar()
 
-	go func() {
+	barCount := 0
+	for {
+		// Check if context has been cancelled or timed out
+		select {
+		case <-ctx.Done():
+			_ = bar.Finish()
+			return fmt.Errorf("polling timeout or cancelled: %w", ctx.Err())
+		default:
+			// Continue with polling
+		}
 
-		defer wg.Done() // Signal that this goroutine is done
+		barCount++
+		if err := bar.Add(1); err != nil {
+			return err
+		}
 
-		//progress bar
-		bar := progressBar()
+		time.Sleep(sleepDuration)
 
-		barCount := 0
-		for {
+		if barCount >= progressBarMax {
+			bar.Reset()
+			barCount = 0
+		}
 
-			barCount++
-			err := bar.Add(1)
+		w, err := respPoller.Poll(ctx)
+		if err != nil {
+			return err
+		}
+
+		if respPoller.Done() {
+
+			if err := bar.Finish(); err != nil {
+				return err
+			}
+
+			// create new PollerResponseData
+			respBody, err := io.ReadAll(w.Body)
 			if err != nil {
-				errChan <- err
-				return
+				return fmt.Errorf("failed to read response body: %w", err)
 			}
 
-			time.Sleep(sleepDuration)
+			pollResp := NewPollerResponseData(respBody, w.StatusCode, w.Status)
 
-			if barCount >= progressBarMax {
-				bar.Reset()
-				barCount = 0
+			// Write output to file
+			if err := pollResp.writeOutput(outputPath); err != nil {
+				return err
 			}
 
-			w, err := respPoller.Poll(ctx)
-			if err != nil {
-				errChan <- err
-				return
-			}
-
-			if respPoller.Done() {
-
-				err := bar.Finish()
-				if err != nil {
-					errChan <- err
-					return
-				}
-
-				// create new PollerResponseData
-				pollResp = NewPollerResponseData(utils.FetchResponseBody(w.Body), w.StatusCode, w.Status)
-
-				//output
-				//pollResp.displayOutput()
-				pollResp.writeOutput(outputPath)
-
-				// close context
-				ctx.Done()
-
-				return
-
-			}
+			return nil
 
 		}
-	}()
 
-	// Wait for the goroutine to finish
-	wg.Wait()
-
-	// Close the error channel
-	close(errChan)
-
-	// Check for errors
-	if err := <-errChan; err != nil {
-		return err
 	}
-
-	return nil
 }

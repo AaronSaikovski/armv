@@ -51,7 +51,7 @@ func getResourceGroupInfo(ctx context.Context, azureResourceMoveInfo *validation
 	/* ********************************************************************** */
 
 	//Get the resource group client
-	resourceGroupClient, err := resourcegroups.GetResourceGroupClient(ctx, azureResourceMoveInfo.Credentials, azureResourceMoveInfo.SourceSubscriptionId)
+	resourceGroupClient, err := resourcegroups.GetResourceGroupClient(azureResourceMoveInfo.Credentials, azureResourceMoveInfo.SourceSubscriptionId)
 	if err != nil {
 		return fmt.Errorf("failed to get resource group client: %w", err)
 	}
@@ -64,7 +64,7 @@ func getResourceGroupInfo(ctx context.Context, azureResourceMoveInfo *validation
 		return err
 	}
 	if !srcRsgExists {
-		return fmt.Errorf("source resource group '%s' does not exist", args.SourceResourceGroup)
+		return fmt.Errorf("source resource group '%s' does not exist", azureResourceMoveInfo.SourceResourceGroup)
 	}
 
 	/* ********************************************************************** */
@@ -75,13 +75,13 @@ func getResourceGroupInfo(ctx context.Context, azureResourceMoveInfo *validation
 		return err
 	}
 	if !dstRsgExists {
-		return fmt.Errorf("destination resource group '%s' does not exist", args.TargetResourceGroup)
+		return fmt.Errorf("destination resource group '%s' does not exist", azureResourceMoveInfo.TargetResourceGroup)
 	}
 
 	/* ********************************************************************** */
 
 	// Get resource client
-	resourcesClient, err := resources.GetResourcesClient(ctx, azureResourceMoveInfo.Credentials, azureResourceMoveInfo.SourceSubscriptionId)
+	resourcesClient, err := resources.GetResourcesClient(azureResourceMoveInfo.Credentials, azureResourceMoveInfo.SourceSubscriptionId)
 	if err != nil {
 		return err
 	}
@@ -93,6 +93,11 @@ func getResourceGroupInfo(ctx context.Context, azureResourceMoveInfo *validation
 	if err != nil {
 		return fmt.Errorf("failed to get resource IDs: %w", err)
 	}
+
+	// Validate that we have resources to move
+	if len(azureResourceMoveInfo.ResourceIds) == 0 {
+		return fmt.Errorf("no resources found in source resource group '%s'", azureResourceMoveInfo.SourceResourceGroup)
+	}
 	/* ********************************************************************** */
 
 	// get the target resource group ID
@@ -101,8 +106,5 @@ func getResourceGroupInfo(ctx context.Context, azureResourceMoveInfo *validation
 		return fmt.Errorf("failed to get target resource group ID: %w", err)
 	}
 
-	ctx.Done()
 	return nil
-	/* ********************************************************************** */
-
 }

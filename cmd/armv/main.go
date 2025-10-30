@@ -26,9 +26,9 @@ package main
 import (
 	"context"
 	_ "embed"
+	"os"
 
 	"github.com/AaronSaikovski/armv/cmd/armv/app"
-	"github.com/AaronSaikovski/armv/pkg/utils"
 )
 
 //ref: https://levelup.gitconnected.com/a-better-way-than-ldflags-to-add-a-build-version-to-your-go-binaries-2258ce419d2d
@@ -39,17 +39,19 @@ var version string
 
 // main is the entry point of the program.
 //
-// It calls the Run function of the app package, passing the version variable as an argument.
-// If an error occurs during the execution of the Run function, it calls the HandleError function of the utils package,
-// passing the error as an argument.
-// The commented out line logs the error message and exits with status code 1.
+// It creates the root cobra command and executes it with a cancellable context.
+// If an error occurs during command execution, the program exits with status code 1.
 func main() {
 
 	// Create a context with cancellation capability
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	if err := app.Run(ctx, version); err != nil {
-		utils.HandleError(err)
+	// Create and execute the root command
+	rootCmd := app.NewRootCommand(version)
+	rootCmd.SetContext(ctx)
+
+	if err := rootCmd.Execute(); err != nil {
+		os.Exit(1)
 	}
 }

@@ -25,7 +25,16 @@ package utils
 
 import (
 	"errors"
+	"fmt"
 	"os"
+	"path/filepath"
+)
+
+const (
+	// Directory permission: owner rwx, group r-x, others ---
+	dirPermission os.FileMode = 0750
+	// File permission: owner rw-, group r--, others ---
+	filePermission os.FileMode = 0640
 )
 
 // CheckExists checks if a file or folder exists at the specified filePath.
@@ -42,45 +51,37 @@ func CheckExists(filePath string) bool {
 	return !errors.Is(error, os.ErrNotExist)
 }
 
-// deleteFile deletes a file at the specified filePath if it exists.
-//
-// filePath: the path to the file to be deleted.
-func DeleteFile(filePath string) {
-	if CheckExists(filePath) {
-		err := os.Remove(filePath)
-		if err != nil {
-			HandleError(err)
-		}
-	}
-}
-
 // MakeFolder creates a new folder with the specified folderName.
 //
 // folderName: the name of the folder to be created.
-func MakeFolder(folderName string) {
+// Returns an error if folder creation fails.
+func MakeFolder(folderName string) error {
 
 	if !CheckExists(folderName) {
-		errFolder := os.Mkdir(folderName, 0755)
-		if errFolder != nil {
-			HandleError(errFolder)
+		if err := os.Mkdir(folderName, dirPermission); err != nil {
+			return fmt.Errorf("failed to create directory %s: %w", folderName, err)
 		}
 	}
-
+	return nil
 }
 
 // WriteOutputFile writes the output to a file with the specified filename.
 //
 // filename: the name of the file to write the output to.
 // output: the content to be written to the file.
-func WriteOutputFile(outputPath string, filename string, output string) {
+// Returns an error if writing fails.
+func WriteOutputFile(outputPath string, filename string, output string) error {
 
 	//create the folder if it doesn't exist
-	MakeFolder(outputPath)
-
-	//write the output to the file
-	errWrite := os.WriteFile(outputPath+"/"+filename, []byte(output), 0644)
-	if errWrite != nil {
-		HandleError(errWrite)
+	if err := MakeFolder(outputPath); err != nil {
+		return fmt.Errorf("output directory creation failed: %w", err)
 	}
 
+	//write the output to the file
+	fullPath := filepath.Join(outputPath, filename)
+	if err := os.WriteFile(fullPath, []byte(output), filePermission); err != nil {
+		return fmt.Errorf("failed to write file %s: %w", fullPath, err)
+	}
+
+	return nil
 }
