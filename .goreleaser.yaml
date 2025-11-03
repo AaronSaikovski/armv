@@ -22,7 +22,20 @@ builds:
       - linux
       - windows
       - darwin
+    goarch:
+      - amd64
+      - arm64
+      - armv7
+      - "386"
     main: ./cmd/armv ##change this for your package
+    # Skip unsupported OS/arch combinations
+    ignore:
+      - goos: windows
+        goarch: arm64
+      - goos: windows
+        goarch: armv7
+      - goos: darwin
+        goarch: "386"
 
 archives:
   - format: tar.gz
