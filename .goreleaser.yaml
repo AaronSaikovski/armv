@@ -22,23 +22,9 @@ builds:
       - linux
       - windows
       - darwin
-    goarch:
-      - amd64
-      - arm64
-      - armv7
-      - "386"
-    main: ./cmd/armv ##change this for your package
-    # Skip unsupported OS/arch combinations
-    ignore:
-      - goos: windows
-        goarch: arm64
-      - goos: windows
-        goarch: armv7
-      - goos: darwin
-        goarch: "386"
 
 archives:
-  - format: tar.gz
+  - formats: [tar.gz]
     # this name template makes the OS and Arch compatible with the results of `uname`.
     name_template: >-
       {{ .ProjectName }}_
@@ -50,7 +36,7 @@ archives:
     # use zip for windows archives
     format_overrides:
       - goos: windows
-        format: zip
+        formats: [zip]
 
 changelog:
   sort: asc
@@ -58,3 +44,10 @@ changelog:
     exclude:
       - "^docs:"
       - "^test:"
+
+release:
+  footer: >-
+
+    ---
+
+    Released by [GoReleaser](https://github.com/goreleaser/goreleaser).
