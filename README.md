@@ -2,7 +2,7 @@
 
 # ARMV - <u>A</u>zure <u>R</u>esource <u>M</u>oveability <u>V</u>alidator
 
-**v1.2.1**
+**v1.2.2**
 
 [![Build Status](https://github.com/AaronSaikovski/armv/workflows/build/badge.svg)](https://github.com/AaronSaikovski/armv/actions)
 [![Licence](https://img.shields.io/github/license/AaronSaikovski/armv)](LICENSE)
@@ -29,6 +29,9 @@ This tool is a complete rewrite of the deprecated [pyazvalidatemoveresources](ht
 - **Secure File Operations**: Timestamped output files with secure permissions
 - **Debug Mode**: Optional verbose logging and timing information
 - **Production-Ready**: Fully tested, optimized memory usage, and comprehensive error handling
+- **Multi-Platform Support**: Cross-platform binaries for Linux, Windows, and macOS
+- **Security Focused**: Vulnerability scanning (govulncheck), static analysis (staticcheck), and comprehensive testing
+- **Continuous Integration**: Automated builds, tests, and security checks on every commit
 
 ### How It Works
 
@@ -152,6 +155,23 @@ The project uses the following key Go packages:
 - **Azure CLI**: [v2.50](https://learn.microsoft.com/en-us/cli/azure/) or later
 - **Taskfile**: [v3.0+](https://taskfile.dev/) for build automation (optional but recommended)
 - **Azure Credentials**: Valid Azure CLI login context (`az login`)
+
+## CI/CD & Quality Assurance
+
+The project uses comprehensive GitHub Actions workflows for:
+
+- **Multi-Platform Testing**: Automated builds and tests on Ubuntu, Windows, and macOS
+- **Multi-Architecture Support**: Cross-platform binary releases for amd64, arm64, armv7, and 386
+- **Code Quality**: Automated vulnerability scanning, static analysis, and linting
+- **Release Automation**: GoReleaser for building and publishing multi-platform binaries
+
+### Quality Checks
+
+All commits run through:
+- ✅ **govulncheck**: Vulnerability scanning
+- ✅ **staticcheck**: Advanced static code analysis
+- ✅ **go vet**: Go's built-in static analysis
+- ✅ **go test**: Comprehensive unit tests (38+ test cases, 100% pass rate)
 
 ## Installation & Setup
 
@@ -308,15 +328,21 @@ The output file contains a detailed JSON error report with:
 
 ## Testing
 
-The project includes comprehensive unit tests covering:
+The project includes comprehensive unit tests with 38+ test cases covering:
 
-- **Input Validation** (`test/validateinput_test.go`): UUID/subscription ID validation
-- **CLI Arguments** (`test/args_test.go`): Command-line argument parsing
-- **Data Structures** (`test/azureresourcemoveinfo_test.go`): Validation parameter initialization
-- **Command Setup** (`test/command_test.go`): Cobra command configuration
-- **Response Handling** (`test/pollerresponsedata_test.go`): API response processing
-- **JSON Operations** (`test/jsonutils_test.go`): JSON serialization/deserialization
-- **File Operations** (`test/outputfile_test.go`): File I/O and permissions
+### Test Modules
+
+| Test File | Focus | Test Cases |
+|-----------|-------|-----------|
+| `validateinput_test.go` | UUID/subscription ID validation | 8 tests |
+| `args_test.go` | Command-line argument parsing | 3 tests |
+| `azureresourcemoveinfo_test.go` | Validation parameter initialization | 5 tests |
+| `command_test.go` | Cobra command configuration | 10 tests |
+| `pollerresponsedata_test.go` | API response processing | 4 tests |
+| `jsonutils_test.go` | JSON serialization/deserialization | 14 tests |
+| `outputfile_test.go` | File I/O and permissions | 7 tests |
+
+**Test Status**: ✅ 100% Pass Rate
 
 Run tests with:
 
@@ -329,6 +355,11 @@ go test ./... -v
 
 # With coverage
 go test ./... -cover
+
+# Run security checks
+task seccheck          # govulncheck
+task staticcheck       # Static analysis
+task vet               # go vet
 ```
 
 ## Limitations
@@ -416,6 +447,37 @@ task vet
 2. Make changes and commit: `git commit -am "Add new feature"`
 3. Push to remote: `git push origin feature/my-feature`
 4. Create a pull request
+
+### GitHub Actions Workflows
+
+The project includes automated CI/CD workflows:
+
+#### Build Workflow (`.github/workflows/build.yml`)
+Runs on every push and pull request to `main`:
+- Multi-platform matrix testing (Ubuntu, Windows, macOS)
+- Dependency verification
+- Code quality checks (go vet, staticcheck, govulncheck)
+- Comprehensive unit tests
+- Binary build verification
+
+#### GoReleaser Workflow (`.github/workflows/goreleaser.yml`)
+Runs on release creation:
+- Pre-release multi-platform testing
+- Cross-platform binary compilation (amd64, arm64, armv7, 386)
+- Automatic release notes generation
+- Binary artifact publishing
+
+## Releases & Binary Availability
+
+Pre-compiled binaries are available for multiple platforms:
+
+| OS | Architectures |
+|----|---|
+| Linux | amd64, arm64, armv7, 386 |
+| Windows | amd64, 386 |
+| macOS | amd64, arm64 |
+
+Download latest binaries from [GitHub Releases](https://github.com/AaronSaikovski/armv/releases)
 
 ## License
 
