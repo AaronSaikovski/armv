@@ -30,28 +30,44 @@ import (
 	"github.com/AaronSaikovski/armv/pkg/utils"
 )
 
-// writeOutput writes the output to a file with a timestamp in the filename.
-//
-// No parameters.
-// Returns an error if writing fails.
+// writeOutput writes the poller response to a timestamped file under outputPath.
 func (pollResp *PollerResponseData) writeOutput(outputPath string) error {
 	fileName := fmt.Sprintf("output-%s.txt", time.Now().Format("2006-01-02-15-04-05"))
 
-	var output string
-	var err error
-
-	if pollResp.RespStatusCode == API_RESOURCE_MOVE_OK {
-		output = fmt.Sprintf("*** SUCCESS - No Azure Resource Validation issues found. ***\n*** Response Status Code OK: %s ***", pollResp.RespStatus)
-	} else {
-		output, err = utils.PrettyJsonString(string(pollResp.RespBody))
-		if err != nil {
-			return fmt.Errorf("failed to format JSON output: %w", err)
-		}
-	}
-
+	output := pollResp.Format()
 	if err := utils.WriteOutputFile(outputPath, fileName, output); err != nil {
 		return fmt.Errorf("failed to write output file: %w", err)
 	}
-
 	return nil
+}
+
+// Format renders the response for persistence, covering the observable
+// terminal states: success (204), an error body that parses as JSON, an
+// empty error body, and a non-JSON error body. Format never returns an error;
+// malformed bodies are persisted verbatim so an operator has something to
+// diagnose.
+func (pollResp *PollerResponseData) Format() string {
+	if pollResp.RespStatusCode == StatusMoveOK {
+		return fmt.Sprintf(
+			"*** SUCCESS - No Azure Resource Validation issues found. ***\n*** Response Status Code OK: %s ***",
+			pollResp.RespStatus,
+		)
+	}
+
+	if len(pollResp.RespBody) == 0 {
+		return fmt.Sprintf(
+			"*** Azure Resource Validation returned status %d %q with no response body. ***",
+			pollResp.RespStatusCode, pollResp.RespStatus,
+		)
+	}
+
+	pretty, err := utils.PrettyJsonString(string(pollResp.RespBody))
+	if err != nil {
+		// Non-JSON body: persist verbatim rather than failing the operation.
+		return fmt.Sprintf(
+			"*** Azure Resource Validation returned status %d %q. Raw body: ***\n%s",
+			pollResp.RespStatusCode, pollResp.RespStatus, string(pollResp.RespBody),
+		)
+	}
+	return pretty
 }

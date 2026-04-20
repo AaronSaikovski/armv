@@ -31,57 +31,27 @@ import (
 )
 
 func TestCheckValidSubscriptionID(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name           string
 		subscriptionID string
 		want           bool
 	}{
-		{
-			name:           "valid subscription ID",
-			subscriptionID: "12345678-1234-1234-1234-123456789012",
-			want:           true,
-		},
-		{
-			name:           "valid subscription ID with lowercase",
-			subscriptionID: "abcdef12-abcd-abcd-abcd-123456789abc",
-			want:           true,
-		},
-		{
-			name:           "valid subscription ID with uppercase",
-			subscriptionID: "ABCDEF12-ABCD-ABCD-ABCD-123456789ABC",
-			want:           true,
-		},
-		{
-			name:           "invalid subscription ID - too short",
-			subscriptionID: "12345678-1234-1234-1234",
-			want:           false,
-		},
-		{
-			name:           "invalid subscription ID - missing hyphens",
-			subscriptionID: "12345678123412341234123456789012",
-			want:           false,
-		},
-		{
-			name:           "invalid subscription ID - empty string",
-			subscriptionID: "",
-			want:           false,
-		},
-		{
-			name:           "invalid subscription ID - wrong format",
-			subscriptionID: "not-a-valid-uuid",
-			want:           false,
-		},
-		{
-			name:           "invalid subscription ID - extra characters",
-			subscriptionID: "12345678-1234-1234-1234-123456789012-extra",
-			want:           false,
-		},
+		{name: "valid lowercase digits", subscriptionID: "12345678-1234-1234-1234-123456789012", want: true},
+		{name: "valid lowercase hex", subscriptionID: "abcdef12-abcd-abcd-abcd-123456789abc", want: true},
+		{name: "valid uppercase hex", subscriptionID: "ABCDEF12-ABCD-ABCD-ABCD-123456789ABC", want: true},
+		{name: "too short", subscriptionID: "12345678-1234-1234-1234", want: false},
+		{name: "missing hyphens", subscriptionID: "12345678123412341234123456789012", want: false},
+		{name: "empty", subscriptionID: "", want: false},
+		{name: "non-hex characters", subscriptionID: "not-a-valid-uuid", want: false},
+		{name: "trailing garbage", subscriptionID: "12345678-1234-1234-1234-123456789012-extra", want: false},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := utils.CheckValidSubscriptionID(tt.subscriptionID)
-			if got != tt.want {
+			t.Parallel()
+			if got := utils.CheckValidSubscriptionID(tt.subscriptionID); got != tt.want {
 				t.Errorf("CheckValidSubscriptionID(%q) = %v, want %v", tt.subscriptionID, got, tt.want)
 			}
 		})

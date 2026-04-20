@@ -31,116 +31,85 @@ import (
 )
 
 func TestNewAzureResourceMoveInfo(t *testing.T) {
-	sourceSubID := "12345678-1234-1234-1234-123456789012"
-	sourceRG := "source-rg"
-	targetRG := "target-rg"
-	targetRGID := "/subscriptions/12345678-1234-1234-1234-123456789012/resourceGroups/target-rg"
-	resourceID1 := "/subscriptions/12345678-1234-1234-1234-123456789012/resourceGroups/source-rg/providers/Microsoft.Storage/storageAccounts/test"
-	resourceID2 := "/subscriptions/12345678-1234-1234-1234-123456789012/resourceGroups/source-rg/providers/Microsoft.Compute/virtualMachines/vm1"
+	t.Parallel()
+
+	const (
+		sourceSubID  = "12345678-1234-1234-1234-123456789012"
+		sourceRG     = "source-rg"
+		targetRG     = "target-rg"
+		targetRGID   = "/subscriptions/12345678-1234-1234-1234-123456789012/resourceGroups/target-rg"
+		resourceID1  = "/subscriptions/12345678-1234-1234-1234-123456789012/resourceGroups/source-rg/providers/Microsoft.Storage/storageAccounts/test"
+		resourceID2  = "/subscriptions/12345678-1234-1234-1234-123456789012/resourceGroups/source-rg/providers/Microsoft.Compute/virtualMachines/vm1"
+	)
+	rgID := targetRGID
+	rid1 := resourceID1
+	rid2 := resourceID2
 
 	tests := []struct {
 		name                  string
-		sourceSubscriptionId  string
-		sourceResourceGroup   string
-		targetResourceGroup   string
 		targetResourceGroupId *string
 		resourceIds           []*string
 	}{
-		{
-			name:                  "complete resource move info",
-			sourceSubscriptionId:  sourceSubID,
-			sourceResourceGroup:   sourceRG,
-			targetResourceGroup:   targetRG,
-			targetResourceGroupId: &targetRGID,
-			resourceIds:           []*string{&resourceID1, &resourceID2},
-		},
-		{
-			name:                  "without target resource group ID",
-			sourceSubscriptionId:  sourceSubID,
-			sourceResourceGroup:   sourceRG,
-			targetResourceGroup:   targetRG,
-			targetResourceGroupId: nil,
-			resourceIds:           []*string{&resourceID1},
-		},
-		{
-			name:                  "empty resource IDs",
-			sourceSubscriptionId:  sourceSubID,
-			sourceResourceGroup:   sourceRG,
-			targetResourceGroup:   targetRG,
-			targetResourceGroupId: &targetRGID,
-			resourceIds:           []*string{},
-		},
-		{
-			name:                  "nil resource IDs",
-			sourceSubscriptionId:  sourceSubID,
-			sourceResourceGroup:   sourceRG,
-			targetResourceGroup:   targetRG,
-			targetResourceGroupId: &targetRGID,
-			resourceIds:           nil,
-		},
+		{name: "complete resource move info", targetResourceGroupId: &rgID, resourceIds: []*string{&rid1, &rid2}},
+		{name: "without target resource group ID", targetResourceGroupId: nil, resourceIds: []*string{&rid1}},
+		{name: "empty resource IDs", targetResourceGroupId: &rgID, resourceIds: []*string{}},
+		{name: "nil resource IDs", targetResourceGroupId: &rgID, resourceIds: nil},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			got := validation.NewAzureResourceMoveInfo(
-				tt.sourceSubscriptionId,
-				tt.sourceResourceGroup,
-				tt.targetResourceGroup,
+				sourceSubID,
+				sourceRG,
+				targetRG,
 				tt.targetResourceGroupId,
 				tt.resourceIds,
-				nil, // credentials
+				nil, // credentials (azcore.TokenCredential interface; nil is allowed here)
 			)
 
-			if got.SourceSubscriptionId != tt.sourceSubscriptionId {
-				t.Errorf("SourceSubscriptionId = %v, want %v", got.SourceSubscriptionId, tt.sourceSubscriptionId)
+			if got.SourceSubscriptionId != sourceSubID {
+				t.Errorf("SourceSubscriptionId = %q, want %q", got.SourceSubscriptionId, sourceSubID)
 			}
-			if got.SourceResourceGroup != tt.sourceResourceGroup {
-				t.Errorf("SourceResourceGroup = %v, want %v", got.SourceResourceGroup, tt.sourceResourceGroup)
+			if got.SourceResourceGroup != sourceRG {
+				t.Errorf("SourceResourceGroup = %q, want %q", got.SourceResourceGroup, sourceRG)
 			}
-			if got.TargetResourceGroup != tt.targetResourceGroup {
-				t.Errorf("TargetResourceGroup = %v, want %v", got.TargetResourceGroup, tt.targetResourceGroup)
-			}
-
-			// Check pointer equality for target resource group ID
-			if tt.targetResourceGroupId == nil {
-				if got.TargetResourceGroupId != nil {
-					t.Errorf("TargetResourceGroupId should be nil")
-				}
-			} else {
-				if got.TargetResourceGroupId == nil {
-					t.Errorf("TargetResourceGroupId should not be nil")
-				} else if *got.TargetResourceGroupId != *tt.targetResourceGroupId {
-					t.Errorf("TargetResourceGroupId = %v, want %v", *got.TargetResourceGroupId, *tt.targetResourceGroupId)
-				}
+			if got.TargetResourceGroup != targetRG {
+				t.Errorf("TargetResourceGroup = %q, want %q", got.TargetResourceGroup, targetRG)
 			}
 
-			// Check resource IDs length
+			switch {
+			case tt.targetResourceGroupId == nil && got.TargetResourceGroupId != nil:
+				t.Error("TargetResourceGroupId should be nil")
+			case tt.targetResourceGroupId != nil && got.TargetResourceGroupId == nil:
+				t.Error("TargetResourceGroupId should not be nil")
+			case tt.targetResourceGroupId != nil && *got.TargetResourceGroupId != *tt.targetResourceGroupId:
+				t.Errorf("TargetResourceGroupId = %q, want %q", *got.TargetResourceGroupId, *tt.targetResourceGroupId)
+			}
+
 			if len(got.ResourceIds) != len(tt.resourceIds) {
-				t.Errorf("ResourceIds length = %v, want %v", len(got.ResourceIds), len(tt.resourceIds))
+				t.Errorf("len(ResourceIds) = %d, want %d", len(got.ResourceIds), len(tt.resourceIds))
 			}
 		})
 	}
 }
 
 func TestAzureResourceMoveInfoStruct(t *testing.T) {
-	// Test that the struct can be created and fields are accessible
-	sourceSubID := "test-sub-id"
-	sourceRG := "test-source-rg"
-	targetRG := "test-target-rg"
+	t.Parallel()
 
 	info := validation.AzureResourceMoveInfo{
-		SourceSubscriptionId: sourceSubID,
-		SourceResourceGroup:  sourceRG,
-		TargetResourceGroup:  targetRG,
+		SourceSubscriptionId: "test-sub-id",
+		SourceResourceGroup:  "test-source-rg",
+		TargetResourceGroup:  "test-target-rg",
 	}
 
-	if info.SourceSubscriptionId != sourceSubID {
-		t.Errorf("SourceSubscriptionId = %v, want %v", info.SourceSubscriptionId, sourceSubID)
+	if info.SourceSubscriptionId != "test-sub-id" {
+		t.Errorf("SourceSubscriptionId = %q", info.SourceSubscriptionId)
 	}
-	if info.SourceResourceGroup != sourceRG {
-		t.Errorf("SourceResourceGroup = %v, want %v", info.SourceResourceGroup, sourceRG)
+	if info.SourceResourceGroup != "test-source-rg" {
+		t.Errorf("SourceResourceGroup = %q", info.SourceResourceGroup)
 	}
-	if info.TargetResourceGroup != targetRG {
-		t.Errorf("TargetResourceGroup = %v, want %v", info.TargetResourceGroup, targetRG)
+	if info.TargetResourceGroup != "test-target-rg" {
+		t.Errorf("TargetResourceGroup = %q", info.TargetResourceGroup)
 	}
 }

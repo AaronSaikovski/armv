@@ -28,81 +28,53 @@ package auth
 
 import (
 	"context"
+	"fmt"
 
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/subscription/armsubscription"
 )
 
-// GetLogin checks if the user is logged into the Azure subscription with the given subscription ID.
-//
-// Parameters:
-// - ctx: The context.Context object for controlling the request lifetime.
-// - subscriptionID: The ID of the Azure subscription to check.
-//
-// Returns:
-// - bool: True if the user is logged into the subscription, false otherwise.
-func CheckLogin(ctx context.Context, cred *azidentity.DefaultAzureCredential, subscriptionID string) (bool, error) {
+// CheckLogin verifies the caller has access to the given Azure subscription by
+// issuing a subscription Get request against it.
+func CheckLogin(ctx context.Context, cred azcore.TokenCredential, subscriptionID string) (bool, error) {
 	client, err := SubscriptionClientCred(cred)
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("auth: creating subscription client: %w", err)
 	}
 
-	if err := GetSubscriptionClient(ctx, client, subscriptionID); err != nil {
-		return false, err
+	if _, err := client.Get(ctx, subscriptionID, nil); err != nil {
+		return false, fmt.Errorf("auth: subscription %q get: %w", subscriptionID, err)
 	}
 
 	return true, nil
 }
 
-// GetAzureDefaultCredential returns a new instance of the azidentity.DefaultAzureCredential.
-//
-// It takes no parameters.
-// It returns a pointer to azidentity.DefaultAzureCredential and an error.
+// GetAzureDefaultCredential returns a DefaultAzureCredential suitable for use
+// against Azure Resource Manager.
 func GetAzureDefaultCredential() (*azidentity.DefaultAzureCredential, error) {
-	return azidentity.NewDefaultAzureCredential(nil)
-
+	cred, err := azidentity.NewDefaultAzureCredential(nil)
+	if err != nil {
+		return nil, fmt.Errorf("auth: default credential: %w", err)
+	}
+	return cred, nil
 }
 
-// NewResourceClient creates a new instance of the armresources.Client for the given Azure credential and subscription ID.
-//
-// Parameters:
-// - subscriptionID: The ID of the subscription to create the client for.
-// - cred: The Azure credential used to authenticate the client.
-//
-// Returns:
-// - *armresources.Client: The created client instance.
-// - error: An error if the client creation fails.
-func NewResourceClient(subscriptionID string, cred *azidentity.DefaultAzureCredential) (*armresources.Client, error) {
+// NewResourceClient creates an armresources.Client for the given subscription.
+func NewResourceClient(subscriptionID string, cred azcore.TokenCredential) (*armresources.Client, error) {
 	clientFactory, err := armresources.NewClientFactory(subscriptionID, cred, nil)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("auth: new resources client factory: %w", err)
 	}
 	return clientFactory.NewClient(), nil
 }
 
-// SubscriptionClientCred creates a new instance of the armsubscription.SubscriptionsClient for the given azidentity.DefaultAzureCredential.
-//
-// Parameters:
-// - cred: The azidentity.DefaultAzureCredential used to authenticate the client.
-//
-// Returns:
-// - *armsubscription.SubscriptionsClient: The created client instance.
-// - error: An error if the client creation fails.
-func SubscriptionClientCred(cred *azidentity.DefaultAzureCredential) (*armsubscription.SubscriptionsClient, error) {
-	return armsubscription.NewSubscriptionsClient(cred, nil)
-}
-
-// GetSubscriptionClient retrieves the subscription client for the given subscription ID.
-//
-// Parameters:
-// - ctx: The context.Context object for controlling the request lifetime.
-// - client: The armsubscription.SubscriptionsClient used to make the request.
-// - subscriptionID: The ID of the subscription to retrieve the client for.
-//
-// Returns:
-// - error: An error if the request fails, nil otherwise.
-func GetSubscriptionClient(ctx context.Context, client *armsubscription.SubscriptionsClient, subscriptionID string) error {
-	_, err := client.Get(ctx, subscriptionID, nil)
-	return err
+// SubscriptionClientCred creates an armsubscription.SubscriptionsClient.
+func SubscriptionClientCred(cred azcore.TokenCredential) (*armsubscription.SubscriptionsClient, error) {
+	client, err := armsubscription.NewSubscriptionsClient(cred, nil)
+	if err != nil {
+		return nil, fmt.Errorf("auth: new subscriptions client: %w", err)
+	}
+	return client, nil
 }

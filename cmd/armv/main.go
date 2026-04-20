@@ -25,30 +25,33 @@ package main
 
 import (
 	"context"
-	_ "embed"
+	"fmt"
 	"os"
 
 	"github.com/AaronSaikovski/armv/cmd/armv/app"
 )
 
-//ref: https://levelup.gitconnected.com/a-better-way-than-ldflags-to-add-a-build-version-to-your-go-binaries-2258ce419d2d
-
-//go:generate bash get_version.sh
-//go:embed version.txt
-var version string
-
-// main is the entry point of the program.
+// Build metadata injected at link time via:
 //
-// It creates the root cobra command and executes it with a cancellable context.
-// If an error occurs during command execution, the program exits with status code 1.
-func main() {
+//	-ldflags "-X main.version=... -X main.commit=... -X main.date=..."
+//
+// Release (Taskfile / goreleaser) pipelines populate all three.
+var (
+	version = "dev"
+	commit  = "none"
+	date    = "unknown"
+)
 
-	// Create a context with cancellation capability
+// fullVersion returns the full version string shown by --version.
+func fullVersion() string {
+	return fmt.Sprintf("%s (commit %s, built %s)", version, commit, date)
+}
+
+func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	// Create and execute the root command
-	rootCmd := app.NewRootCommand(version)
+	rootCmd := app.NewRootCommand(fullVersion())
 	rootCmd.SetContext(ctx)
 
 	if err := rootCmd.Execute(); err != nil {

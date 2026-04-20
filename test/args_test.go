@@ -30,77 +30,91 @@ import (
 	"github.com/AaronSaikovski/armv/pkg/utils"
 )
 
-func TestSetVersion(t *testing.T) {
+func TestFormatVersion(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
-		name     string
-		version  string
-		expected string
+		name    string
+		version string
+		want    string
 	}{
-		{
-			name:     "set version successfully",
-			version:  "1.0.0",
-			expected: "ARMV version: 1.0.0",
-		},
-		{
-			name:     "set empty version",
-			version:  "",
-			expected: "ARMV version: ",
-		},
-		{
-			name:     "set version with build info",
-			version:  "1.2.3-beta+20240101",
-			expected: "ARMV version: 1.2.3-beta+20240101",
-		},
+		{name: "semantic version", version: "1.0.0", want: "ARMV version: 1.0.0"},
+		{name: "v-prefix", version: "v1.3.0", want: "ARMV version: v1.3.0"},
+		{name: "empty version", version: "", want: "ARMV version: "},
+		{name: "dev sentinel", version: "dev", want: "ARMV version: dev"},
+		{name: "prerelease with metadata", version: "1.2.3-beta+20240101", want: "ARMV version: 1.2.3-beta+20240101"},
+		{name: "composite version string", version: "v1.3.0 (commit abc1234, built 2026-04-20)", want: "ARMV version: v1.3.0 (commit abc1234, built 2026-04-20)"},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			utils.SetVersion(tt.version)
-			got := utils.GetVersion()
-			if got != tt.expected {
-				t.Errorf("GetVersion() = %v, want %v", got, tt.expected)
+			t.Parallel()
+			if got := utils.FormatVersion(tt.version); got != tt.want {
+				t.Errorf("FormatVersion(%q) = %q, want %q", tt.version, got, tt.want)
 			}
 		})
 	}
 }
 
 func TestAppDescription(t *testing.T) {
+	t.Parallel()
+
 	if utils.AppDescription == "" {
-		t.Error("AppDescription should not be empty")
+		t.Fatal("AppDescription should not be empty")
 	}
-	// Check if description contains key information
-	expectedSubstring := "Azure Resource Movability Validator"
+
+	const expectedSubstring = "Azure Resource Movability Validator"
 	if len(utils.AppDescription) < len(expectedSubstring) {
 		t.Errorf("AppDescription is too short, got length %d", len(utils.AppDescription))
 	}
 }
 
-func TestArgsStruct(t *testing.T) {
-	args := utils.Args{
-		SourceSubscriptionId: "12345678-1234-1234-1234-123456789012",
-		SourceResourceGroup:  "source-rg",
-		TargetSubscriptionId: "87654321-4321-4321-4321-210987654321",
-		TargetResourceGroup:  "target-rg",
+func TestArgsZeroValue(t *testing.T) {
+	t.Parallel()
+
+	var a utils.Args
+
+	if a.SourceSubscriptionId != "" || a.SourceResourceGroup != "" ||
+		a.TargetSubscriptionId != "" || a.TargetResourceGroup != "" ||
+		a.OutputPath != "" {
+		t.Errorf("Args zero value has non-empty string fields: %+v", a)
+	}
+	if a.Debug {
+		t.Errorf("Args.Debug zero value = true, want false")
+	}
+}
+
+// TestArgsFieldAssignment pins the public field set. If a field is renamed or
+// removed in a future refactor, this test fails to compile, flagging the break.
+func TestArgsFieldAssignment(t *testing.T) {
+	t.Parallel()
+
+	a := utils.Args{
+		SourceSubscriptionId: "a",
+		SourceResourceGroup:  "b",
+		TargetSubscriptionId: "c",
+		TargetResourceGroup:  "d",
 		Debug:                true,
-		OutputPath:           "./output",
+		OutputPath:           "e",
 	}
 
-	if args.SourceSubscriptionId != "12345678-1234-1234-1234-123456789012" {
-		t.Error("SourceSubscriptionId not set correctly")
+	cases := []struct {
+		name string
+		got  string
+		want string
+	}{
+		{"SourceSubscriptionId", a.SourceSubscriptionId, "a"},
+		{"SourceResourceGroup", a.SourceResourceGroup, "b"},
+		{"TargetSubscriptionId", a.TargetSubscriptionId, "c"},
+		{"TargetResourceGroup", a.TargetResourceGroup, "d"},
+		{"OutputPath", a.OutputPath, "e"},
 	}
-	if args.SourceResourceGroup != "source-rg" {
-		t.Error("SourceResourceGroup not set correctly")
+	for _, c := range cases {
+		if c.got != c.want {
+			t.Errorf("%s = %q, want %q", c.name, c.got, c.want)
+		}
 	}
-	if args.TargetSubscriptionId != "87654321-4321-4321-4321-210987654321" {
-		t.Error("TargetSubscriptionId not set correctly")
-	}
-	if args.TargetResourceGroup != "target-rg" {
-		t.Error("TargetResourceGroup not set correctly")
-	}
-	if !args.Debug {
-		t.Error("Debug not set correctly")
-	}
-	if args.OutputPath != "./output" {
-		t.Error("OutputPath not set correctly")
+	if !a.Debug {
+		t.Errorf("Debug = false, want true")
 	}
 }

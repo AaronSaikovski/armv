@@ -31,60 +31,47 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var (
-	// Command-line flags
-	sourceSubscriptionId string
-	sourceResourceGroup  string
-	targetSubscriptionId string
-	targetResourceGroup  string
-	debug                bool
-	outputPath           string
-)
-
-// NewRootCommand creates and returns the root cobra command
+// NewRootCommand builds the root cobra command for the armv CLI.
 func NewRootCommand(version string) *cobra.Command {
+	var (
+		sourceSubscriptionId string
+		sourceResourceGroup  string
+		targetSubscriptionId string
+		targetResourceGroup  string
+		debug                bool
+		outputPath           string
+	)
+
 	rootCmd := &cobra.Command{
 		Use:   "armv",
 		Short: "Azure Resource Movability Validator",
 		Long:  utils.AppDescription,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			// Set version
-			utils.SetVersion(version)
-
-			// Create context
+		RunE: func(cmd *cobra.Command, _ []string) error {
 			ctx := cmd.Context()
 			if ctx == nil {
 				ctx = context.Background()
 			}
 
-			// Populate Args struct from flags
-			appArgs := utils.Args{
-				SourceSubscriptionId: sourceSubscriptionId,
-				SourceResourceGroup:  sourceResourceGroup,
-				TargetSubscriptionId: targetSubscriptionId,
-				TargetResourceGroup:  targetResourceGroup,
-				Debug:                debug,
-				OutputPath:           outputPath,
-			}
-
-			// Initialize configuration
 			cfg := &Config{
-				Args:       appArgs,
-				OutputPath: DefaultOutputPath,
+				Version: version,
+				Args: utils.Args{
+					SourceSubscriptionId: sourceSubscriptionId,
+					SourceResourceGroup:  sourceResourceGroup,
+					TargetSubscriptionId: targetSubscriptionId,
+					TargetResourceGroup:  targetResourceGroup,
+					Debug:                debug,
+					OutputPath:           outputPath,
+				},
+				OutputPath: outputPath,
 			}
 
-			// Set output path if provided
-			if cfg.Args.OutputPath != "" {
-				cfg.OutputPath = cfg.Args.OutputPath
-			}
-
-			// Run the application
 			return run(ctx, cfg)
 		},
-		Version: version,
+		Version:       version,
+		SilenceUsage:  true,
+		SilenceErrors: true,
 	}
 
-	// Define flags
 	rootCmd.Flags().StringVar(&sourceSubscriptionId, "source-subscription-id", "", "Source Subscription Id (required)")
 	rootCmd.Flags().StringVar(&sourceResourceGroup, "source-resource-group", "", "Source Resource Group (required)")
 	rootCmd.Flags().StringVar(&targetSubscriptionId, "target-subscription-id", "", "Target Subscription Id (required)")
@@ -92,11 +79,14 @@ func NewRootCommand(version string) *cobra.Command {
 	rootCmd.Flags().BoolVar(&debug, "debug", false, "Enable debug mode with timing information")
 	rootCmd.Flags().StringVar(&outputPath, "output-path", DefaultOutputPath, "Output path to write results")
 
-	// Mark required flags
-	rootCmd.MarkFlagRequired("source-subscription-id")
-	rootCmd.MarkFlagRequired("source-resource-group")
-	rootCmd.MarkFlagRequired("target-subscription-id")
-	rootCmd.MarkFlagRequired("target-resource-group")
+	for _, flagName := range []string{
+		"source-subscription-id",
+		"source-resource-group",
+		"target-subscription-id",
+		"target-resource-group",
+	} {
+		cobra.CheckErr(rootCmd.MarkFlagRequired(flagName))
+	}
 
 	return rootCmd
 }
