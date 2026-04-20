@@ -95,7 +95,7 @@ jobs:
         run: go mod verify
 
       - name: Run tests with coverage
-        run: go test -v -race -shuffle=on -covermode=atomic -coverpkg=./... -coverprofile=coverage.out ./test/...
+        run: go test -v -race -shuffle=on -covermode=atomic -coverpkg=./... -coverprofile=coverage.out ./...
 
       - name: Upload coverage artifact
         if: matrix.os == 'ubuntu-latest'

@@ -18,7 +18,6 @@ env:
   TARGET: armv
   APPPATH: ./cmd/armv
   ENV: dev
-  CGO_ENABLED: "0"
 
 dotenv: ["./envs/{{.ENV}}.env"]
 
@@ -48,12 +47,16 @@ tasks:
 
   build:
     desc: "Debug build (no stripping, no version injection)."
+    env:
+      CGO_ENABLED: "0"
     cmds:
       - go build -o {{.BIN}} {{.APPPATH}}
 
   release:
     desc: "Optimized release build with version injection and reproducible flags."
     deps: [vet, lint, seccheck]
+    env:
+      CGO_ENABLED: "0"
     cmds:
       - go build -trimpath -ldflags='{{.LDFLAGS}}' -o {{.BIN}} {{.APPPATH}}
 
@@ -104,14 +107,21 @@ tasks:
       - govulncheck ./...
 
   test:
-    desc: "Run unit tests with coverage."
+    desc: "Run unit tests with coverage (no race detector; use `task test-race` for race)."
     cmds:
-      - go test -race -shuffle=on -covermode=atomic -coverpkg=./... -coverprofile=coverage.out ./test/...
+      - go test -shuffle=on -covermode=atomic -coverpkg=./... -coverprofile=coverage.out ./...
+
+  test-race:
+    desc: "Run unit tests with the race detector. Requires a C toolchain (gcc/clang/mingw)."
+    env:
+      CGO_ENABLED: "1"
+    cmds:
+      - go test -race -shuffle=on ./...
 
   test-verbose:
     desc: "Run unit tests with verbose output."
     cmds:
-      - go test -v -race -shuffle=on ./test/...
+      - go test -v -shuffle=on ./...
 
   cover:
     desc: "Show per-function test coverage."
