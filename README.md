@@ -158,13 +158,84 @@ armv \
   --debug
 ```
 
-The CLI prints progress to stdout and writes the report file on completion:
+The CLI prints progress to stdout, a coloured summary banner (green on success, red on failure), then writes the full Markdown report to the output directory:
 
 ```
 Logged into Subscription Id: 12345678-1234-1234-1234-123456789012
  100% |████████████████████████████████| [2m45s]
+
+*****************************************************************
+*** SUCCESS - No Azure Resource Validation issues found. ***
+*** Response Status OK - 204 No Content ***
+*****************************************************************
+
 ***  Output file written to: - ./output ***
 ```
+
+### Output file
+
+On completion ARMV writes a timestamped **Markdown** report:
+
+```
+./output/output-2026-04-20-10-45-12.md
+```
+
+**Success report (HTTP 204)**
+
+```markdown
+# Azure Resource Move Validation Report
+
+- **Generated:** 2026-04-20 10:45:12 UTC
+- **Status:** SUCCESS
+- **Source:** `<sub-id>` / `source-rg`
+- **Target:** `<sub-id>` / `target-rg`
+- **Resources validated:** 12
+- **HTTP status:** 204 No Content
+
+No validation issues found. All resources are eligible to move.
+```
+
+**Failure report (HTTP 409)**
+
+```markdown
+# Azure Resource Move Validation Report
+
+- **Generated:** 2026-04-20 10:45:12 UTC
+- **Status:** FAILED (1 error)
+- **Source:** `<sub-id>` / `source-rg`
+- **Target:** `<sub-id>` / `target-rg`
+- **Resources validated:** 12
+- **HTTP status:** 409 Conflict
+- **Top-level code:** `ResourceMoveValidationFailed`
+
+> The resource batch move request has '1' validation errors...
+
+## Summary
+
+| # | Resource Type | Name | Code |
+|---|---|---|---|
+| 1 | Microsoft.ContainerInstance/containerGroups | aciresource | ResourceMoveNotSupported |
+
+## Details
+
+### 1. aciresource
+- **Type:** `Microsoft.ContainerInstance/containerGroups`
+- **Resource ID:** `/subscriptions/.../aciresource`
+- **Code:** `ResourceMoveNotSupported`
+- **Message:** Resource move is not supported for resource types 'Microsoft.ContainerInstance/containerGroups'.
+
+## Raw Azure API Response
+
+\`\`\`json
+{ ...full pretty-printed Azure API response... }
+\`\`\`
+```
+
+The report contains:
+- **Header** — timestamp, source/target subscriptions and resource groups, resource count, HTTP status
+- **Summary table** — every failing resource with type, name, and error code
+- **Details** — per-resource full resource ID, code, and message
+- **Raw Azure response** — pretty-printed JSON for forensics
 
 ---
 

@@ -30,44 +30,29 @@ import (
 	"github.com/AaronSaikovski/armv/pkg/utils"
 )
 
-// writeOutput writes the poller response to a timestamped file under outputPath.
-func (pollResp *PollerResponseData) writeOutput(outputPath string) error {
-	fileName := fmt.Sprintf("output-%s.txt", time.Now().Format("2006-01-02-15-04-05"))
+// writeOutput builds a ValidationReport, renders it as Markdown, and writes
+// it to a timestamped .md file under outputPath. The returned report is
+// returned so the caller can drive the console summary from the same data.
+func (pollResp *PollerResponseData) writeOutput(outputPath string, ctx ReportContext) (ValidationReport, error) {
+	fileName := fmt.Sprintf("output-%s.md", time.Now().Format("2006-01-02-15-04-05"))
 
-	output := pollResp.Format()
-	if err := utils.WriteOutputFile(outputPath, fileName, output); err != nil {
-		return fmt.Errorf("failed to write output file: %w", err)
-	}
-	return nil
-}
-
-// Format renders the response for persistence, covering the observable
-// terminal states: success (204), an error body that parses as JSON, an
-// empty error body, and a non-JSON error body. Format never returns an error;
-// malformed bodies are persisted verbatim so an operator has something to
-// diagnose.
-func (pollResp *PollerResponseData) Format() string {
-	if pollResp.RespStatusCode == StatusMoveOK {
-		return fmt.Sprintf(
-			"*** SUCCESS - No Azure Resource Validation issues found. ***\n*** Response Status Code OK: %s ***",
-			pollResp.RespStatus,
-		)
+	// Pretty-print the raw Azure body (if any). Non-JSON bodies are kept
+	// verbatim rather than failing the operation — the markdown rendering
+	// handles unparseable JSON by showing a FAILED header with no table.
+	var prettyJSON string
+	if pollResp.RespStatusCode != StatusMoveOK && len(pollResp.RespBody) > 0 {
+		if pj, err := utils.PrettyJsonString(string(pollResp.RespBody)); err == nil {
+			prettyJSON = pj
+		} else {
+			prettyJSON = string(pollResp.RespBody)
+		}
 	}
 
-	if len(pollResp.RespBody) == 0 {
-		return fmt.Sprintf(
-			"*** Azure Resource Validation returned status %d %q with no response body. ***",
-			pollResp.RespStatusCode, pollResp.RespStatus,
-		)
-	}
+	report := BuildValidationReport(pollResp.RespStatusCode, pollResp.RespStatus, pollResp.RespBody, prettyJSON, ctx)
+	markdown := RenderMarkdown(report)
 
-	pretty, err := utils.PrettyJsonString(string(pollResp.RespBody))
-	if err != nil {
-		// Non-JSON body: persist verbatim rather than failing the operation.
-		return fmt.Sprintf(
-			"*** Azure Resource Validation returned status %d %q. Raw body: ***\n%s",
-			pollResp.RespStatusCode, pollResp.RespStatus, string(pollResp.RespBody),
-		)
+	if err := utils.WriteOutputFile(outputPath, fileName, markdown); err != nil {
+		return ValidationReport{}, fmt.Errorf("failed to write output file: %w", err)
 	}
-	return pretty
+	return report, nil
 }
