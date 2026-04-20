@@ -1,4 +1,3 @@
-
 package poller
 
 type PollerResponseData struct {

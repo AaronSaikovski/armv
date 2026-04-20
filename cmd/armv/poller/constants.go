@@ -1,5 +1,3 @@
-
-
 package poller
 
 import "time"

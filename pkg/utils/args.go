@@ -1,5 +1,3 @@
-
-
 // Package utils provides utility functions and structures for command-line argument parsing,
 // version management, and common helper functions for the ARMV application.
 package utils

@@ -1,9 +1,3 @@
-/*
-MIT License
-
-# Copyright (c) 2024 Aaron Saikovski
-*/
-
 package mcpserver
 
 import (
