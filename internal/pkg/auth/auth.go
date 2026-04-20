@@ -36,7 +36,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/subscription/armsubscription"
 )
 
-// CheckLogin verifies the caller has access to the given Azure subscription by
+// CheckLogin verifies the credential can reach the given subscription by
 // issuing a subscription Get request against it.
 func CheckLogin(ctx context.Context, cred azcore.TokenCredential, subscriptionID string) (bool, error) {
 	client, err := SubscriptionClientCred(cred)
@@ -51,12 +51,24 @@ func CheckLogin(ctx context.Context, cred azcore.TokenCredential, subscriptionID
 	return true, nil
 }
 
-// GetAzureDefaultCredential returns a DefaultAzureCredential suitable for use
-// against Azure Resource Manager.
+// GetAzureDefaultCredential returns a DefaultAzureCredential, which walks the
+// standard Azure credential chain (env vars, managed identity, workload
+// identity, az CLI, etc.).
 func GetAzureDefaultCredential() (*azidentity.DefaultAzureCredential, error) {
 	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
 		return nil, fmt.Errorf("auth: default credential: %w", err)
+	}
+	return cred, nil
+}
+
+// NewClientSecretCredential builds a service principal credential from
+// explicit tenant/client/secret values. Used by the MCP server to accept
+// per-call credentials rather than relying on ambient `az login`.
+func NewClientSecretCredential(tenantID, clientID, clientSecret string) (*azidentity.ClientSecretCredential, error) {
+	cred, err := azidentity.NewClientSecretCredential(tenantID, clientID, clientSecret, nil)
+	if err != nil {
+		return nil, fmt.Errorf("auth: client secret credential: %w", err)
 	}
 	return cred, nil
 }
@@ -77,4 +89,25 @@ func SubscriptionClientCred(cred azcore.TokenCredential) (*armsubscription.Subsc
 		return nil, fmt.Errorf("auth: new subscriptions client: %w", err)
 	}
 	return client, nil
+}
+
+// ListSubscriptions returns every subscription the given credential can enumerate.
+// Used by the MCP discovery tool so an LLM can offer the user a picklist before
+// asking for a specific ID. Pagination is handled internally.
+func ListSubscriptions(ctx context.Context, cred azcore.TokenCredential) ([]*armsubscription.Subscription, error) {
+	client, err := SubscriptionClientCred(cred)
+	if err != nil {
+		return nil, err
+	}
+
+	pager := client.NewListPager(nil)
+	subs := make([]*armsubscription.Subscription, 0, 8)
+	for pager.More() {
+		page, err := pager.NextPage(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("auth: list subscriptions page: %w", err)
+		}
+		subs = append(subs, page.Value...)
+	}
+	return subs, nil
 }

@@ -31,7 +31,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// NewRootCommand builds the root cobra command for the armv CLI.
+// NewRootCommand builds the root cobra command for the armv CLI, including
+// the `mcp` subcommand that runs ARMV as a Model Context Protocol server.
 func NewRootCommand(version string) *cobra.Command {
 	var (
 		sourceSubscriptionId string
@@ -79,6 +80,8 @@ func NewRootCommand(version string) *cobra.Command {
 	rootCmd.Flags().BoolVar(&debug, "debug", false, "Enable debug mode with timing information")
 	rootCmd.Flags().StringVar(&outputPath, "output-path", DefaultOutputPath, "Output path to write results")
 
+	// Required flags apply only to the root invocation; `armv mcp serve`
+	// doesn't need them because the MCP client supplies parameters per call.
 	for _, flagName := range []string{
 		"source-subscription-id",
 		"source-resource-group",
@@ -87,6 +90,8 @@ func NewRootCommand(version string) *cobra.Command {
 	} {
 		cobra.CheckErr(rootCmd.MarkFlagRequired(flagName))
 	}
+
+	rootCmd.AddCommand(newMCPCommand(version))
 
 	return rootCmd
 }

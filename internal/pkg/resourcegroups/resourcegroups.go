@@ -60,3 +60,20 @@ func CheckResourceGroupExists(ctx context.Context, resourceGroupClient *armresou
 	}
 	return boolResp.Success, nil
 }
+
+// ListResourceGroup enumerates every resource group the credential can see in
+// the subscription associated with the given client. Used by the MCP discovery
+// tool; pagination is handled internally.
+func ListResourceGroup(ctx context.Context, resourceGroupClient *armresources.ResourceGroupsClient) ([]*armresources.ResourceGroup, error) {
+	pager := resourceGroupClient.NewListPager(nil)
+
+	groups := make([]*armresources.ResourceGroup, 0, 16)
+	for pager.More() {
+		page, err := pager.NextPage(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("resourcegroups: list page: %w", err)
+		}
+		groups = append(groups, page.ResourceGroupListResult.Value...)
+	}
+	return groups, nil
+}

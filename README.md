@@ -9,7 +9,7 @@
 [![License](https://img.shields.io/github/license/AaronSaikovski/armv)](LICENSE)
 [![Go Version](https://img.shields.io/github/go-mod/go-version/AaronSaikovski/armv)](go.mod)
 
-A lightweight CLI for validating Azure resource moveability — **read-only**, no state changes.
+A lightweight Go utility for validating Azure resource moveability — **read-only**, no state changes. Ships as both a **CLI** and an **MCP server** so it can be driven by a human at the terminal or by LLM agents like Claude Desktop and Claude Code.
 
 </div>
 
@@ -19,15 +19,22 @@ A lightweight CLI for validating Azure resource moveability — **read-only**, n
 
 ## Overview
 
-ARMV wraps Azure's [Validate Move Resources API](https://learn.microsoft.com/en-us/rest/api/resources/resources/validate-move-resources?view=rest-resources-2021-04-01) and produces a timestamped validation report. It's the Go successor to the deprecated [pyazvalidatemoveresources](https://github.com/AaronSaikovski/pyazvalidatemoveresources) Python utility — a single self-contained binary with no runtime dependencies.
+ARMV wraps Azure's [Validate Move Resources API](https://learn.microsoft.com/en-us/rest/api/resources/resources/validate-move-resources?view=rest-resources-2021-04-01) and produces a timestamped Markdown validation report. It's the Go successor to the deprecated [pyazvalidatemoveresources](https://github.com/AaronSaikovski/pyazvalidatemoveresources) Python utility — a single self-contained binary with no runtime dependencies.
+
+Two modes share the same core engine:
+
+- **CLI mode** (`armv …`) — interactive terminal use with a progress bar, coloured summary banner, and a timestamped Markdown output file.
+- **MCP server mode** (`armv mcp serve`) — exposes `validate_move`, `list_subscriptions`, `list_resource_groups`, and `list_resources` as tools over stdio so MCP clients (Claude Desktop, Claude Code, VS Code MCP extensions, MCP Inspector) can invoke them. Supports per-call service principal credentials, pre-fetched bearer tokens, or ambient `az login`. See [MCP Server Mode](#mcp-server-mode) below.
 
 ### Features
 
 - **Non-destructive** — pure validation; no resources are ever mutated
+- **Dual mode** — interactive CLI or LLM-driven MCP server (`armv mcp serve`) backed by the same validation engine
+- **Flexible auth** — `az login`, service principal secret, client-supplied bearer token, or the full `DefaultAzureCredential` chain (env vars, managed identity, workload identity)
 - **Cross-subscription** — source and target may live in different subscriptions (same tenant)
-- **Bounded polling** — long-running operation polled with a 30-minute ceiling and respects `Ctrl-C`
-- **Detailed diagnostics** — failed validations are written as pretty-printed JSON with Azure tracking/correlation IDs
-- **Progress bar** — visual feedback during polling
+- **Bounded polling** — long-running operation polled with a 30-minute ceiling and respects `Ctrl-C` / MCP cancellation
+- **Markdown reports** — success/failure pages with per-resource failure tables and full JSON for forensics
+- **Progress bar** (CLI) / **MCP progress notifications** (server) — clients render live status for long-running calls
 - **Hardened file I/O** — output files created with `0640` / directories with `0750` permissions
 - **Cross-platform builds** — signed, reproducible binaries for Linux, macOS, Windows (amd64/arm64/386/armv7)
 - **CI-enforced quality** — `go vet`, `staticcheck`, `golangci-lint`, `govulncheck`, race-enabled tests on every push
@@ -35,12 +42,12 @@ ARMV wraps Azure's [Validate Move Resources API](https://learn.microsoft.com/en-
 ### Flow
 
 1. Validate source/target subscription IDs (UUID format)
-2. Acquire `DefaultAzureCredential` (from `az login` context)
+2. Resolve a credential: `DefaultAzureCredential` (`az login` / env vars / managed identity), a service principal (tenant/client/secret), or a pre-fetched bearer token in MCP mode
 3. Confirm access to the source subscription
 4. Verify both resource groups exist; enumerate source resources
 5. Start the Azure validate-move long-running operation
-6. Poll with progress bar until the operation completes or the 30-minute ceiling is hit
-7. Write a timestamped output file: `output-YYYY-MM-DD-HH-MM-SS.txt`
+6. Poll with a progress bar (CLI) or progress notifications (MCP) until the operation completes or the 30-minute ceiling is hit
+7. **CLI:** write a timestamped Markdown file `output-YYYY-MM-DD-HH-MM-SS.md` and print a coloured summary banner. **MCP:** return a structured JSON result to the client.
 
 ### Response codes
 
@@ -106,14 +113,16 @@ task release     # builds bin/armv (stripped, trimpath, version-injected)
 
 ## Authentication
 
-ARMV uses Azure's `DefaultAzureCredential` chain, which resolves credentials in this order: environment variables → managed identity → Azure CLI. The simplest path is `az login`:
+The **CLI** uses Azure's `DefaultAzureCredential` chain, which resolves credentials in this order: environment variables → workload identity → managed identity → Azure CLI. The simplest path is `az login`:
 
 ```bash
 az login
 az account set --subscription "<your-subscription-id>"
 ```
 
-> ARMV does **not** accept service-principal credentials via flags or environment variables. Use `az login` (interactive or device-code) or an Azure-hosted managed identity.
+Service principal credentials work transparently when the standard Azure SDK environment variables are present (`AZURE_TENANT_ID`, `AZURE_CLIENT_ID`, `AZURE_CLIENT_SECRET` or `AZURE_CLIENT_CERTIFICATE_PATH`); `DefaultAzureCredential` picks them up automatically.
+
+**MCP server mode** additionally accepts per-call service principal credentials and pre-fetched bearer tokens directly in the tool arguments. See [MCP Server Mode › Credential selection](#credential-selection-priority-order).
 
 ---
 
@@ -239,25 +248,281 @@ The report contains:
 
 ---
 
+## MCP Server Mode
+
+In addition to running as a CLI, ARMV can expose its validation engine as a [Model Context Protocol](https://modelcontextprotocol.io) server. This lets LLM-based agents (Claude Desktop, Claude Code, VS Code MCP extensions, custom MCP clients) invoke resource-move validation as a tool.
+
+Built on the [official MCP Go SDK](https://github.com/modelcontextprotocol/go-sdk), the server speaks MCP over **stdio** (standard input/output). The client is responsible for launching the `armv` binary as a subprocess; communication happens via newline-delimited JSON-RPC on the child's stdin/stdout.
+
+### Starting the Server
+
+```bash
+./armv mcp serve
+```
+
+The server runs in the foreground and blocks until the client disconnects or the process is cancelled. It emits **no output on stdout** other than MCP protocol messages — any logs, errors, or debug information go to stderr.
+
+### Exposed Tools
+
+| Tool | Description |
+|------|-------------|
+| `validate_move` | Validate whether all resources in a source resource group can be moved to a target resource group (optionally in a different subscription) without performing the move. |
+| `list_subscriptions` | List every Azure subscription the supplied credential can see. Used as the first step in a discovery flow so the LLM can offer the user a picklist instead of asking them to recall UUIDs. |
+| `list_resource_groups` | List every resource group in a given subscription. |
+| `list_resources` | List every Azure resource in a given resource group (name, type, location, ARM ID). Useful for inspecting what's in an RG before validating, or for pinpointing a likely blocker. |
+
+All four tools share the same credential model — `bearer_token` > SP triple > `DefaultAzureCredential`. See [Credential selection](#credential-selection-priority-order) below.
+
+#### Typical Discovery Flow
+
+```
+User:     "I want to validate moving something from one of my subs."
+LLM:      → list_subscriptions
+          "You have 3: prod-east, dev-west, sandbox. Which one?"
+User:     "dev-west"
+LLM:      → list_resource_groups(subscription_id: dev-west)
+          "7 RGs: rg-app, rg-data, rg-network… which?"
+User:     "rg-app, move to prod-east."
+LLM:      → list_resource_groups(subscription_id: prod-east)     (confirms target RG exists)
+          → validate_move(source/target …)
+          "24 of 27 resources can move; the Container Instance is blocking."
+```
+
+The LLM chains the calls itself based on the user's natural-language intent and the tool descriptions exposed via `tools/list`.
+
+#### `validate_move` — Input Schema
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `source_subscription_id` | string (UUID) | yes | Source Azure subscription ID |
+| `source_resource_group` | string | yes | Source resource group name |
+| `target_subscription_id` | string (UUID) | yes | Target Azure subscription ID |
+| `target_resource_group` | string | yes | Target resource group name |
+| `tenant_id` | string (UUID) | no | Service principal tenant ID |
+| `client_id` | string (UUID) | no | Service principal client (application) ID |
+| `client_secret` | string | no | Service principal client secret |
+| `bearer_token` | string | no | Pre-fetched Azure AD bearer token for `https://management.azure.com` |
+
+#### Credential selection (priority order)
+
+1. **`bearer_token`** — if supplied, the server uses it directly and stores no credentials. The client is responsible for fetching the token (e.g. `az account get-access-token --resource https://management.azure.com`) and refreshing it when it expires (~1 hour). Mixing `bearer_token` with SP fields is rejected.
+2. **Service principal** — all three of `tenant_id` / `client_id` / `client_secret` present. Supplying only one or two is rejected.
+3. **`DefaultAzureCredential`** — fallback when no auth fields are supplied. Walks the standard Azure credential chain: environment variables, workload identity, managed identity, `az login`.
+
+For local desktop use, option 3 with `az login` is the most ergonomic — no secrets anywhere. For sensitive environments where no credentials should ever reach the server process, option 1 (bearer token) is recommended.
+
+All four tools accept the same optional auth fields, so a single credential strategy works across the whole discovery flow.
+
+#### Discovery Tool Schemas
+
+**`list_subscriptions`** — input is just the four auth fields (no resource parameters). Output contains `subscriptions[].subscription_id`, `subscriptions[].display_name`, `subscriptions[].state`, `subscriptions[].id`, and `count`.
+
+**`list_resource_groups`** — additional required input: `subscription_id`. Output contains `resource_groups[].name`, `resource_groups[].id`, `resource_groups[].location`, plus the echoed `subscription_id` and `count`.
+
+**`list_resources`** — additional required inputs: `subscription_id`, `resource_group`. Output contains `resources[].name`, `resources[].type`, `resources[].id`, `resources[].location`, plus echoed `subscription_id`, `resource_group`, and `count`.
+
+#### `validate_move` — Output Schema
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `success` | bool | `true` when the Azure API returned HTTP 204 |
+| `resource_ids` | string[] | Every resource enumerated in the source resource group |
+| `target_resource_group_id` | string | Fully qualified ID of the target resource group |
+| `http_status_code` | int | HTTP status code of the validate-move response (204 = ok, 409 = conflict) |
+| `http_status` | string | HTTP status string |
+| `diagnostics` | string | Raw response body — typically the 409 error payload when validation fails |
+
+### Connecting a Client
+
+Most clients drive ARMV through a configuration file — below are the common ones.
+
+#### Claude Desktop
+
+Edit `claude_desktop_config.json`:
+
+- **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
+- **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
+
+```json
+{
+  "mcpServers": {
+    "armv": {
+      "command": "/absolute/path/to/armv",
+      "args": ["mcp", "serve"]
+    }
+  }
+}
+```
+
+Restart Claude Desktop. The tools appear in the picker.
+
+#### Claude Code (CLI)
+
+```bash
+claude mcp add armv --command /absolute/path/to/armv --args mcp --args serve
+```
+
+Or edit `~/.claude/mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "armv": { "command": "/absolute/path/to/armv", "args": ["mcp", "serve"] }
+  }
+}
+```
+
+#### VS Code (with an MCP extension)
+
+`.vscode/mcp.json`:
+
+```json
+{
+  "servers": {
+    "armv": { "type": "stdio", "command": "/absolute/path/to/armv", "args": ["mcp", "serve"] }
+  }
+}
+```
+
+#### MCP Inspector (debugging)
+
+```bash
+npx @modelcontextprotocol/inspector /absolute/path/to/armv mcp serve
+```
+
+The inspector UI lists each tool with its input and output JSON schemas and lets you invoke it interactively.
+
+#### Passing Credentials via Environment
+
+Configure service principal credentials once at the client level and omit them from tool calls — `DefaultAzureCredential` picks them up:
+
+```json
+{
+  "mcpServers": {
+    "armv": {
+      "command": "/absolute/path/to/armv",
+      "args": ["mcp", "serve"],
+      "env": {
+        "AZURE_TENANT_ID": "<tenant-uuid>",
+        "AZURE_CLIENT_ID": "<client-uuid>",
+        "AZURE_CLIENT_SECRET": "<secret>"
+      }
+    }
+  }
+}
+```
+
+Swap `AZURE_CLIENT_SECRET` for `AZURE_CLIENT_CERTIFICATE_PATH` to use a cert-based SP.
+
+#### Client-Supplied Bearer Token
+
+Fetch a token client-side and pass it per-call — no Azure credential material lives on the server:
+
+```bash
+az account get-access-token --resource https://management.azure.com --query accessToken -o tsv
+```
+
+Pass the resulting string as `bearer_token` in the tool arguments. If the token is expired, the Azure API returns 401; the client fetches a fresh one and retries.
+
+### Example Invocation
+
+```json
+{
+  "name": "validate_move",
+  "arguments": {
+    "source_subscription_id": "12345678-1234-1234-1234-123456789012",
+    "source_resource_group": "rg-prod-east",
+    "target_subscription_id": "87654321-4321-4321-4321-210987654321",
+    "target_resource_group": "rg-dev-west"
+  }
+}
+```
+
+A successful response:
+
+```json
+{
+  "success": true,
+  "resource_ids": ["/subscriptions/.../rg-prod-east/providers/..."],
+  "target_resource_group_id": "/subscriptions/.../rg-dev-west",
+  "http_status_code": 204,
+  "http_status": "204 No Content"
+}
+```
+
+A failed response sets `success: false`, `http_status_code: 409`, and includes the full Azure error payload in `diagnostics`.
+
+### Progress Notifications
+
+Azure validate-move can take minutes. The server emits MCP `notifications/progress` at every phase transition and on each 2-second poll tick, so clients can render a live status line:
+
+```
+Verifying Azure credentials
+Enumerating resource groups and resources
+Starting Azure validate-move for 27 resource(s)
+Polling Azure validate-move (elapsed 2s)
+…
+Validation complete (HTTP 204)
+```
+
+Clients opt in by including a `progressToken` in the tool call (Claude Desktop, Claude Code, and MCP Inspector all do this automatically). Without a token, the server skips notifications entirely.
+
+### Timeouts and Cancellation
+
+| Layer | Limit |
+|-------|-------|
+| Server polling ceiling | **30 minutes** (hard cap via `context.WithTimeout` in `PollAndCollect`) |
+| Poll interval | **2 seconds** — one progress update per tick |
+| MCP client per-call deadline | **Client-specific** (Claude Desktop typically ~60 seconds) |
+
+`notifications/cancelled` from the client propagates into the Azure SDK's `ctx`; the in-flight call aborts at the next poll boundary (within ~2 seconds) and returns a cancellation error. Validate-move is read-only, so no cleanup is required.
+
+### Recommended LLM
+
+Small tool-capable models are plenty — only four tools and short UUID-shaped inputs. **Claude Haiku 4.5** is the default pick (fast, cheap, high tool-use accuracy). Step up to **Sonnet 4.6** when the LLM needs to reason about large 409 diagnostics, propose remediations, or plan multi-RG migrations. Open-weight models work too (Qwen 2.5 Instruct 14B+, Llama 3.3 70B Instruct, Hermes 3) — see the [official MCP docs](https://modelcontextprotocol.io) for client configuration details.
+
+---
+
 ## Architecture
+
+| Layer | Location | Responsibility |
+|-------|----------|----------------|
+| **CLI** | `cmd/armv/app/` | Cobra root + `mcp serve` subcommand, flag parsing, CLI workflow orchestration |
+| **MCP server** | `internal/pkg/mcpserver/` | MCP over stdio; tool registration; credential selection; progress notifications |
+| **Validator core** | `internal/pkg/validator/` | Library-friendly end-to-end validation flow — presentation-free, shared by CLI and MCP |
+| **Authentication** | `internal/pkg/auth/` | `DefaultAzureCredential`, `ClientSecretCredential`, `StaticTokenCredential` (bearer token) |
+| **Validation** | `internal/pkg/validation/` | `AzureResourceMoveInfo` state + `BeginValidateMoveResources` wrapper |
+| **Resource management** | `internal/pkg/resourcegroups/`, `internal/pkg/resources/` | RG + resource enumeration |
+| **Polling** | `cmd/armv/poller/` | Interactive (`PollApi`) for CLI and quiet (`PollAndCollect`) for MCP |
+| **Utilities** | `pkg/utils/` | UUID validation, file I/O with hardened permissions, JSON helpers, console output |
 
 ```
 cmd/armv/                          # Binary entry point
-├── main.go                        # Version-injection var; bootstraps cobra
+├── main.go                        # version/commit/date ldflags vars; bootstraps cobra
 ├── app/                           # Orchestration layer
-│   ├── command.go                 # cobra flag definitions
-│   ├── root.go                    # run() — end-to-end workflow + Config
+│   ├── command.go                 # cobra root + flag binding + mcp subcommand registration
+│   ├── root.go                    # run() — end-to-end CLI workflow + Config
+│   ├── mcp.go                     # `armv mcp serve` subcommand
 │   ├── login.go                   # CheckLogin wrapper
 │   └── resourcegroup.go           # RG lookup + resource enumeration driver
 └── poller/                        # Azure long-running-operation handling
-    ├── pollapi.go                 # Generic PollApi[T] with ctx-aware timer
-    ├── pollresponse.go            # Response formatting (204 / 409 / empty)
+    ├── pollapi.go                 # Generic PollApi[T] — CLI progress bar + ctx-aware timer
+    ├── pollquiet.go               # PollAndCollect — silent poller for MCP (no stdout writes)
+    ├── report.go                  # ValidationReport / RenderMarkdown / ParseResourceID
+    ├── pollresponse.go            # writeOutput: build ValidationReport, render .md
     ├── pollerresponsedata.go      # Response DTO
     ├── progressbar.go             # schollz/progressbar wiring
     └── constants.go               # StatusMoveOK/StatusMoveFailure, timings
 
 internal/pkg/                      # Internal (module-private) packages
-├── auth/auth.go                   # DefaultAzureCredential + client factories
+├── auth/
+│   ├── auth.go                    # DefaultAzureCredential, ClientSecretCredential, client factories, ListSubscriptions
+│   └── bearer.go                  # StaticTokenCredential for client-supplied bearer tokens
+├── mcpserver/
+│   ├── server.go                  # MCP server, validate_move tool handler, auth selection
+│   └── discovery.go               # list_subscriptions / list_resource_groups / list_resources tools
+├── validator/
+│   └── validator.go               # library-friendly Validate() — shared by CLI and MCP
 ├── validation/
 │   ├── azureresourcemoveinfo.go   # Workflow state struct
 │   └── validatemove.go            # BeginValidateMoveResources caller
@@ -268,6 +533,7 @@ pkg/utils/                         # Public helpers (imported by tests)
 ├── args.go                        # Args struct + FormatVersion
 ├── validateinput.go               # UUID regex
 ├── outputfile.go                  # Mkdir/WriteFile with hardened permissions
+├── output.go                      # OutputSuccess + OutputFailSummary console banners
 └── jsonutils.go                   # any-based (un)marshal + pretty-print
 
 test/                              # Black-box tests (separate package)
