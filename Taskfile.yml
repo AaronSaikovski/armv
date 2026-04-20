@@ -1,154 +1,200 @@
 # MIT License
-
-# # Copyright (c) 2024 Aaron Saikovski
-
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-
-# The above copyright notice and this permission notice shall be included in all
-# copies or substantial portions of the Software.
-
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-# SOFTWARE.
-
-# using - https://taskfile.dev/
+# Copyright (c) 2024 Aaron Saikovski
+#
+# Taskfile reference: https://taskfile.dev/
+#
+# Cross-platform notes:
+#   - Task v3 uses the mvdan/sh POSIX interpreter on all platforms, so `rm`,
+#     pipes, and redirection work everywhere without requiring an external
+#     shell. Native Windows `cmd.exe` is NOT invoked.
+#   - Commands below only use tools that ship cross-platform: `go`, `git`,
+#     `task`, and the linter/security tools (which the developer installs).
+#   - Tasks that require bash (bicep scripts) are gated via `platforms:` so
+#     they surface clean errors on Windows.
 
 version: "3"
 
-#ENV VARS
 env:
-  TARGET: armv.exe #Change this to suit
-  APPPATH: .\cmd\armv\main.go #Change this to suit cmd\armv\main.go
+  TARGET: armv
+  APPPATH: ./cmd/armv
   ENV: dev
+  CGO_ENABLED: "0"
 
 dotenv: ["./envs/{{.ENV}}.env"]
 
-tasks:
-  ## version - get the app version
-  version:
-    desc: "Get the app version."
-    cmds:
-      - go run $APPPATH --version
+vars:
+  # Resolve the version from the nearest git tag. Falls back to "dev" if the
+  # working copy has no tags (e.g. shallow clone, fresh repo). Uses git only,
+  # which is guaranteed present in any Go dev setup on any platform.
+  VERSION:
+    sh: git describe --tags --always --dirty 2>/dev/null || echo dev
+  COMMIT:
+    sh: git rev-parse --short HEAD 2>/dev/null || echo none
+  DATE:
+    sh: git show -s --format=%cI HEAD 2>/dev/null || echo unknown
+  LDFLAGS: "-s -w -X main.version={{.VERSION}} -X main.commit={{.COMMIT}} -X main.date={{.DATE}}"
+  BIN_EXT: '{{if eq OS "windows"}}.exe{{end}}'
+  BIN: "bin/{{.TARGET}}{{.BIN_EXT}}"
 
-  ## release - Builds the project in preparation for (local)release
+tasks:
+  # ────────────────────────────────────────────────────────────────────
+  # Build / run
+  # ────────────────────────────────────────────────────────────────────
+
+  version:
+    desc: "Print the application version."
+    cmds:
+      - go run {{.APPPATH}} --version
+
+  build:
+    desc: "Debug build (no stripping, no version injection)."
+    cmds:
+      - go build -o {{.BIN}} {{.APPPATH}}
+
   release:
-    desc: "Builds the project in preparation for (local)release."
+    desc: "Optimized release build with version injection and reproducible flags."
     deps: [vet, lint, seccheck]
     cmds:
-      - go generate $APPPATH
-      - go build -ldflags="-s -w" -o bin/$TARGET $APPPATH
-      - #file bin/$TARGET
+      - go build -trimpath -ldflags='{{.LDFLAGS}}' -o {{.BIN}} {{.APPPATH}}
 
-  ## goreleaser - Builds the project in preparation for release
-  goreleaser:
-    desc: "Builds a cross platform release using goreleaser."
-    cmds:
-      - goreleaser release --snapshot --clean
-
-  ## build - Builds the project in preparation for debug
-  build:
-    desc: "Builds the project in preparation for debug."
-    #deps: [clean]
-    cmds:
-      - go build -o bin/$TARGET $APPPATH
-      #- file bin/$TARGET
-
-  ## run - builds and runs the program on the target platform
   run:
-    desc: "Builds and runs the program on the target platform."
+    desc: "Build and run on the host platform."
     cmds:
-      - go run $APPPATH
+      - go run {{.APPPATH}}
 
-    ## debug - builds and runs the program on the target platform
   debug:
-    desc: "Runs a debug version of the application with input parameters from the environment file."
+    desc: "Run with input parameters sourced from envs/dev.env."
     cmds:
-      - go run $APPPATH --SourceSubscriptionId $SOURCESUBSCRIPTIONID --SourceResourceGroup $SOURCERESOURCEGROUP --TargetSubscriptionId $TARGETSUBSCRIPTIONID --TargetResourceGroup $TARGETRESOURCEGROUP --debug
+      - >
+        go run {{.APPPATH}}
+        --source-subscription-id {{.SOURCESUBSCRIPTIONID}}
+        --source-resource-group {{.SOURCERESOURCEGROUP}}
+        --target-subscription-id {{.TARGETSUBSCRIPTIONID}}
+        --target-resource-group {{.TARGETRESOURCEGROUP}}
+        --debug
 
-  ## watch - use air server for hot reloading
-  watch:
-    desc: "Use air server for hot reloading."
-    cmds:
-      - air
+  # ────────────────────────────────────────────────────────────────────
+  # Quality / CI
+  # ────────────────────────────────────────────────────────────────────
 
-  ## docs - updates the swagger docs
-  docs:
-    desc: "Updates the swagger docs - For APIs."
-    cmds:
-      - swag init
-
-  ## clean - Remove the old builds and any debug information
-  clean:
-    desc: "Removes the old builds and any debug information from the source tree."
-    cmds:
-      - go clean -cache
-      - go clean
-      #- rm -rf dist
-      #- rm bin/$TARGET
-
-  ## test - executes unit tests
-  test:
-    desc: "Executes unit tests."
-    cmds:
-      - go test -v ./test/...
-
-  ## deps - fetches any external dependencies and updates
-  deps:
-    desc: "Fetches any external dependencies and updates."
-    cmds:
-      - go mod tidy
-      - go mod download
-      - go get -u ./...
-
-  ## vet - Vet examines Go source code and reports suspicious constructs
   vet:
-    desc: "Vet examines Go source code and reports suspicious constructs."
+    desc: "Run go vet."
     cmds:
       - go vet ./...
 
-  ## staticcheck - Runs static code analyzer staticcheck
+  lint:
+    desc: "Format sources and tidy the module graph."
+    cmds:
+      - go fmt ./...
+      - go mod tidy
+
   staticcheck:
-    desc: "Runs static code analyzer staticcheck."
+    desc: "Run staticcheck (requires staticcheck on PATH)."
     cmds:
       - staticcheck ./...
 
-    ## seccheck - Code vulnerability check
+  golangci:
+    desc: "Run golangci-lint (requires golangci-lint on PATH)."
+    cmds:
+      - golangci-lint run ./...
+
   seccheck:
-    desc: "Code vulnerability scanner check."
+    desc: "Run govulncheck (requires govulncheck on PATH)."
     cmds:
       - govulncheck ./...
 
-  ## lint - format code and tidy modules
-  lint:
-    desc: "Lint, format and tidy code."
+  test:
+    desc: "Run unit tests with coverage."
     cmds:
-      - go fmt ./...
-      - go mod tidy -v
-      #- golangci-lint run ./...
+      - go test -race -shuffle=on -covermode=atomic -coverpkg=./... -coverprofile=coverage.out ./test/...
 
-  ## generate - update build version
+  test-verbose:
+    desc: "Run unit tests with verbose output."
+    cmds:
+      - go test -v -race -shuffle=on ./test/...
+
+  cover:
+    desc: "Show per-function test coverage."
+    deps: [test]
+    cmds:
+      - go tool cover -func=coverage.out
+
+  ci:
+    desc: "Full local CI pipeline: vet, static analysis, vuln check, tests."
+    cmds:
+      - task: vet
+      - task: staticcheck
+      - task: seccheck
+      - task: test
+
+  # ────────────────────────────────────────────────────────────────────
+  # Release / cross-platform
+  # ────────────────────────────────────────────────────────────────────
+
+  goreleaser:
+    desc: "Cross-platform release snapshot build (requires goreleaser on PATH)."
+    cmds:
+      - goreleaser release --snapshot --clean
+
+  goreleaser-check:
+    desc: "Validate the .goreleaser.yaml configuration."
+    cmds:
+      - goreleaser check
+
+  # ────────────────────────────────────────────────────────────────────
+  # Dependencies / housekeeping
+  # ────────────────────────────────────────────────────────────────────
+
+  deps:
+    desc: "Download and tidy module dependencies."
+    cmds:
+      - go mod tidy
+      - go mod download
+      - go mod verify
+
+  deps-upgrade:
+    desc: "Upgrade dependencies to their latest minor/patch versions."
+    cmds:
+      - go get -u ./...
+      - go mod tidy
+
   generate:
-    desc: "update binary build version using gogenerate."
+    desc: "Run go generate (placeholder — ARMV has no generators today)."
     cmds:
-      - go generate $APPPATH
+      - go generate ./...
 
-  ## deploy - deploy azure stack
+  clean:
+    desc: "Remove local build artefacts and the Go build cache."
+    cmds:
+      - go clean
+      - go clean -cache
+      - cmd: rm -rf dist bin coverage.out
+        ignore_error: true
+
+  # ────────────────────────────────────────────────────────────────────
+  # Bicep test harness — requires bash (Linux/macOS/WSL/Git Bash)
+  # ────────────────────────────────────────────────────────────────────
+
   deploy:
-    desc: "Deploy Azure resources using Bicep for testing."
+    desc: "Deploy Azure test resources via Bicep (bash required)."
+    platforms: [linux, darwin]
     cmds:
       - bash ./bicep/deploy.sh
 
-  ## destroy - destroy azure stack
   destroy:
-    desc: "Destroy Azure resources for testing."
+    desc: "Destroy Azure test resources via Bicep (bash required)."
+    platforms: [linux, darwin]
     cmds:
       - bash ./bicep/destroy.sh
+
+  deploy-win:
+    desc: "Deploy Azure test resources via Bicep on Windows (requires Git Bash or WSL)."
+    platforms: [windows]
+    cmds:
+      - sh ./bicep/deploy.sh
+
+  destroy-win:
+    desc: "Destroy Azure test resources via Bicep on Windows (requires Git Bash or WSL)."
+    platforms: [windows]
+    cmds:
+      - sh ./bicep/destroy.sh
