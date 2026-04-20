@@ -30,7 +30,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources"
 )
 
@@ -44,7 +44,7 @@ import (
 // - *armresources.Client: The created client instance.
 // - error: An error if the client creation fails.
 
-func GetResourcesClient(cred *azidentity.DefaultAzureCredential, subscriptionID string) (*armresources.Client, error) {
+func GetResourcesClient(cred azcore.TokenCredential, subscriptionID string) (*armresources.Client, error) {
 	resourcesClientFactory, err := armresources.NewClientFactory(subscriptionID, cred, nil)
 	if err != nil {
 		return nil, err

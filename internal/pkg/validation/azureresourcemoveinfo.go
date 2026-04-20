@@ -26,7 +26,7 @@ SOFTWARE.
 // It handles the validation of whether resources can be moved between resource groups.
 package validation
 
-import "github.com/Azure/azure-sdk-for-go/sdk/azidentity"
+import "github.com/Azure/azure-sdk-for-go/sdk/azcore"
 
 type AzureResourceMoveInfo struct {
 	SourceSubscriptionId  string
@@ -34,7 +34,7 @@ type AzureResourceMoveInfo struct {
 	TargetResourceGroup   string
 	TargetResourceGroupId *string
 	ResourceIds           []*string
-	Credentials           *azidentity.DefaultAzureCredential
+	Credentials           azcore.TokenCredential
 }
 
 func NewAzureResourceMoveInfo(
@@ -43,7 +43,7 @@ func NewAzureResourceMoveInfo(
 	targetResourceGroup string,
 	targetResourceGroupId *string,
 	resourceIds []*string,
-	credentials *azidentity.DefaultAzureCredential) AzureResourceMoveInfo {
+	credentials azcore.TokenCredential) AzureResourceMoveInfo {
 	return AzureResourceMoveInfo{
 		SourceSubscriptionId:  sourceSubscriptionId,
 		SourceResourceGroup:   sourceResourceGroup,

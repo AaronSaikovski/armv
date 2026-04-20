@@ -92,11 +92,13 @@ func NewRootCommand(version string) *cobra.Command {
 	rootCmd.Flags().BoolVar(&debug, "debug", false, "Enable debug mode with timing information")
 	rootCmd.Flags().StringVar(&outputPath, "output-path", DefaultOutputPath, "Output path to write results")
 
-	// Mark required flags
+	// Mark required flags (only for the root invocation; `armv mcp serve` doesn't need them)
 	rootCmd.MarkFlagRequired("source-subscription-id")
 	rootCmd.MarkFlagRequired("source-resource-group")
 	rootCmd.MarkFlagRequired("target-subscription-id")
 	rootCmd.MarkFlagRequired("target-resource-group")
+
+	rootCmd.AddCommand(newMCPCommand(version))
 
 	return rootCmd
 }
