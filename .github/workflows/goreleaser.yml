@@ -17,7 +17,9 @@ jobs:
     name: goreleaser
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      -
+        name: Checkout
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -37,6 +39,7 @@ jobs:
       - name: GoReleaser
         uses: goreleaser/goreleaser-action@v6
         with:
+          # either 'goreleaser' (default) or 'goreleaser-pro'
           distribution: goreleaser
           version: "~> v2"
           args: release --clean
