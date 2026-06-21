@@ -33,3 +33,33 @@ func TestCheckValidSubscriptionID(t *testing.T) {
 		})
 	}
 }
+
+func TestCheckValidTenantID(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name     string
+		tenantID string
+		want     bool
+	}{
+		{name: "valid lowercase", tenantID: "12345678-1234-1234-1234-123456789012", want: true},
+		{name: "valid lowercase hex", tenantID: "abcdef12-abcd-abcd-abcd-123456789abc", want: true},
+		{name: "valid uppercase hex", tenantID: "ABCDEF12-ABCD-ABCD-ABCD-123456789ABC", want: true},
+		{name: "with braces", tenantID: "{12345678-1234-1234-1234-123456789012}", want: true},
+		{name: "too short", tenantID: "12345678-1234-1234-1234", want: false},
+		{name: "missing hyphens", tenantID: "12345678123412341234123456789012", want: false},
+		{name: "empty", tenantID: "", want: false},
+		{name: "non-hex characters", tenantID: "not-a-valid-uuid", want: false},
+		{name: "trailing garbage", tenantID: "12345678-1234-1234-1234-123456789012-extra", want: false},
+		{name: "leading garbage", tenantID: "prefix-12345678-1234-1234-1234-123456789012", want: false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			if got := utils.CheckValidTenantID(tt.tenantID); got != tt.want {
+				t.Errorf("CheckValidTenantID(%q) = %v, want %v", tt.tenantID, got, tt.want)
+			}
+		})
+	}
+}
