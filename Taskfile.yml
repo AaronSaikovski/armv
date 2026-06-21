@@ -1,210 +1,111 @@
-# MIT License
-# Copyright (c) 2024 Aaron Saikovski
-#
-# Taskfile reference: https://taskfile.dev/
-#
-# Cross-platform notes:
-#   - Task v3 uses the mvdan/sh POSIX interpreter on all platforms, so `rm`,
-#     pipes, and redirection work everywhere without requiring an external
-#     shell. Native Windows `cmd.exe` is NOT invoked.
-#   - Commands below only use tools that ship cross-platform: `go`, `git`,
-#     `task`, and the linter/security tools (which the developer installs).
-#   - Tasks that require bash (bicep scripts) are gated via `platforms:` so
-#     they surface clean errors on Windows.
+# using - https://taskfile.dev/
 
 version: "3"
 
-env:
-  TARGET: armv
-  APPPATH: ./cmd/armv
-  ENV: dev
-
-dotenv: ["./envs/{{.ENV}}.env"]
-
+# Task variables
 vars:
-  # Resolve the version from the nearest git tag. Falls back to "dev" if the
-  # working copy has no tags (e.g. shallow clone, fresh repo). Uses git only,
-  # which is guaranteed present in any Go dev setup on any platform.
-  VERSION:
-    sh: git describe --tags --always --dirty 2>/dev/null || echo dev
-  COMMIT:
-    sh: git rev-parse --short HEAD 2>/dev/null || echo none
-  DATE:
-    sh: git show -s --format=%cI HEAD 2>/dev/null || echo unknown
-  LDFLAGS: "-s -w -X main.version={{.VERSION}} -X main.commit={{.COMMIT}} -X main.date={{.DATE}}"
-  BIN_EXT: '{{if eq OS "windows"}}.exe{{end}}'
-  BIN: "bin/{{.TARGET}}{{.BIN_EXT}}"
+  APPPATH: ./cmd/armv
+  PROJECT_NAME: go-cli-starter #Change this to suit
+  TARGET:
+    sh: if [ "$(go env GOOS)" = "windows" ]; then echo "armv.exe"; else echo "armv"; fi
+
+###########################################################################
 
 tasks:
-  # ────────────────────────────────────────────────────────────────────
-  # Build / run
-  # ────────────────────────────────────────────────────────────────────
-
-  version:
-    desc: "Print the application version."
-    cmds:
-      - go run {{.APPPATH}} --version
-
-  build:
-    desc: "Debug build (no stripping, no version injection)."
-    env:
-      CGO_ENABLED: "0"
-    cmds:
-      - go build -o {{.BIN}} {{.APPPATH}}
-
+  ## release - Builds the project in preparation for (local)release
   release:
-    desc: "Optimized release build with version injection and reproducible flags."
-    deps: [vet, lint, seccheck]
-    env:
-      CGO_ENABLED: "0"
+    deps: [lint]
     cmds:
-      - go build -trimpath -ldflags='{{.LDFLAGS}}' -o {{.BIN}} {{.APPPATH}}
+      - go build -ldflags="-s -w" -o bin/{{.TARGET}} {{.APPPATH}}
 
-  run:
-    desc: "Build and run on the host platform."
-    cmds:
-      - go run {{.APPPATH}}
+  ###############################################################################
 
-  debug:
-    desc: "Run with input parameters sourced from envs/dev.env."
-    cmds:
-      - >
-        go run {{.APPPATH}}
-        --source-subscription-id {{.SOURCESUBSCRIPTIONID}}
-        --source-resource-group {{.SOURCERESOURCEGROUP}}
-        --target-subscription-id {{.TARGETSUBSCRIPTIONID}}
-        --target-resource-group {{.TARGETRESOURCEGROUP}}
-        --debug
-
-  # ────────────────────────────────────────────────────────────────────
-  # Quality / CI
-  # ────────────────────────────────────────────────────────────────────
-
-  vet:
-    desc: "Run go vet."
-    cmds:
-      - go vet ./...
-
-  lint:
-    desc: "Format sources and tidy the module graph."
-    cmds:
-      - go fmt ./...
-      - go mod tidy
-
-  staticcheck:
-    desc: "Run staticcheck (requires staticcheck on PATH)."
-    cmds:
-      - staticcheck ./...
-
-  golangci:
-    desc: "Run golangci-lint (requires golangci-lint on PATH)."
-    cmds:
-      - golangci-lint run ./...
-
-  seccheck:
-    desc: "Run govulncheck (requires govulncheck on PATH)."
-    cmds:
-      - govulncheck ./...
-
-  test:
-    desc: "Run unit tests with coverage (no race detector; use `task test-race` for race)."
-    cmds:
-      - go test -shuffle=on -covermode=atomic -coverpkg=./... -coverprofile=coverage.out ./...
-
-  test-race:
-    desc: "Run unit tests with the race detector. Requires a C toolchain (gcc/clang/mingw)."
-    env:
-      CGO_ENABLED: "1"
-    cmds:
-      - go test -race -shuffle=on ./...
-
-  test-verbose:
-    desc: "Run unit tests with verbose output."
-    cmds:
-      - go test -v -shuffle=on ./...
-
-  cover:
-    desc: "Show per-function test coverage."
-    deps: [test]
-    cmds:
-      - go tool cover -func=coverage.out
-
-  ci:
-    desc: "Full local CI pipeline: vet, static analysis, vuln check, tests."
-    cmds:
-      - task: vet
-      - task: staticcheck
-      - task: seccheck
-      - task: test
-
-  # ────────────────────────────────────────────────────────────────────
-  # Release / cross-platform
-  # ────────────────────────────────────────────────────────────────────
-
+  ## goreleaser - Builds the project in preparation for release
   goreleaser:
-    desc: "Cross-platform release snapshot build (requires goreleaser on PATH)."
     cmds:
       - goreleaser release --snapshot --clean
 
-  goreleaser-check:
-    desc: "Validate the .goreleaser.yaml configuration."
+  ###############################################################################
+
+  ## build - Builds the project in preparation for debug
+  build:
     cmds:
-      - goreleaser check
+      - go build -o bin/{{.TARGET}} {{.APPPATH}}
 
-  # ────────────────────────────────────────────────────────────────────
-  # Dependencies / housekeeping
-  # ────────────────────────────────────────────────────────────────────
+  ###############################################################################
 
+  ## run - builds and runs the program on the target platform
+  run:
+    cmds:
+      - go run {{.APPPATH}} --help
+
+  ###############################################################################
+
+  ## clean - Remove the old builds and any debug information
+  clean:
+    cmds:
+      - go clean -cache
+      - go clean
+      - rm -rf dist bin
+    platforms: [darwin, linux]
+  clean_windows:
+    silent: true
+    cmds:
+      - cmd /c "rmdir /s /q dist || exit 0"
+      - cmd /c "rmdir /s /q bin || exit 0"
+    platforms: [windows]
+
+  ###############################################################################
+
+  ## test - executes unit tests
+  test:
+    cmds:
+      - go test -v ./...
+
+  ###############################################################################
+
+  ## deps - fetches any external dependencies and updates
   deps:
-    desc: "Download and tidy module dependencies."
     cmds:
       - go mod tidy
       - go mod download
-      - go mod verify
-
-  deps-upgrade:
-    desc: "Upgrade dependencies to their latest minor/patch versions."
-    cmds:
       - go get -u ./...
-      - go mod tidy
 
+  ###############################################################################
+
+  ## vet - Vet examines Go source code and reports suspicious constructs
+  vet:
+    cmds:
+      - go vet ./...
+
+  ###############################################################################
+
+  ## staticcheck - Runs static code analyzer staticcheck
+  staticcheck:
+    cmds:
+      - go run honnef.co/go/tools/cmd/staticcheck@latest ./...
+
+  ###############################################################################
+
+  ## seccheck - Code vulnerability check
+  seccheck:
+    cmds:
+      - go run golang.org/x/vuln/cmd/govulncheck@latest ./...
+
+  ###############################################################################
+
+  ## lint - format code and tidy modules
+  lint:
+    cmds:
+      - go fmt ./...
+      - go mod tidy -v
+      #- golangci-lint run ./...
+
+  ###############################################################################
+
+  ## generate - update build version
   generate:
-    desc: "Run go generate (placeholder — ARMV has no generators today)."
     cmds:
-      - go generate ./...
+      - go generate {{.APPPATH}}
 
-  clean:
-    desc: "Remove local build artefacts and the Go build cache."
-    cmds:
-      - go clean
-      - go clean -cache
-      - cmd: rm -rf dist bin coverage.out
-        ignore_error: true
-
-  # ────────────────────────────────────────────────────────────────────
-  # Bicep test harness — requires bash (Linux/macOS/WSL/Git Bash)
-  # ────────────────────────────────────────────────────────────────────
-
-  deploy:
-    desc: "Deploy Azure test resources via Bicep (bash required)."
-    platforms: [linux, darwin]
-    cmds:
-      - bash ./bicep/deploy.sh
-
-  destroy:
-    desc: "Destroy Azure test resources via Bicep (bash required)."
-    platforms: [linux, darwin]
-    cmds:
-      - bash ./bicep/destroy.sh
-
-  deploy-win:
-    desc: "Deploy Azure test resources via Bicep on Windows (requires Git Bash or WSL)."
-    platforms: [windows]
-    cmds:
-      - sh ./bicep/deploy.sh
-
-  destroy-win:
-    desc: "Destroy Azure test resources via Bicep on Windows (requires Git Bash or WSL)."
-    platforms: [windows]
-    cmds:
-      - sh ./bicep/destroy.sh
+  ###############################################################################

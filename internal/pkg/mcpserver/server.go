@@ -1,3 +1,5 @@
+//go:build ignore
+
 // Package mcpserver exposes ARMV as a Model Context Protocol server so LLM agents
 // (Claude Desktop, Claude Code, etc.) can invoke resource-move validation as a tool.
 //
