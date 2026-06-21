@@ -66,9 +66,9 @@ checksum:
   name_template: "{{ .ProjectName }}_{{ .Version }}_checksums.txt"
   algorithm: sha256
 
-sboms:
-  - id: default
-    artifacts: archive
+# sboms:
+#   - id: default
+#     artifacts: archive
 
 snapshot:
   version_template: "{{ incpatch .Version }}-next"
