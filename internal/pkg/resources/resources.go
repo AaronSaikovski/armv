@@ -1,27 +1,3 @@
-/*
-MIT License
-
-# Copyright (c) 2024 Aaron Saikovski
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-*/
-
 // Package resources provides functions for managing Azure resources within resource groups,
 // including listing resources and extracting resource IDs with optimized memory allocation.
 package resources
@@ -30,77 +6,43 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources"
 )
 
-// GetResourcesClient returns a new instance of the armresources.Client for the given Azure credential and subscription ID.
-//
-// Parameters:
-// - cred: The Azure credential used to authenticate the client.
-// - subscriptionID: The ID of the subscription to create the client for.
-//
-// Returns:
-// - *armresources.Client: The created client instance.
-// - error: An error if the client creation fails.
-
-func GetResourcesClient(cred *azidentity.DefaultAzureCredential, subscriptionID string) (*armresources.Client, error) {
+// GetResourcesClient returns an armresources.Client for the given subscription.
+func GetResourcesClient(cred azcore.TokenCredential, subscriptionID string) (*armresources.Client, error) {
 	resourcesClientFactory, err := armresources.NewClientFactory(subscriptionID, cred, nil)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("resources: new client factory: %w", err)
 	}
-	resourcesClient := resourcesClientFactory.NewClient()
-
-	if resourcesClient == nil {
-		return nil, fmt.Errorf("failed to create resources client")
-	}
-
-	return resourcesClient, nil
+	return resourcesClientFactory.NewClient(), nil
 }
 
 // GetResources retrieves a list of resources in a specific resource group.
-//
-// ctx: the context for the request
-// resourceGroupName: the name of the resource group to retrieve resources from
-// []*armresources.GenericResourceExpanded: a list of expanded generic resources
-// error: an error if the operation fails
 func GetResources(ctx context.Context, resourcesClient *armresources.Client, resourceGroupName string) ([]*armresources.GenericResourceExpanded, error) {
-
 	resourcePager := resourcesClient.NewListByResourceGroupPager(resourceGroupName, nil)
 
-	// Pre-allocate with reasonable initial capacity to reduce allocations
 	resourceItems := make([]*armresources.GenericResourceExpanded, 0, 32)
-
 	for resourcePager.More() {
-
 		pageResp, err := resourcePager.NextPage(ctx)
-
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("resources: list page for %q: %w", resourceGroupName, err)
 		}
-
 		resourceItems = append(resourceItems, pageResp.ResourceListResult.Value...)
-
 	}
 
 	return resourceItems, nil
 }
 
-// GetResourceIds generates resource IDs for the given resource group.
-//
-// ctx: the context object.
-// resourcesClient: the client for interacting with Azure resources.
-// resourceGroupName: the name of the resource group.
-// []*string, error: returns a slice of pointers to resource IDs and an error if any.
+// GetResourceIds returns the Azure resource IDs for every resource in the group.
 func GetResourceIds(ctx context.Context, resourcesClient *armresources.Client, resourceGroupName string) ([]*string, error) {
 	resourcesList, err := GetResources(ctx, resourcesClient, resourceGroupName)
 	if err != nil {
 		return nil, err
 	}
 
-	// Pre-allocate exact size since we know it - more efficient than append
 	resourceIds := make([]*string, len(resourcesList))
-
 	for i, val := range resourcesList {
 		resourceIds[i] = val.ID
 	}

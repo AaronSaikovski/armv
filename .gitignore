@@ -38,3 +38,5 @@ out.txt
 /envs/dev.env
 
 /.vscode/launch.json
+
+.claude/

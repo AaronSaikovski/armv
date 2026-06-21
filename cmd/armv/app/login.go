@@ -1,26 +1,3 @@
-/*
-MIT License
-
-# Copyright (c) 2024 Aaron Saikovski
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-*/
 package app
 
 import (
@@ -32,23 +9,14 @@ import (
 	"github.com/logrusorgru/aurora"
 )
 
-// CheckLogin checks if the user is logged into the Azure source subscription.
-//
-// It takes the following parameters:
-// - ctx: the context.Context object for the function.
-// - azureResourceMoveInfo: a pointer to a validation.AzureResourceMoveInfo object containing the necessary information for the login check.
-//
-// Returns an error if login check fails or user is not logged in.
+// checkLogin verifies the caller has access to the source Azure subscription.
 func checkLogin(ctx context.Context, azureResourceMoveInfo *validation.AzureResourceMoveInfo) error {
-
-	// check we are logged into the Azure source subscription
 	login, err := auth.CheckLogin(ctx, azureResourceMoveInfo.Credentials, azureResourceMoveInfo.SourceSubscriptionId)
-
 	if err != nil {
 		return fmt.Errorf("login error: %w", err)
 	}
 	if !login {
-		return fmt.Errorf("you are not logged into the azure subscription '%s', please login and retry operation", azureResourceMoveInfo.SourceSubscriptionId)
+		return fmt.Errorf("not logged into Azure subscription %q: please run `az login` and retry", azureResourceMoveInfo.SourceSubscriptionId)
 	}
 	fmt.Println(aurora.Yellow(fmt.Sprintf("Logged into Subscription Id: %s", azureResourceMoveInfo.SourceSubscriptionId)))
 
