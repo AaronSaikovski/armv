@@ -42,15 +42,19 @@ failure exits `0`; the final line prints the output directory).
   Ctrl-C / SIGTERM, so the process interrupts even during credential
   acquisition.
 - **`--`-prefixed missing-flag errors** for clearer usage hints.
-- **Test suite** — ~80 tests: pure-logic unit tests plus `wiremock`
-  end-to-end tests exercising the full pipeline through the real `azure_core`
-  stack.
+- **Test suite** — 75 tests: 59 pure-logic unit tests plus 16 integration
+  tests (`assert_cmd` CLI tests and `wiremock` end-to-end tests exercising the
+  full pipeline through the real `azure_core` stack).
 - **Tooling** — `rust` CI workflow (fmt/clippy/test/build), a cross-platform
   release workflow reproducing the goreleaser artifact naming, and
   `task rust:*` targets.
 
 ### Changed
 
+- Argument parsing uses [`clap`](https://docs.rs/clap) (derive). `--help`,
+  `--version`, and usage-error output are clap-native, and usage errors exit
+  with clap's code `2` (pipeline errors still exit `1`). Short version flag is
+  `-V`.
 - Version metadata for `--version` is sourced from the Cargo package version
   (idiomatic for Rust) with git supplying commit/date; env vars override for
   release pipelines.

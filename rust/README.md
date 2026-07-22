@@ -58,9 +58,11 @@ HTTP glue is already isolated in `send_raw` for exactly this swap.
 
 ## Parity with the Go binary
 
-Error message strings, exit codes, the Markdown report format, output
-filenames, file permissions, and the success/failure banner bytes all match
-the Go binary — deliberately including its quirks:
+Runtime behaviour — pipeline error messages, exit codes, the Markdown report
+format, output filenames, file permissions, and the success/failure banner
+bytes — matches the Go binary. (Argument parsing uses **clap**, so
+`--help`/`--version`/usage-error text and the exit code on usage errors are
+clap-native — see deviations.) Deliberately preserved Go quirks:
 
 - A 409 validation failure still exits **0** (only hard errors exit 1).
 - `--target-subscription-id` is validated and shown in the report but is
@@ -103,7 +105,7 @@ armv \
 | `--output-path` | string | `./output` | Directory for the report (and, with `--debug`, the log file). |
 | `--exclude-resource-types` | strings | *(none)* | Resource `provider/type`s to exclude before validation. Repeatable and comma-separated; matched case-insensitively. |
 | `--debug` | bool | `false` | Print elapsed time and enable verbose logging (stderr + `armv-debug-*.log`). |
-| `-v`, `--version` | flag | — | Print version and exit. |
+| `-V`, `--version` | flag | — | Print version and exit. |
 | `-h`, `--help` | flag | — | Print help and exit. |
 
 `--debug` prints the elapsed time (as in the Go build) and additionally
@@ -156,7 +158,7 @@ missing git values fall back to `none`/`unknown`.
 
 | File | Go counterpart | Responsibility |
 |------|----------------|----------------|
-| `src/cli.rs` | `cmd/armv/app/command.go` | flag parsing with cobra-parity error text |
+| `src/cli.rs` | `cmd/armv/app/command.go` | clap-based flag parsing |
 | `src/app.rs` | `cmd/armv/app/{root,login,resourcegroup}.go` | the validation pipeline |
 | `src/auth.rs` | `internal/pkg/auth` | `DefaultAzureCredential`-equivalent chain |
 | `src/azure/` | `internal/pkg/{auth,resources,resourcegroups,validation}` | the 5 ARM calls + models |
@@ -170,11 +172,12 @@ missing git values fall back to `none`/`unknown`.
 
 ## Accepted deviations from the Go binary
 
-- `--help` layout (content matches; cobra's column formatting is not
-  replicated exactly).
-- The missing-required-flag error prefixes each flag name with `--`
-  (e.g. `required flag(s) "--source-resource-group" … not set`) so the
-  correct invocation is obvious; cobra omits the prefix.
+- Argument parsing uses **clap**, not a cobra port. `--help`/`--version`
+  output, usage-error messages, and the exit code on a usage error
+  (clap's `2`, vs the Go binary's `1`) are clap-native. Short version is
+  `-V` (clap default) rather than `-v`. Pipeline errors (invalid UUID,
+  missing resource group, poll/timeout, file write) keep their Go-parity
+  messages and exit `1`.
 - Cyan per-step status lines (`Authenticating to Azure…`, `Enumerating
   resources…`, etc.) are printed as the pipeline runs; the Go build is
   silent between the login line and the progress bar.
@@ -250,5 +253,8 @@ hot-path work)
 - The tokio runtime is multi-threaded although the workload is largely
   sequential I/O.
 
-**Coverage:** ~80 tests — pure-logic unit tests plus wiremock end-to-end
-tests exercising the full pipeline through the real `azure_core` stack.
+**Coverage:** 75 tests — 59 unit tests (pure logic: report rendering,
+`json.Indent` port, UUID validation, exclusion filter, output permissions,
+CLI parsing) plus 16 integration tests (8 `assert_cmd` CLI tests and 8
+`wiremock` end-to-end tests exercising the full pipeline through the real
+`azure_core` stack).

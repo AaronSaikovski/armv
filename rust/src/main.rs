@@ -1,19 +1,9 @@
-// Port of cmd/armv/main.go: build metadata, signal wiring, error surfacing.
+// Port of cmd/armv/main.go: runtime setup, signal wiring, error surfacing.
+// Argument parsing (and --version/--help) is handled by clap in cli.rs.
 // `unsafe` is forbidden package-wide via `[lints]` in Cargo.toml.
 use std::process::ExitCode;
 
 use tokio_util::sync::CancellationToken;
-
-// Injected by build.rs (env override -> git -> Go zero-values dev/none/unknown),
-// mirroring the Go -ldflags -X main.version/main.commit/main.date mechanism.
-const VERSION: &str = env!("ARMV_VERSION");
-const COMMIT: &str = env!("ARMV_COMMIT");
-const DATE: &str = env!("ARMV_DATE");
-
-/// The full version string shown by --version.
-fn full_version() -> String {
-    format!("{VERSION} (commit {COMMIT}, built {DATE})")
-}
 
 /// Installs a `tracing` subscriber that writes verbose diagnostics to both
 /// stderr and a timestamped `armv-debug-*.log` file in the output directory,
@@ -87,15 +77,8 @@ impl std::io::Write for SharedFileHandle {
 }
 
 fn main() -> ExitCode {
-    let argv: Vec<String> = std::env::args().skip(1).collect();
-    let args = match armv::cli::parse(&argv, &full_version()) {
-        Ok(Some(args)) => args,
-        Ok(None) => return ExitCode::SUCCESS,
-        Err(err) => {
-            eprintln!("Error: {err:#}");
-            return ExitCode::FAILURE;
-        }
-    };
+    // clap handles --help/--version and exits on usage errors itself.
+    let args = armv::cli::parse();
 
     init_logging(args.debug, &args.output_path);
 
