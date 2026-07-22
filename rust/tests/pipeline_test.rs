@@ -374,3 +374,27 @@ async fn excludes_resource_types_from_validation() {
     assert!(content.contains("## Excluded Resources"));
     assert!(content.contains("| 1 | Microsoft.Storage/storageAccounts | stg1 |"));
 }
+
+#[tokio::test]
+async fn all_resources_excluded_errors() {
+    let server = MockServer::start().await;
+    mount_pipeline(&server).await; // src-rg's only two types are Storage + Web/sites
+
+    let dir = tempfile::tempdir().unwrap();
+    let uri = server.uri();
+    let out_str = dir.path().to_str().unwrap().to_string();
+
+    // Excluding both types empties the list; the run stops before validating.
+    tokio::task::spawn_blocking(move || {
+        let mut cmd = armv(&uri, &out_str);
+        cmd.args([
+            "--exclude-resource-types",
+            "Microsoft.Storage/storageAccounts,Microsoft.Web/sites",
+        ]);
+        cmd.assert().failure().code(1).stderr(
+            "Error: all resources in source resource group \"src-rg\" were excluded by --exclude-resource-types\n",
+        )
+    })
+    .await
+    .unwrap();
+}

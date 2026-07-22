@@ -10,6 +10,8 @@ long-running operation to report whether every resource in a source resource
 group *could* move to a target group, writes a timestamped Markdown report,
 and prints a coloured summary banner. It never performs the move.
 
+See [`CHANGELOG.md`](CHANGELOG.md) for release notes.
+
 ## Azure SDK usage
 
 Auth and transport use the official new-generation Azure SDK crates
@@ -89,6 +91,20 @@ armv \
   --exclude-resource-types Microsoft.Web/certificates \ # optional, repeatable
   --debug                                               # optional, elapsed time + verbose logging
 ```
+
+### Flags
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--source-subscription-id` | string | — | **Required.** Source subscription ID (bare UUID). |
+| `--source-resource-group` | string | — | **Required.** Source resource group name. |
+| `--target-subscription-id` | string | — | **Required.** Target subscription ID (bare UUID). |
+| `--target-resource-group` | string | — | **Required.** Target resource group name. |
+| `--output-path` | string | `./output` | Directory for the report (and, with `--debug`, the log file). |
+| `--exclude-resource-types` | strings | *(none)* | Resource `provider/type`s to exclude before validation. Repeatable and comma-separated; matched case-insensitively. |
+| `--debug` | bool | `false` | Print elapsed time and enable verbose logging (stderr + `armv-debug-*.log`). |
+| `-v`, `--version` | flag | — | Print version and exit. |
+| `-h`, `--help` | flag | — | Print help and exit. |
 
 `--debug` prints the elapsed time (as in the Go build) and additionally
 enables verbose `tracing` diagnostics — each HTTP request and response,
@@ -210,6 +226,15 @@ Reviewed as a senior-Rust pass. Summary of the current state:
 - `azure_core` retry policy disabled so the explicitly-driven poll loop
   isn't fought by SDK retries.
 - Dead `Config.version` field removed.
+
+**Performance pass** (I/O-bound app — allocation/clarity cleanups, not
+hot-path work)
+- `--exclude-resource-types` matching is allocation-free
+  (`eq_ignore_ascii_case`) instead of lowercasing a copy per resource.
+- The poll loop was split into `poll_api` / `poll_to_terminal`, removing a
+  per-completion `ReportContext` clone and a spurious 2-second wait on an
+  already-terminal initial response.
+- Release builds set `codegen-units = 1` alongside `lto` and `strip`.
 
 **Known limitations / deferred (acceptable for alpha)**
 - `--exclude-resource-types` matches the top-level `provider/type` only

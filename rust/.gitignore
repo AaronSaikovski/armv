@@ -1,1 +1,22 @@
+# Rust build artifacts
 target/
+
+# Cargo.lock is intentionally committed (this crate builds a binary).
+
+# ARMV output: timestamped reports and --debug log files
+output/
+armv-debug-*.log
+
+# rustfmt backups
+**/*.rs.bk
+
+# Environment files (may hold Azure service-principal secrets)
+.env
+.env.*
+!.env.example
+
+# Editor / OS cruft
+.DS_Store
+*.swp
+.idea/
+.vscode/
