@@ -74,9 +74,10 @@ clap-native — see deviations.) Deliberately preserved Go quirks:
 
 The port adds a few things the Go build lacks, for usability (see
 deviations): the `--exclude-resource-types` filter, cyan per-step status
-lines, `--`-prefixed missing-flag names, prompt Ctrl-C/SIGTERM cancellation
-at every pipeline step, and a short managed-identity probe timeout so
-off-Azure runs don't hang on IMDS.
+lines, `--`-prefixed missing-flag names, a clean actionable "run `az login`"
+message when the caller isn't authenticated, prompt Ctrl-C/SIGTERM
+cancellation at every pipeline step, and a short managed-identity probe
+timeout so off-Azure runs don't hang on IMDS.
 
 ## Usage
 
@@ -197,10 +198,19 @@ missing git values fall back to `none`/`unknown`.
 - The `azure_core` pipeline retry policy is disabled: the LRO poll loop is
   driven explicitly and every status is interpreted by the client, so SDK
   retries would only conflict (e.g. retrying a terminal 500 for 60s).
+- When the initial login check fails (no usable credential / 401 — i.e. the
+  caller isn't logged in), the error is exactly the actionable one-line
+  message `not logged into Azure subscription "<id>": please run \`az login\`
+  and retry`. The SDK's verbose multi-line credential-chain cause is
+  suppressed from that message and logged only under `--debug`. Go defines
+  this exact string in `checkLogin` but never reaches it — its login check
+  always returns via the `login error:` path — so this is the Rust port
+  surfacing Go's intended message. A genuine Ctrl-C during the login step
+  still reports `login error: context canceled`.
 - Azure SDK error internals: transport/auth failures render with
   `azure_core`/`azure_identity` text, not the Go azcore `ResponseError`
-  format. Our own wrap prefixes (`login error:`,
-  `auth: subscription "x" get:`, …) are identical.
+  format. Our own wrap prefixes (`auth: subscription "x" get:`, …) are
+  identical.
 - The environment credential supports the client-secret service principal;
   client-certificate and username/password flows are not wired up.
 - The credential-chain aggregation error text differs from Go's
@@ -253,8 +263,8 @@ hot-path work)
 - The tokio runtime is multi-threaded although the workload is largely
   sequential I/O.
 
-**Coverage:** 75 tests — 59 unit tests (pure logic: report rendering,
+**Coverage:** 76 tests — 59 unit tests (pure logic: report rendering,
 `json.Indent` port, UUID validation, exclusion filter, output permissions,
-CLI parsing) plus 16 integration tests (8 `assert_cmd` CLI tests and 8
+CLI parsing) plus 17 integration tests (8 `assert_cmd` CLI tests and 9
 `wiremock` end-to-end tests exercising the full pipeline through the real
 `azure_core` stack).

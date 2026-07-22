@@ -72,10 +72,22 @@ async fn run_inner(cancel: CancellationToken, cfg: &Config) -> anyhow::Result<()
     // Every pre-poll Azure call is raced against cancellation so Ctrl-C
     // interrupts even while a credential probe or HTTP request is in flight
     // (the poll loop honours cancellation on its own).
+    // If the caller isn't logged into Azure, this first call fails (no usable
+    // credential / 401). Show a clean, actionable message rather than the
+    // SDK's multi-line credential-chain dump; the noisy cause is preserved for
+    // `--debug` via tracing. Go's checkLogin defines this exact string but
+    // never reaches it. A genuine cancellation (Ctrl-C) is passed through
+    // unchanged, not mislabelled as a login problem.
     status("Authenticating to Azure...");
-    cancellable(&cancel, client.get_subscription(sub))
-        .await
-        .context("login error")?;
+    if let Err(err) = cancellable(&cancel, client.get_subscription(sub)).await {
+        if cancel.is_cancelled() {
+            return Err(err.context("login error"));
+        }
+        tracing::debug!("login check failed: {err:#}");
+        anyhow::bail!(
+            "not logged into Azure subscription \"{sub}\": please run `az login` and retry"
+        );
+    }
     tracing::debug!("confirmed access to subscription {sub}");
     println!(
         "{}",

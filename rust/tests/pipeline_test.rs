@@ -197,6 +197,38 @@ async fn conflict_409_exits_zero_with_failure_banner() {
 }
 
 #[tokio::test]
+async fn not_logged_in_shows_login_error() {
+    let server = MockServer::start().await;
+    // The very first call (the login check) is rejected as unauthorized,
+    // which is what a caller who hasn't run `az login` effectively sees.
+    Mock::given(method("GET"))
+        .and(path(format!("/subscriptions/{SUB}")))
+        .respond_with(ResponseTemplate::new(401).set_body_raw(
+            r#"{"error":{"code":"AuthenticationFailed","message":"no credential"}}"#,
+            "application/json",
+        ))
+        .mount(&server)
+        .await;
+
+    let dir = tempfile::tempdir().unwrap();
+    let uri = server.uri();
+    let out_str = dir.path().to_str().unwrap().to_string();
+    tokio::task::spawn_blocking(move || {
+        armv(&uri, &out_str)
+            .assert()
+            .failure()
+            .code(1)
+            // Exact match: the message is clean (no SDK credential-chain dump
+            // trailing it); that noise is only emitted under --debug.
+            .stderr(format!(
+                "Error: not logged into Azure subscription \"{SUB}\": please run `az login` and retry\n"
+            ))
+    })
+    .await
+    .unwrap();
+}
+
+#[tokio::test]
 async fn missing_source_resource_group() {
     let server = MockServer::start().await;
     Mock::given(method("GET"))

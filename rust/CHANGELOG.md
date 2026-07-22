@@ -37,12 +37,18 @@ failure exits `0`; the final line prints the output directory).
   resource counts, exclusions, credential selection, and poll transitions to
   **both** stderr and a timestamped `armv-debug-*.log` file in the output
   directory. `RUST_LOG` overrides the filter.
+- **Actionable not-logged-in error** — when the initial login check fails
+  because no Azure credential is available, the error is a clean one-liner:
+  `not logged into Azure subscription "<id>": please run \`az login\` and
+  retry`. The SDK's noisy multi-line credential-chain cause is suppressed
+  from the message and shown only under `--debug`. This surfaces the message
+  Go defines in `checkLogin` but never actually reaches.
 - **Cyan per-step status lines** printed while the pipeline runs.
 - **Prompt cancellation** — every pre-poll Azure call is raced against
   Ctrl-C / SIGTERM, so the process interrupts even during credential
   acquisition.
 - **`--`-prefixed missing-flag errors** for clearer usage hints.
-- **Test suite** — 75 tests: 59 pure-logic unit tests plus 16 integration
+- **Test suite** — 76 tests: 59 pure-logic unit tests plus 17 integration
   tests (`assert_cmd` CLI tests and `wiremock` end-to-end tests exercising the
   full pipeline through the real `azure_core` stack).
 - **Tooling** — `rust` CI workflow (fmt/clippy/test/build), a cross-platform
@@ -51,10 +57,12 @@ failure exits `0`; the final line prints the output directory).
 
 ### Changed
 
-- Argument parsing uses [`clap`](https://docs.rs/clap) (derive). `--help`,
-  `--version`, and usage-error output are clap-native, and usage errors exit
-  with clap's code `2` (pipeline errors still exit `1`). Short version flag is
-  `-V`.
+- Argument parsing migrated to [`clap`](https://docs.rs/clap) (derive),
+  replacing the earlier hand-rolled cobra-parity parser (now fully removed).
+  `--help`, `--version`, and usage-error output are clap-native, and usage
+  errors exit with clap's code `2` (pipeline errors still exit `1`). Short
+  version flag is `-V`. The default output path (`./output`) is defined once
+  as a shared constant used by both the flag default and its tests.
 - Version metadata for `--version` is sourced from the Cargo package version
   (idiomatic for Rust) with git supplying commit/date; env vars override for
   release pipelines.
