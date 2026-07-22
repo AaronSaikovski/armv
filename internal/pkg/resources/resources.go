@@ -42,9 +42,11 @@ func GetResourceIds(ctx context.Context, resourcesClient *armresources.Client, r
 		return nil, err
 	}
 
-	resourceIds := make([]*string, len(resourcesList))
-	for i, val := range resourcesList {
-		resourceIds[i] = val.ID
+	resourceIds := make([]*string, 0, len(resourcesList))
+	for _, val := range resourcesList {
+		if val.ID != nil {
+			resourceIds = append(resourceIds, val.ID)
+		}
 	}
 
 	return resourceIds, nil

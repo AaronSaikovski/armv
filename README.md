@@ -34,8 +34,8 @@ Single CLI mode:
 - **Markdown reports** — success/failure pages with per-resource failure tables and full JSON for forensics
 - **Progress bar** (CLI) — renders live status for long-running calls
 - **Hardened file I/O** — output files created with `0640` / directories with `0750` permissions
-- **Cross-platform builds** — signed, reproducible binaries for Linux, macOS, Windows (amd64/arm64/386/armv7)
-- **CI-enforced quality** — `go vet`, `staticcheck`, `golangci-lint`, `govulncheck`, race-enabled tests on every push
+- **Cross-platform builds** — reproducible, checksummed binaries for Linux, macOS, Windows (amd64/arm64/386/armv7)
+- **CI-enforced quality** — `go vet`, `gofmt` drift check, `staticcheck`, `govulncheck`, and tests on every push
 
 ### Flow
 
@@ -88,14 +88,14 @@ Prebuilt archives are published on every `v*` tag:
 | macOS | amd64, arm64 |
 | Windows | amd64, 386 |
 
-Each release includes a `sha256` checksum file and per-archive SBOMs.
+Each release includes a `sha256` checksum file.
 
 ### macOS Security
 
 If you downloaded a pre-built binary from a GitHub Release and macOS blocks it with "App can't be opened because Apple cannot check it for malicious software", run:
 
 ```bash
-xattr -d com.apple.quarantine ./gogoodwe
+xattr -d com.apple.quarantine ./armv
 ```
 
 Alternatively, right-click the binary and select **Open** from the context menu, then confirm when prompted.
@@ -253,255 +253,15 @@ The report contains:
 - **Details** — per-resource full resource ID, code, and message
 - **Raw Azure response** — pretty-printed JSON for forensics
 
-<!-- MCP Server Mode section disabled
----
-
-## MCP Server Mode
-
-In addition to running as a CLI, ARMV can expose its validation engine as a [Model Context Protocol](https://modelcontextprotocol.io) server. This lets LLM-based agents (Claude Desktop, Claude Code, VS Code MCP extensions, custom MCP clients) invoke resource-move validation as a tool.
-
-Built on the [official MCP Go SDK](https://github.com/modelcontextprotocol/go-sdk), the server speaks MCP over **stdio** (standard input/output). The client is responsible for launching the `armv` binary as a subprocess; communication happens via newline-delimited JSON-RPC on the child's stdin/stdout.
-
-### Starting the Server
-
-```bash
-./armv mcp serve
-```
-
-The server runs in the foreground and blocks until the client disconnects or the process is cancelled. It emits **no output on stdout** other than MCP protocol messages — any logs, errors, or debug information go to stderr.
-
-### Exposed Tools
-
-| Tool | Description |
-|------|-------------|
-| `validate_move` | Validate whether all resources in a source resource group can be moved to a target resource group (optionally in a different subscription) without performing the move. |
-| `list_subscriptions` | List every Azure subscription the supplied credential can see. Used as the first step in a discovery flow so the LLM can offer the user a picklist instead of asking them to recall UUIDs. |
-| `list_resource_groups` | List every resource group in a given subscription. |
-| `list_resources` | List every Azure resource in a given resource group (name, type, location, ARM ID). Useful for inspecting what's in an RG before validating, or for pinpointing a likely blocker. |
-
-All four tools share the same credential model — `bearer_token` > SP triple > `DefaultAzureCredential`. See [Credential selection](#credential-selection-priority-order) below.
-
-#### Typical Discovery Flow
-
-```
-User:     "I want to validate moving something from one of my subs."
-LLM:      → list_subscriptions
-          "You have 3: prod-east, dev-west, sandbox. Which one?"
-User:     "dev-west"
-LLM:      → list_resource_groups(subscription_id: dev-west)
-          "7 RGs: rg-app, rg-data, rg-network… which?"
-User:     "rg-app, move to prod-east."
-LLM:      → list_resource_groups(subscription_id: prod-east)     (confirms target RG exists)
-          → validate_move(source/target …)
-          "24 of 27 resources can move; the Container Instance is blocking."
-```
-
-The LLM chains the calls itself based on the user's natural-language intent and the tool descriptions exposed via `tools/list`.
-
-#### `validate_move` — Input Schema
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `source_subscription_id` | string (UUID) | yes | Source Azure subscription ID |
-| `source_resource_group` | string | yes | Source resource group name |
-| `target_subscription_id` | string (UUID) | yes | Target Azure subscription ID |
-| `target_resource_group` | string | yes | Target resource group name |
-| `tenant_id` | string (UUID) | no | Service principal tenant ID |
-| `client_id` | string (UUID) | no | Service principal client (application) ID |
-| `client_secret` | string | no | Service principal client secret |
-| `bearer_token` | string | no | Pre-fetched Azure AD bearer token for `https://management.azure.com` |
-
-#### Credential selection (priority order)
-
-1. **`bearer_token`** — if supplied, the server uses it directly and stores no credentials. The client is responsible for fetching the token (e.g. `az account get-access-token --resource https://management.azure.com`) and refreshing it when it expires (~1 hour). Mixing `bearer_token` with SP fields is rejected.
-2. **Service principal** — all three of `tenant_id` / `client_id` / `client_secret` present. Supplying only one or two is rejected.
-3. **`DefaultAzureCredential`** — fallback when no auth fields are supplied. Walks the standard Azure credential chain: environment variables, workload identity, managed identity, `az login`.
-
-For local desktop use, option 3 with `az login` is the most ergonomic — no secrets anywhere. For sensitive environments where no credentials should ever reach the server process, option 1 (bearer token) is recommended.
-
-All four tools accept the same optional auth fields, so a single credential strategy works across the whole discovery flow.
-
-#### Discovery Tool Schemas
-
-**`list_subscriptions`** — input is just the four auth fields (no resource parameters). Output contains `subscriptions[].subscription_id`, `subscriptions[].display_name`, `subscriptions[].state`, `subscriptions[].id`, and `count`.
-
-**`list_resource_groups`** — additional required input: `subscription_id`. Output contains `resource_groups[].name`, `resource_groups[].id`, `resource_groups[].location`, plus the echoed `subscription_id` and `count`.
-
-**`list_resources`** — additional required inputs: `subscription_id`, `resource_group`. Output contains `resources[].name`, `resources[].type`, `resources[].id`, `resources[].location`, plus echoed `subscription_id`, `resource_group`, and `count`.
-
-#### `validate_move` — Output Schema
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `success` | bool | `true` when the Azure API returned HTTP 204 |
-| `resource_ids` | string[] | Every resource enumerated in the source resource group |
-| `target_resource_group_id` | string | Fully qualified ID of the target resource group |
-| `http_status_code` | int | HTTP status code of the validate-move response (204 = ok, 409 = conflict) |
-| `http_status` | string | HTTP status string |
-| `diagnostics` | string | Raw response body — typically the 409 error payload when validation fails |
-
-### Connecting a Client
-
-Most clients drive ARMV through a configuration file — below are the common ones.
-
-#### Claude Desktop
-
-Edit `claude_desktop_config.json`:
-
-- **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
-- **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
-
-```json
-{
-  "mcpServers": {
-    "armv": {
-      "command": "/absolute/path/to/armv",
-      "args": ["mcp", "serve"]
-    }
-  }
-}
-```
-
-Restart Claude Desktop. The tools appear in the picker.
-
-#### Claude Code (CLI)
-
-```bash
-claude mcp add armv --command /absolute/path/to/armv --args mcp --args serve
-```
-
-Or edit `~/.claude/mcp.json`:
-
-```json
-{
-  "mcpServers": {
-    "armv": { "command": "/absolute/path/to/armv", "args": ["mcp", "serve"] }
-  }
-}
-```
-
-#### VS Code (with an MCP extension)
-
-`.vscode/mcp.json`:
-
-```json
-{
-  "servers": {
-    "armv": { "type": "stdio", "command": "/absolute/path/to/armv", "args": ["mcp", "serve"] }
-  }
-}
-```
-
-#### MCP Inspector (debugging)
-
-```bash
-npx @modelcontextprotocol/inspector /absolute/path/to/armv mcp serve
-```
-
-The inspector UI lists each tool with its input and output JSON schemas and lets you invoke it interactively.
-
-#### Passing Credentials via Environment
-
-Configure service principal credentials once at the client level and omit them from tool calls — `DefaultAzureCredential` picks them up:
-
-```json
-{
-  "mcpServers": {
-    "armv": {
-      "command": "/absolute/path/to/armv",
-      "args": ["mcp", "serve"],
-      "env": {
-        "AZURE_TENANT_ID": "<tenant-uuid>",
-        "AZURE_CLIENT_ID": "<client-uuid>",
-        "AZURE_CLIENT_SECRET": "<secret>"
-      }
-    }
-  }
-}
-```
-
-Swap `AZURE_CLIENT_SECRET` for `AZURE_CLIENT_CERTIFICATE_PATH` to use a cert-based SP.
-
-#### Client-Supplied Bearer Token
-
-Fetch a token client-side and pass it per-call — no Azure credential material lives on the server:
-
-```bash
-az account get-access-token --resource https://management.azure.com --query accessToken -o tsv
-```
-
-Pass the resulting string as `bearer_token` in the tool arguments. If the token is expired, the Azure API returns 401; the client fetches a fresh one and retries.
-
-### Example Invocation
-
-```json
-{
-  "name": "validate_move",
-  "arguments": {
-    "source_subscription_id": "12345678-1234-1234-1234-123456789012",
-    "source_resource_group": "rg-prod-east",
-    "target_subscription_id": "87654321-4321-4321-4321-210987654321",
-    "target_resource_group": "rg-dev-west"
-  }
-}
-```
-
-A successful response:
-
-```json
-{
-  "success": true,
-  "resource_ids": ["/subscriptions/.../rg-prod-east/providers/..."],
-  "target_resource_group_id": "/subscriptions/.../rg-dev-west",
-  "http_status_code": 204,
-  "http_status": "204 No Content"
-}
-```
-
-A failed response sets `success: false`, `http_status_code: 409`, and includes the full Azure error payload in `diagnostics`.
-
-### Progress Notifications
-
-Azure validate-move can take minutes. The server emits MCP `notifications/progress` at every phase transition and on each 2-second poll tick, so clients can render a live status line:
-
-```
-Verifying Azure credentials
-Enumerating resource groups and resources
-Starting Azure validate-move for 27 resource(s)
-Polling Azure validate-move (elapsed 2s)
-…
-Validation complete (HTTP 204)
-```
-
-Clients opt in by including a `progressToken` in the tool call (Claude Desktop, Claude Code, and MCP Inspector all do this automatically). Without a token, the server skips notifications entirely.
-
-### Timeouts and Cancellation
-
-| Layer | Limit |
-|-------|-------|
-| Server polling ceiling | **30 minutes** (hard cap via `context.WithTimeout` in `PollAndCollect`) |
-| Poll interval | **2 seconds** — one progress update per tick |
-| MCP client per-call deadline | **Client-specific** (Claude Desktop typically ~60 seconds) |
-
-`notifications/cancelled` from the client propagates into the Azure SDK's `ctx`; the in-flight call aborts at the next poll boundary (within ~2 seconds) and returns a cancellation error. Validate-move is read-only, so no cleanup is required.
-
-### Recommended LLM
-
-Small tool-capable models are plenty — only four tools and short UUID-shaped inputs. **Claude Haiku 4.5** is the default pick (fast, cheap, high tool-use accuracy). Step up to **Sonnet 4.6** when the LLM needs to reason about large 409 diagnostics, propose remediations, or plan multi-RG migrations. Open-weight models work too (Qwen 2.5 Instruct 14B+, Llama 3.3 70B Instruct, Hermes 3) — see the [official MCP docs](https://modelcontextprotocol.io) for client configuration details.
-
----
--->
-
 ## Architecture
 
 | Layer | Location | Responsibility |
 |-------|----------|----------------|
-| **CLI** | `cmd/armv/app/` | Cobra root + flag parsing, CLI workflow orchestration |
-| **Validator core** | `internal/pkg/validator/` | Library-friendly end-to-end validation flow — presentation-free |
-| **Authentication** | `internal/pkg/auth/` | `DefaultAzureCredential`, `ClientSecretCredential`, `StaticTokenCredential` (bearer token) |
+| **CLI** | `cmd/armv/app/` | Cobra root + flag parsing, CLI workflow orchestration (`run()`) |
+| **Authentication** | `internal/pkg/auth/` | `DefaultAzureCredential` + Azure client factories |
 | **Validation** | `internal/pkg/validation/` | `AzureResourceMoveInfo` state + `BeginValidateMoveResources` wrapper |
-| **Resource management** | `internal/pkg/resourcegroups/`, `internal/pkg/resources/` | RG + resource enumeration |
-| **Polling** | `cmd/armv/poller/` | Interactive (`PollApi`) for CLI |
+| **Resource management** | `internal/pkg/resourcegroups/`, `internal/pkg/resources/` | RG existence checks + resource enumeration |
+| **Polling** | `cmd/armv/poller/` | `PollApi` — drives the long-running operation, renders the report |
 | **Utilities** | `pkg/utils/` | UUID validation, file I/O with hardened permissions, JSON helpers, console output |
 
 ```
@@ -522,10 +282,7 @@ cmd/armv/                          # Binary entry point
 
 internal/pkg/                      # Internal (module-private) packages
 ├── auth/
-│   ├── auth.go                    # DefaultAzureCredential, ClientSecretCredential, client factories, ListSubscriptions
-│   └── bearer.go                  # StaticTokenCredential for client-supplied bearer tokens
-├── validator/
-│   └── validator.go               # library-friendly Validate()
+│   └── auth.go                    # DefaultAzureCredential, login check, client factories
 ├── validation/
 │   ├── azureresourcemoveinfo.go   # Workflow state struct
 │   └── validatemove.go            # BeginValidateMoveResources caller
@@ -546,13 +303,16 @@ test/                              # Black-box tests (separate package)
 ├── jsonutils_test.go
 ├── outputfile_test.go
 ├── pollerresponsedata_test.go
+├── report_test.go
 └── validateinput_test.go
 
 .github/workflows/
-├── build.yml                      # vet + golangci-lint + staticcheck + govulncheck + race tests + multi-OS build
-└── goreleaser.yml                 # tag-triggered cross-platform release with SBOMs
+├── build.yml                      # vet + gofmt drift + test + build (push to main, PRs)
+├── test.yml                       # test + staticcheck + govulncheck (all branches, PRs)
+├── goreleaser.yml                 # tag-triggered cross-platform release
+└── release.yml                    # tag-triggered release (test + goreleaser)
 
-.goreleaser.yaml                   # goreleaser v2 config (trimpath, -s -w, SBOMs, checksums)
+.goreleaser.yaml                   # goreleaser v2 config (trimpath, -s -w, checksums)
 Taskfile.yml                       # Cross-platform task runner
 ```
 
@@ -564,11 +324,12 @@ Credentials flow as the `azcore.TokenCredential` interface end-to-end so the cre
 
 | Package | Version | Purpose |
 |---------|---------|---------|
-| `github.com/Azure/azure-sdk-for-go/sdk/azcore` | v1.21.1 | Azure SDK core |
-| `github.com/Azure/azure-sdk-for-go/sdk/azidentity` | v1.13.1 | `DefaultAzureCredential` |
+| `github.com/Azure/azure-sdk-for-go/sdk/azcore` | v1.22.0 | Azure SDK core |
+| `github.com/Azure/azure-sdk-for-go/sdk/azidentity` | v1.14.0 | `DefaultAzureCredential` |
 | `github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources` | v1.2.0 | Resources API client |
+| `github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/subscription/armsubscription` | v1.2.0 | Subscription access check |
 | `github.com/spf13/cobra` | v1.10.2 | CLI framework |
-| `github.com/schollz/progressbar/v3` | v3.19.0 | Progress bar |
+| `github.com/schollz/progressbar/v3` | v3.19.1 | Progress bar |
 | `github.com/logrusorgru/aurora` | v2.0.3 | ANSI colour output |
 
 See [`go.mod`](./go.mod) for the complete set, including transitive pins.
@@ -581,55 +342,32 @@ See [`go.mod`](./go.mod) for the complete set, including transitive pins.
 
 - **Go 1.26+**
 - **Task** — [taskfile.dev](https://taskfile.dev/)
-- Optional: `staticcheck`, `golangci-lint`, `govulncheck`, `goreleaser`
+- Optional: `staticcheck`, `govulncheck`, `goreleaser`
 
 ### Tasks
 
+Task names come straight from [`Taskfile.yml`](./Taskfile.yml):
+
 ```bash
-task                 # list all tasks
 task build           # debug build → bin/armv
-task release         # stripped, trimpath, version-injected build (runs vet+lint+seccheck first)
-task run             # go run ./cmd/armv
-task debug           # run with params sourced from envs/dev.env
-task test            # race-enabled unit tests with coverage profile
-task test-verbose    # same with -v
-task cover           # per-function coverage summary (depends on task test)
-task vet             # go vet
-task lint            # go fmt + go mod tidy
+task release         # stripped, trimpath, version-injected build (runs lint first)
+task run             # go run ./cmd/armv --help
+task test            # go test -v ./...
+task vet             # go vet ./...
+task lint            # go fmt + go mod tidy + go fix
 task staticcheck     # staticcheck ./...
-task golangci        # golangci-lint run ./...
 task seccheck        # govulncheck ./...
-task ci              # vet + staticcheck + seccheck + test (the local CI combo)
+task generate        # go generate ./cmd/armv
+task deps            # go mod tidy + download + go get -u
 task goreleaser      # local cross-platform snapshot via goreleaser
-task goreleaser-check  # validate .goreleaser.yaml
-task deps            # go mod tidy + download + verify
-task deps-upgrade    # go get -u ./... + tidy
-task clean           # clean caches + remove bin/ dist/ coverage.out
-```
-
-Linux/macOS-only tasks (require `bash`):
-
-```bash
-task deploy          # deploy test Azure resources via Bicep
-task destroy         # tear them down
-```
-
-Windows developers should run `task deploy-win` / `task destroy-win` (Git Bash or WSL required).
-
-### Environment file for `task debug`
-
-Create `./envs/dev.env` from the sample:
-
-```bash
-cp envs/sample.env envs/dev.env
-# edit with your values
+task clean           # clean caches + remove bin/ dist/
 ```
 
 ### Running a single test
 
 ```bash
 go test -v ./test/ -run TestCheckValidSubscriptionID
-go test -v ./test/ -run TestArgsFieldAssignment
+go test -v ./cmd/armv/poller/ -run TestWriteOutputEndToEnd
 ```
 
 ---
@@ -638,16 +376,15 @@ go test -v ./test/ -run TestArgsFieldAssignment
 
 ### `.github/workflows/build.yml`
 
-Four jobs run on every push and pull request to `main`:
+Runs on every push to `main` and on pull requests: `go vet`, a `gofmt` drift check (`go fmt ./... && git diff --exit-code`), `go test`, and a `go build` to confirm the binary links.
 
-1. **lint** — `gofmt` drift check, `go mod tidy` drift check, `go vet`, `golangci-lint`, `staticcheck`
-2. **vulncheck** — `govulncheck ./...`
-3. **test** — race-enabled unit tests with coverage on Ubuntu / Windows / macOS (matrix, fail-fast: false)
-4. **build** — full release-flag build on all three OSes to verify release binaries link correctly
+### `.github/workflows/test.yml`
 
-### `.github/workflows/goreleaser.yml`
+Runs on every push (all branches) and on pull requests: `go test`, `staticcheck`, and `govulncheck`.
 
-Triggered on `v*` tags (and manual dispatch). Builds the release matrix, generates SBOMs with `syft`, publishes archives and a `sha256` checksum file to the GitHub release.
+### `.github/workflows/goreleaser.yml` and `release.yml`
+
+Both trigger on `v*` tags and run `goreleaser release --clean`, which builds the cross-platform matrix and publishes archives plus a `sha256` checksum file to the GitHub release.
 
 ### Release flags
 
@@ -693,10 +430,10 @@ Issues and PRs are welcome:
 - 🐛 [Report a bug](https://github.com/AaronSaikovski/armv/issues)
 - 💡 [Suggest a feature](https://github.com/AaronSaikovski/armv/issues)
 
-Before opening a PR:
+Before opening a PR, run the same checks CI does:
 
 ```bash
-task ci   # runs vet + staticcheck + seccheck + race tests locally
+task vet && task staticcheck && task seccheck && task test
 ```
 
 Please include in any bug report:

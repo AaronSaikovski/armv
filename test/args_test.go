@@ -1,6 +1,7 @@
 package test
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/AaronSaikovski/armv/pkg/utils"
@@ -39,9 +40,16 @@ func TestAppDescription(t *testing.T) {
 		t.Fatal("AppDescription should not be empty")
 	}
 
-	const expectedSubstring = "Azure Resource Movability Validator"
-	if len(utils.AppDescription) < len(expectedSubstring) {
-		t.Errorf("AppDescription is too short, got length %d", len(utils.AppDescription))
+	if !strings.Contains(utils.AppDescription, "Azure Resource Movability Validator") {
+		t.Errorf("AppDescription missing product name:\n%s", utils.AppDescription)
+	}
+	if !strings.Contains(utils.AppDescription, "Read-Only") {
+		t.Errorf("AppDescription should state the tool is Read-Only:\n%s", utils.AppDescription)
+	}
+	// The tool supports cross-subscription moves; the description must not
+	// claim source and target must share a subscription (a prior doc bug).
+	if strings.Contains(utils.AppDescription, "same subscription") {
+		t.Errorf("AppDescription wrongly claims 'same subscription':\n%s", utils.AppDescription)
 	}
 }
 

@@ -38,17 +38,6 @@ func GetAzureDefaultCredential() (*azidentity.DefaultAzureCredential, error) {
 	return cred, nil
 }
 
-// NewClientSecretCredential builds a service principal credential from
-// explicit tenant/client/secret values. Used by the MCP server to accept
-// per-call credentials rather than relying on ambient `az login`.
-func NewClientSecretCredential(tenantID, clientID, clientSecret string) (*azidentity.ClientSecretCredential, error) {
-	cred, err := azidentity.NewClientSecretCredential(tenantID, clientID, clientSecret, nil)
-	if err != nil {
-		return nil, fmt.Errorf("auth: client secret credential: %w", err)
-	}
-	return cred, nil
-}
-
 // NewResourceClient creates an armresources.Client for the given subscription.
 func NewResourceClient(subscriptionID string, cred azcore.TokenCredential) (*armresources.Client, error) {
 	clientFactory, err := armresources.NewClientFactory(subscriptionID, cred, nil)
@@ -65,25 +54,4 @@ func SubscriptionClientCred(cred azcore.TokenCredential) (*armsubscription.Subsc
 		return nil, fmt.Errorf("auth: new subscriptions client: %w", err)
 	}
 	return client, nil
-}
-
-// ListSubscriptions returns every subscription the given credential can enumerate.
-// Used by the MCP discovery tool so an LLM can offer the user a picklist before
-// asking for a specific ID. Pagination is handled internally.
-func ListSubscriptions(ctx context.Context, cred azcore.TokenCredential) ([]*armsubscription.Subscription, error) {
-	client, err := SubscriptionClientCred(cred)
-	if err != nil {
-		return nil, err
-	}
-
-	pager := client.NewListPager(nil)
-	subs := make([]*armsubscription.Subscription, 0, 8)
-	for pager.More() {
-		page, err := pager.NextPage(ctx)
-		if err != nil {
-			return nil, fmt.Errorf("auth: list subscriptions page: %w", err)
-		}
-		subs = append(subs, page.Value...)
-	}
-	return subs, nil
 }

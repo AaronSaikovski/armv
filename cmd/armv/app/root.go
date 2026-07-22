@@ -26,9 +26,8 @@ const (
 
 // Config holds the application configuration resolved from CLI flags.
 type Config struct {
-	Version    string
-	Args       utils.Args
-	OutputPath string
+	Version string
+	Args    utils.Args
 }
 
 // run executes the validation workflow end-to-end.
@@ -82,7 +81,7 @@ func run(ctx context.Context, cfg *Config) error {
 		ResourceCount:        len(azureResourceMoveInfo.ResourceIds),
 	}
 
-	report, err := poller.PollApi(ctx, resp, cfg.OutputPath, reportCtx)
+	report, err := poller.PollApi(ctx, resp, cfg.Args.OutputPath, reportCtx)
 	if err != nil {
 		return fmt.Errorf("failed to poll API: %w", err)
 	}
@@ -93,6 +92,6 @@ func run(ctx context.Context, cfg *Config) error {
 		utils.OutputFailSummary(len(report.Errors), poller.TopFailureNames(report, consoleTopFailures))
 	}
 
-	fmt.Println(aurora.Yellow(fmt.Sprintf("\n***  Output file written to: - %s ***", cfg.OutputPath)))
+	fmt.Println(aurora.Yellow(fmt.Sprintf("\n***  Output file written to: - %s ***", cfg.Args.OutputPath)))
 	return nil
 }

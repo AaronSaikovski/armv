@@ -7,7 +7,8 @@ const (
 	AppDescription = `ARMV - Azure Resource Movability Validator
 
 Performs a Read-Only check whether resources in a source resource group
-can be moved to a target resource group in the same subscription.`
+can be moved to a target resource group. The source and target may live in
+different subscriptions within the same tenant.`
 )
 
 // Args holds the command-line arguments

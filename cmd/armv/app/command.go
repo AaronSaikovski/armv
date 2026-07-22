@@ -8,7 +8,6 @@ import (
 )
 
 // NewRootCommand builds the root cobra command for the armv CLI.
-// Note: MCP server subcommand has been disabled.
 func NewRootCommand(version string) *cobra.Command {
 	var (
 		sourceSubscriptionId string
@@ -39,7 +38,6 @@ func NewRootCommand(version string) *cobra.Command {
 					Debug:                debug,
 					OutputPath:           outputPath,
 				},
-				OutputPath: outputPath,
 			}
 
 			return run(ctx, cfg)
@@ -56,8 +54,6 @@ func NewRootCommand(version string) *cobra.Command {
 	rootCmd.Flags().BoolVar(&debug, "debug", false, "Enable debug mode with timing information")
 	rootCmd.Flags().StringVar(&outputPath, "output-path", DefaultOutputPath, "Output path to write results")
 
-	// Required flags apply only to the root invocation.
-	// Note: MCP server subcommand has been disabled.
 	for _, flagName := range []string{
 		"source-subscription-id",
 		"source-resource-group",
@@ -66,8 +62,6 @@ func NewRootCommand(version string) *cobra.Command {
 	} {
 		cobra.CheckErr(rootCmd.MarkFlagRequired(flagName))
 	}
-
-	// MCP subcommand disabled: rootCmd.AddCommand(newMCPCommand(version))
 
 	return rootCmd
 }

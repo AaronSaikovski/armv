@@ -11,30 +11,6 @@ import (
 	"testing"
 )
 
-func TestResourceMoveOK(t *testing.T) {
-	t.Parallel()
-
-	tests := []struct {
-		name       string
-		statusCode int
-		want       bool
-	}{
-		{name: "204 No Content is OK", statusCode: 204, want: true},
-		{name: "409 Conflict is not OK", statusCode: 409, want: false},
-		{name: "200 OK is not a validated success", statusCode: 200, want: false},
-		{name: "500 Internal Server Error is not OK", statusCode: 500, want: false},
-		{name: "zero status is not OK", statusCode: 0, want: false},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-			if got := ResourceMoveOK(tt.statusCode); got != tt.want {
-				t.Errorf("ResourceMoveOK(%d) = %v, want %v", tt.statusCode, got, tt.want)
-			}
-		})
-	}
-}
-
 // TestWriteOutputEndToEnd exercises the full persistence pipeline:
 // PollerResponseData → format via report.go → WriteOutputFile → file on disk.
 func TestWriteOutputEndToEnd(t *testing.T) {
