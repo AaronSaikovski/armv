@@ -1,8 +1,8 @@
 [package]
 name = "armv"
-version = "0.0.1"
+version = "0.0.1-alpha"
 edition = "2024"
-description = "ARMV - Azure Resource Movability Validator (Rust port)"
+description = "ARMV - Azure Resource Movability Validator (Rust Edition)"
 license = "MIT"
 repository = "https://github.com/AaronSaikovski/armv"
 
@@ -14,6 +14,12 @@ path = "src/lib.rs"
 name = "armv"
 path = "src/main.rs"
 
+# Forbid `unsafe` across every target in the package (lib, bin, tests,
+# build script) - stronger than a crate-root attribute, which only covers
+# the root it is on.
+[lints.rust]
+unsafe_code = "forbid"
+
 [dependencies]
 anyhow = "1"
 async-trait = "0.1"
@@ -21,8 +27,15 @@ chrono = { version = "0.4", default-features = false, features = ["clock"] }
 indicatif = "0.17"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-tokio = { version = "1", features = ["rt-multi-thread", "macros", "time", "signal"] }
+tokio = { version = "1", features = [
+    "rt-multi-thread",
+    "macros",
+    "time",
+    "signal",
+] }
 tokio-util = { version = "0.7", features = ["rt"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 # ARM access: official new-generation Azure SDK crates. The HTTP calls run
 # through azure_core's pipeline with a BearerTokenCredentialPolicy; only the
 # 5 endpoint definitions (which no new-gen mgmt crate provides) are ours.
@@ -39,3 +52,4 @@ wiremock = "0.6"
 [profile.release]
 strip = true
 lto = true
+codegen-units = 1

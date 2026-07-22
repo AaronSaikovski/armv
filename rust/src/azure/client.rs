@@ -19,7 +19,8 @@ use azure_core::credentials::TokenCredential;
 use azure_core::http::headers::{HeaderName, CONTENT_TYPE};
 use azure_core::http::policies::{BearerTokenAuthorizationPolicy, Policy};
 use azure_core::http::{
-    ClientOptions, Context as HttpContext, Method, Pipeline, PipelineSendOptions, Request, Url,
+    ClientOptions, Context as HttpContext, Method, Pipeline, PipelineSendOptions, RetryOptions,
+    Request, Url,
 };
 
 use crate::auth::ARM_SCOPE;
@@ -112,10 +113,18 @@ impl ArmClient {
                 [ARM_SCOPE],
             )));
         }
+        // Disable the pipeline's retry policy: we drive the LRO poll loop
+        // ourselves and interpret every status explicitly, so SDK retries
+        // conflict with that (e.g. a terminal 500 would otherwise be retried
+        // for the default 60s budget instead of being reported).
+        let options = ClientOptions {
+            retry: RetryOptions::none(),
+            ..Default::default()
+        };
         let pipeline = Pipeline::new(
             option_env!("CARGO_PKG_NAME"),
             option_env!("CARGO_PKG_VERSION"),
-            ClientOptions::default(),
+            options,
             Vec::new(),
             per_try,
             None,
@@ -140,6 +149,7 @@ impl ArmClient {
         let parsed: Url = url
             .parse()
             .with_context(|| format!("invalid request URL {url}"))?;
+        tracing::debug!("request {method:?} {url}");
         let mut request = Request::new(parsed, method);
         if let Some(bytes) = json_body {
             request.insert_header(CONTENT_TYPE, "application/json");
@@ -164,6 +174,7 @@ impl ArmClient {
 
         let (status, headers, body) = response.deconstruct();
         let status = u16::from(status);
+        tracing::debug!("response {status} ({} bytes)", body.len());
         let location = headers
             .get_optional_str(&HeaderName::from_static("location"))
             .map(str::to_string);

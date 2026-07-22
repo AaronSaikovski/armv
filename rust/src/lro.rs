@@ -17,10 +17,10 @@ pub const SLEEP_DURATION: Duration = Duration::from_secs(2);
 pub const POLLING_TIMEOUT: Duration = Duration::from_secs(30 * 60);
 
 /// Drives the LRO to completion, writing the Markdown report to
-/// output_path and returning the parsed ValidationReport (Go PollApi).
-/// The poll cycle is bounded by POLLING_TIMEOUT and honours cancellation
-/// at every wait point; the cancellation/timeout error embeds the literal
-/// Go ctx.Err() strings for message parity.
+/// output_path and returning the parsed ValidationReport (Go PollApi). An
+/// already-terminal initial response is written straight out; otherwise the
+/// poll cycle is bounded by POLLING_TIMEOUT and honours cancellation at
+/// every wait point.
 pub async fn poll_api(
     cancel: &CancellationToken,
     client: &ArmClient,
@@ -28,6 +28,26 @@ pub async fn poll_api(
     output_path: &str,
     report_ctx: ReportContext,
 ) -> anyhow::Result<ValidationReport> {
+    let (status_code, status_text, body) = match begin {
+        BeginMove::Immediate {
+            status_code,
+            status_text,
+            body,
+        } => (status_code, status_text, body),
+        BeginMove::Poller(url) => poll_to_terminal(cancel, client, &url).await?,
+    };
+    write_output(&body, status_code, &status_text, output_path, report_ctx)
+}
+
+/// Polls `url` until the operation reaches a terminal status, returning
+/// `(status_code, status_text, body)`. Bounded by POLLING_TIMEOUT and
+/// honouring cancellation at every wait point; the cancellation/timeout
+/// error embeds the literal Go ctx.Err() strings for message parity.
+async fn poll_to_terminal(
+    cancel: &CancellationToken,
+    client: &ArmClient,
+    url: &str,
+) -> anyhow::Result<(u16, String, Vec<u8>)> {
     let deadline = tokio::time::Instant::now() + POLLING_TIMEOUT;
     let mut bar = Progress::new();
 
@@ -47,47 +67,32 @@ pub async fn poll_api(
 
         bar.tick();
 
-        let status = match &begin {
-            BeginMove::Immediate {
-                status_code,
-                status_text,
-                body,
-            } => PollStatus::Terminal {
-                status_code: *status_code,
-                status_text: status_text.clone(),
-                body: body.clone(),
-            },
-            BeginMove::Poller(url) => {
-                tokio::select! {
-                    biased;
-                    _ = cancel.cancelled() => {
-                        bar.finish();
-                        anyhow::bail!("polling timeout or cancelled: context canceled");
-                    }
-                    _ = tokio::time::sleep_until(deadline) => {
-                        bar.finish();
-                        anyhow::bail!("polling timeout or cancelled: context deadline exceeded");
-                    }
-                    result = client.poll_once(url) => result.context("poll")?
-                }
+        let status = tokio::select! {
+            biased;
+            _ = cancel.cancelled() => {
+                bar.finish();
+                anyhow::bail!("polling timeout or cancelled: context canceled");
             }
+            _ = tokio::time::sleep_until(deadline) => {
+                bar.finish();
+                anyhow::bail!("polling timeout or cancelled: context deadline exceeded");
+            }
+            result = client.poll_once(url) => result.context("poll")?
         };
 
         match status {
-            PollStatus::InProgress => continue,
+            PollStatus::InProgress => {
+                tracing::debug!("poll: operation in progress");
+                continue;
+            }
             PollStatus::Terminal {
                 status_code,
                 status_text,
                 body,
             } => {
+                tracing::debug!("poll: terminal status {status_code}");
                 bar.finish();
-                return write_output(
-                    &body,
-                    status_code,
-                    &status_text,
-                    output_path,
-                    report_ctx.clone(),
-                );
+                return Ok((status_code, status_text, body));
             }
         }
     }
@@ -137,6 +142,7 @@ mod tests {
             target_subscription_id: "t".into(),
             target_resource_group: "tgt".into(),
             resource_count: 1,
+            excluded_resources: Vec::new(),
         }
     }
 

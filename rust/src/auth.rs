@@ -12,7 +12,7 @@ use std::time::Duration;
 
 use anyhow::Context as _;
 use azure_core::credentials::{AccessToken, Secret, TokenCredential, TokenRequestOptions};
-use tokio::sync::Mutex;
+use tokio::sync::OnceCell;
 
 /// ARM scope used for every management-plane call.
 pub const ARM_SCOPE: &str = "https://management.azure.com/.default";
@@ -30,10 +30,11 @@ type Candidate = (&'static str, Duration, Arc<dyn TokenCredential>);
 /// DefaultAzureCredential-equivalent: tries each candidate on first
 /// get_token and caches the first that works (Go caches the winner too).
 /// Each attempt is bounded by a timeout so no single credential can hang
-/// the whole chain.
+/// the whole chain. The winning credential is remembered in a `OnceCell`
+/// so subsequent calls skip probing without holding a lock across I/O.
 struct ChainedTokenCredential {
     candidates: Vec<Candidate>,
-    cached: Mutex<Option<Arc<dyn TokenCredential>>>,
+    cached: OnceCell<Arc<dyn TokenCredential>>,
 }
 
 impl std::fmt::Debug for ChainedTokenCredential {
@@ -58,20 +59,30 @@ impl TokenCredential for ChainedTokenCredential {
         scopes: &[&str],
         options: Option<TokenRequestOptions<'_>>,
     ) -> azure_core::Result<AccessToken> {
-        let mut cached = self.cached.lock().await;
-        if let Some(cred) = cached.as_ref() {
+        // Fast path: a credential has already been selected.
+        if let Some(cred) = self.cached.get() {
             return cred.get_token(scopes, options).await;
         }
 
+        // Slow path: probe the chain, returning the first token obtained and
+        // remembering its credential for next time. No lock is held across
+        // the awaits; concurrent first calls may probe redundantly, which is
+        // harmless (in practice get_token is called once).
         let mut last_err: Option<azure_core::Error> = None;
         for (name, timeout, cred) in &self.candidates {
             match tokio::time::timeout(*timeout, cred.get_token(scopes, options.clone())).await {
                 Ok(Ok(token)) => {
-                    *cached = Some(cred.clone());
+                    tracing::debug!("acquired token via {name}");
+                    // Ignore the error if another task set it first.
+                    let _ = self.cached.set(cred.clone());
                     return Ok(token);
                 }
-                Ok(Err(e)) => last_err = Some(e),
+                Ok(Err(e)) => {
+                    tracing::debug!("{name} failed: {e}");
+                    last_err = Some(e);
+                }
                 Err(_) => {
+                    tracing::debug!("{name} timed out");
                     last_err = Some(azure_core::Error::with_message(
                         azure_core::error::ErrorKind::Credential,
                         format!("{name} timed out"),
@@ -136,7 +147,7 @@ pub fn default_azure_credential() -> anyhow::Result<Arc<dyn TokenCredential>> {
 
     Ok(Arc::new(ChainedTokenCredential {
         candidates,
-        cached: Mutex::new(None),
+        cached: OnceCell::new(),
     }))
 }
 
@@ -168,5 +179,40 @@ mod tests {
         // Developer-tools / managed-identity candidates need no env vars,
         // so the chain must construct on a bare machine.
         assert!(default_azure_credential().is_ok());
+    }
+
+    #[derive(Debug)]
+    struct Hanging;
+
+    #[async_trait::async_trait]
+    impl TokenCredential for Hanging {
+        async fn get_token(
+            &self,
+            _scopes: &[&str],
+            _options: Option<TokenRequestOptions<'_>>,
+        ) -> azure_core::Result<AccessToken> {
+            std::future::pending().await
+        }
+    }
+
+    /// A credential that hangs must not stall the chain: its timeout should
+    /// fire and the next candidate should win (the managed-identity IMDS
+    /// hang-fix in miniature).
+    #[tokio::test(start_paused = true)]
+    async fn chain_times_out_hanging_credential_and_fails_over() {
+        let chain = ChainedTokenCredential {
+            candidates: vec![
+                ("hanging", Duration::from_secs(5), Arc::new(Hanging)),
+                (
+                    "working",
+                    Duration::from_secs(5),
+                    Arc::new(StaticCredential("ok-token".into())),
+                ),
+            ],
+            cached: OnceCell::new(),
+        };
+
+        let token = chain.get_token(&["scope"], None).await.unwrap();
+        assert_eq!(token.token.secret(), "ok-token");
     }
 }

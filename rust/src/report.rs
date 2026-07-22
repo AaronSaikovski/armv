@@ -20,6 +20,8 @@ pub struct ReportContext {
     pub target_subscription_id: String,
     pub target_resource_group: String,
     pub resource_count: usize,
+    /// Full resource IDs dropped via `--exclude-resource-types` (may be empty).
+    pub excluded_resources: Vec<String>,
 }
 
 /// One entry from the Azure error response's details array.
@@ -182,11 +184,38 @@ pub fn render_markdown(r: &ValidationReport) -> String {
         r.context.target_subscription_id, r.context.target_resource_group
     );
     let _ = writeln!(b, "- **Resources validated:** {}", r.context.resource_count);
+    if !r.context.excluded_resources.is_empty() {
+        let _ = writeln!(
+            b,
+            "- **Excluded (by type):** {}",
+            r.context.excluded_resources.len()
+        );
+    }
     let _ = writeln!(b, "- **HTTP status:** {} {}", r.status_code, r.status_text);
     if !r.success && !r.top_level.code.is_empty() {
         let _ = writeln!(b, "- **Top-level code:** `{}`", r.top_level.code);
     }
     b.push('\n');
+
+    if !r.context.excluded_resources.is_empty() {
+        b.push_str("## Excluded Resources\n\n");
+        b.push_str(
+            "These resources were excluded from validation via `--exclude-resource-types`:\n\n",
+        );
+        b.push_str("| # | Resource Type | Name |\n");
+        b.push_str("|---|---|---|\n");
+        for (i, id) in r.context.excluded_resources.iter().enumerate() {
+            let (resource_type, resource_name) = parse_resource_id(id);
+            let _ = writeln!(
+                b,
+                "| {} | {} | {} |",
+                i + 1,
+                md_escape(&resource_type),
+                md_escape(&resource_name)
+            );
+        }
+        b.push('\n');
+    }
 
     if r.success {
         b.push_str("No validation issues found. All resources are eligible to move.\n");
@@ -273,6 +302,7 @@ mod tests {
             target_subscription_id: "tgt-sub".into(),
             target_resource_group: "tgt-rg".into(),
             resource_count: 12,
+            excluded_resources: Vec::new(),
         }
     }
 
@@ -359,6 +389,29 @@ mod tests {
         let r = build_validation_report(409, "409 Conflict", body, "{}", ctx());
         assert_eq!(r.top_level.code, "");
         assert_eq!(r.top_level.message, "only message");
+    }
+
+    #[test]
+    fn render_includes_excluded_resources_section() {
+        let mut c = ctx();
+        c.excluded_resources = vec![
+            "/subscriptions/s/resourceGroups/rg/providers/Microsoft.Web/certificates/cert1".into(),
+            "/subscriptions/s/resourceGroups/rg/providers/Microsoft.Web/certificates/cert2".into(),
+        ];
+        let md = render_markdown(&build_validation_report(204, "204 No Content", b"", "", c));
+        assert!(md.contains("- **Excluded (by type):** 2\n"));
+        assert!(md.contains("## Excluded Resources\n\n"));
+        assert!(md.contains("| # | Resource Type | Name |\n|---|---|---|\n"));
+        assert!(md.contains("| 1 | Microsoft.Web/certificates | cert1 |\n"));
+        assert!(md.contains("| 2 | Microsoft.Web/certificates | cert2 |\n"));
+        // Still a success report otherwise.
+        assert!(md.contains("No validation issues found."));
+    }
+
+    #[test]
+    fn render_omits_excluded_section_when_none() {
+        let md = render_markdown(&build_validation_report(204, "204 No Content", b"", "", ctx()));
+        assert!(!md.contains("Excluded"));
     }
 
     fn failure_report(n: usize) -> ValidationReport {

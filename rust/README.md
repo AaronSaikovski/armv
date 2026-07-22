@@ -1,9 +1,9 @@
 # ARMV — Rust port
 
-A faithful Rust rewrite of the Go `armv` CLI (Azure Resource Movability
-Validator), developed side-by-side under `rust/`. The Go binary at the repo
-root stays canonical until this port reaches full parity; behavior here is
-matched to it byte-for-byte.
+**Status: `0.0.1-alpha`.** A faithful Rust rewrite of the Go `armv` CLI
+(Azure Resource Movability Validator), developed side-by-side under `rust/`.
+The Go binary at the repo root stays canonical until this port reaches full
+parity; behavior here is matched to it byte-for-byte.
 
 ARMV is **strictly read-only**: it drives Azure's `validateMoveResources`
 long-running operation to report whether every resource in a source resource
@@ -69,9 +69,10 @@ the Go binary — deliberately including its quirks:
   (`409 409 Conflict`), because the status text is the full HTTP status line.
 
 The port adds a few things the Go build lacks, for usability (see
-deviations): cyan per-step status lines, `--`-prefixed missing-flag names,
-prompt Ctrl-C/SIGTERM cancellation at every pipeline step, and a short
-managed-identity probe timeout so off-Azure runs don't hang on IMDS.
+deviations): the `--exclude-resource-types` filter, cyan per-step status
+lines, `--`-prefixed missing-flag names, prompt Ctrl-C/SIGTERM cancellation
+at every pipeline step, and a short managed-identity probe timeout so
+off-Azure runs don't hang on IMDS.
 
 ## Usage
 
@@ -84,14 +85,33 @@ armv \
   --source-resource-group  rg-source \
   --target-subscription-id 11111111-1111-1111-1111-111111111111 \
   --target-resource-group  rg-target \
-  --output-path ./output \   # optional, default ./output
-  --debug                    # optional, prints elapsed time
+  --output-path ./output \                              # optional, default ./output
+  --exclude-resource-types Microsoft.Web/certificates \ # optional, repeatable
+  --debug                                               # optional, elapsed time + verbose logging
 ```
+
+`--debug` prints the elapsed time (as in the Go build) and additionally
+enables verbose `tracing` diagnostics — each HTTP request and response,
+resource counts, exclusions, credential selection, and poll transitions.
+The output is written to **both stderr and a `armv-debug-*.log` file** in the
+output directory (alongside the report); the log path is printed at startup.
+Set `RUST_LOG` (e.g. `RUST_LOG=armv=debug,azure_core=debug`) to widen the
+filter; without `--debug` no logging subscriber is installed, so normal runs
+stay quiet.
 
 Subscription IDs must be bare UUIDs. On completion a
 `output-YYYY-MM-DD-HH-MM-SS.md` report is written under `--output-path`
 (files `0640`, directories `0750`), and a green (204) or red (409) banner is
 printed. `--version` and `--help` behave as in the Go build.
+
+`--exclude-resource-types` (Rust-only) drops resources of the given types
+before validation — useful for types known not to be movable (e.g.
+`Microsoft.Web/certificates`). It is repeatable and comma-separated
+(`--exclude-resource-types A,B --exclude-resource-types C`), matched
+case-insensitively against each resource's `provider/type`. If every
+resource is excluded the run stops with a clear error. When any resources
+are excluded, the report adds an `## Excluded Resources` table (and an
+`Excluded (by type)` count in the header) listing them for reference.
 
 ## Build, test, lint
 
@@ -108,10 +128,13 @@ built binary end-to-end through the real `azure_core` pipeline via the
 test-only `ARMV_ENDPOINT` override; the unit tests assert byte-for-byte
 parity with the Go output.
 
-Version metadata parity: `build.rs` resolves version/commit/date from the
-`ARMV_VERSION`/`ARMV_COMMIT`/`ARMV_DATE` env vars (release pipelines), then
-`git describe`/`rev-parse`/`show`, then the Go zero-values
-`dev`/`none`/`unknown`.
+Version metadata: `build.rs` embeds the version/commit/date shown by
+`--version`. The version defaults to the Cargo package version
+(`0.0.1-alpha` — idiomatic for Rust, the crate carries its own version), and
+the commit/date come from `git` (`rev-parse --short HEAD` /
+`show -s --format=%cI`). Each can be overridden by the
+`ARMV_VERSION`/`ARMV_COMMIT`/`ARMV_DATE` env vars for release pipelines;
+missing git values fall back to `none`/`unknown`.
 
 ## Module map
 
@@ -139,12 +162,22 @@ Version metadata parity: `build.rs` resolves version/commit/date from the
 - Cyan per-step status lines (`Authenticating to Azure…`, `Enumerating
   resources…`, etc.) are printed as the pipeline runs; the Go build is
   silent between the login line and the progress bar.
+- `--debug` additionally installs a `tracing` subscriber that logs verbose
+  diagnostics (HTTP requests/responses, counts, credential selection, poll
+  transitions) to stderr and to a `armv-debug-*.log` file in the output
+  directory; the Go build's `--debug` only prints elapsed time.
 - Every pre-poll Azure call is raced against cancellation, so Ctrl-C /
   SIGTERM interrupts promptly even during credential acquisition (the Go
   build only unwinds cleanly once it reaches the poll loop).
 - The managed-identity credential gets a 5-second probe timeout so the chain
   fails over to `az login` quickly off-Azure instead of blocking on the
   unreachable IMDS endpoint (other credentials get 30s).
+- `--exclude-resource-types` drops resources of the named types before
+  validation (repeatable, comma-separated, case-insensitive); the Go build
+  has no such filter.
+- The `azure_core` pipeline retry policy is disabled: the LRO poll loop is
+  driven explicitly and every status is interpreted by the client, so SDK
+  retries would only conflict (e.g. retrying a terminal 500 for 60s).
 - Azure SDK error internals: transport/auth failures render with
   `azure_core`/`azure_identity` text, not the Go azcore `ResponseError`
   format. Our own wrap prefixes (`login error:`,
@@ -161,3 +194,36 @@ Version metadata parity: `build.rs` resolves version/commit/date from the
   transport-level `poll: … context canceled` wording.
 - `ARMV_ENDPOINT` (test-only) points the ARM client at a mock server with a
   static token; it is unset in production use.
+
+## Code review notes (`0.0.1-alpha`)
+
+Reviewed as a senior-Rust pass. Summary of the current state:
+
+**Applied**
+- Credential cache uses `OnceCell` (no lock held across `.await`); the
+  winning credential is remembered without a double token-fetch.
+- The `--debug` file-log writer recovers from a poisoned mutex instead of
+  panicking — a logging sink can never take down the process.
+- `unsafe` is forbidden package-wide via `[lints] unsafe_code = "forbid"`
+  in `Cargo.toml` (covers the lib, binary, tests, and build script); the
+  codebase contains zero `unsafe`.
+- `azure_core` retry policy disabled so the explicitly-driven poll loop
+  isn't fought by SDK retries.
+- Dead `Config.version` field removed.
+
+**Known limitations / deferred (acceptable for alpha)**
+- `--exclude-resource-types` matches the top-level `provider/type` only
+  (e.g. `Microsoft.Web/certificates`); a nested child type such as
+  `Microsoft.Web/sites/slots` would not match.
+- `--debug` creates the output directory (and an `armv-debug-*.log`) eagerly,
+  so it appears even when a run fails before writing a report.
+- `ARMV_ENDPOINT` is a deliberate test hook that lives in the production
+  path (needed to drive the real binary from the wiremock e2e tests).
+- The public API surface is intentionally broad so integration tests in
+  `tests/` can reach internals; not all `pub` items are part of a stable
+  contract.
+- The tokio runtime is multi-threaded although the workload is largely
+  sequential I/O.
+
+**Coverage:** ~80 tests — pure-logic unit tests plus wiremock end-to-end
+tests exercising the full pipeline through the real `azure_core` stack.

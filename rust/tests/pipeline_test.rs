@@ -318,4 +318,59 @@ async fn debug_flag_prints_elapsed_time() {
         .lines()
         .any(|l| l.starts_with("Elapsed time: ") && l.ends_with(" seconds"));
     assert!(re_ok, "expected elapsed-time line in: {stdout}");
+
+    // --debug also turns on verbose tracing to stderr.
+    let stderr = String::from_utf8(assert.get_output().stderr.clone()).unwrap();
+    assert!(
+        stderr.contains("confirmed access to subscription"),
+        "expected verbose debug logging in stderr: {stderr}"
+    );
+
+    // ...and a debug log file is written to the output directory.
+    let log_dir = dir.path().join("r");
+    let logs: Vec<_> = std::fs::read_dir(&log_dir)
+        .unwrap()
+        .filter_map(Result::ok)
+        .filter(|e| e.file_name().to_string_lossy().starts_with("armv-debug-"))
+        .collect();
+    assert_eq!(logs.len(), 1, "expected one debug log file");
+    let log_content = std::fs::read_to_string(logs[0].path()).unwrap();
+    assert!(log_content.contains("confirmed access to subscription"));
+}
+
+#[tokio::test]
+async fn excludes_resource_types_from_validation() {
+    let server = MockServer::start().await;
+    mount_pipeline(&server).await; // src-rg has 2 resources: a Storage account and a Web site
+    Mock::given(method("GET"))
+        .and(path("/lro/poll"))
+        .respond_with(ResponseTemplate::new(204))
+        .mount(&server)
+        .await;
+
+    let dir = tempfile::tempdir().unwrap();
+    let out = dir.path().join("reports");
+    let uri = server.uri();
+    let out_str = out.to_str().unwrap().to_string();
+
+    let assert = tokio::task::spawn_blocking(move || {
+        let mut cmd = armv(&uri, &out_str);
+        cmd.args(["--exclude-resource-types", "Microsoft.Storage/storageAccounts"]);
+        cmd.assert().success()
+    })
+    .await
+    .unwrap();
+
+    let stdout = String::from_utf8(assert.get_output().stdout.clone()).unwrap();
+    assert!(stdout.contains("Excluded 1 resource(s) matching --exclude-resource-types"));
+
+    let files = report_files(&out);
+    assert_eq!(files.len(), 1);
+    let content = std::fs::read_to_string(out.join(&files[0])).unwrap();
+    // One of the two resources was excluded, so only one is validated.
+    assert!(content.contains("- **Resources validated:** 1"));
+    // ...and the excluded resource is listed in the report for reference.
+    assert!(content.contains("- **Excluded (by type):** 1"));
+    assert!(content.contains("## Excluded Resources"));
+    assert!(content.contains("| 1 | Microsoft.Storage/storageAccounts | stg1 |"));
 }

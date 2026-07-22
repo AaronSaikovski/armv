@@ -18,6 +18,10 @@ pub struct Args {
     pub target_resource_group: String,
     pub debug: bool,
     pub output_path: String,
+    /// Resource types to drop from validation (e.g. types known not to be
+    /// movable, such as "Microsoft.Web/certificates"). Repeatable and/or
+    /// comma-separated; matched case-insensitively.
+    pub exclude_resource_types: Vec<String>,
 }
 
 /// Default directory for output files (app/root.go DefaultOutputPath).
@@ -68,7 +72,8 @@ pub fn parse(argv: &[String], version: &str) -> anyhow::Result<Option<Args>> {
                 | "source-resource-group"
                 | "target-subscription-id"
                 | "target-resource-group"
-                | "output-path" => {
+                | "output-path"
+                | "exclude-resource-types" => {
                     let value = match inline_value {
                         Some(v) => v,
                         None => {
@@ -99,6 +104,15 @@ pub fn parse(argv: &[String], version: &str) -> anyhow::Result<Option<Args>> {
                             set.push("target-resource-group");
                         }
                         "output-path" => args.output_path = value,
+                        // Repeatable and comma-separated; accumulate.
+                        "exclude-resource-types" => {
+                            for t in value.split(',') {
+                                let t = t.trim();
+                                if !t.is_empty() {
+                                    args.exclude_resource_types.push(t.to_string());
+                                }
+                            }
+                        }
                         _ => unreachable!(),
                     }
                 }
@@ -180,14 +194,16 @@ Usage:\n\
   armv [flags]\n\
 \n\
 Flags:\n\
-      --debug                           Enable debug mode with timing information\n\
-  -h, --help                            help for armv\n\
-      --output-path string              Output path to write results (default \"./output\")\n\
-      --source-resource-group string    Source Resource Group (required)\n\
-      --source-subscription-id string   Source Subscription Id (required)\n\
-      --target-resource-group string    Target Resource Group (required)\n\
-      --target-subscription-id string   Target Subscription Id (required)\n\
-  -v, --version                         version for armv\n"
+      --debug                             Enable debug mode with timing information\n\
+      --exclude-resource-types strings    Resource types to exclude from validation, e.g.\n\
+                                          Microsoft.Web/certificates (repeatable/comma-separated)\n\
+  -h, --help                              help for armv\n\
+      --output-path string                Output path to write results (default \"./output\")\n\
+      --source-resource-group string      Source Resource Group (required)\n\
+      --source-subscription-id string     Source Subscription Id (required)\n\
+      --target-resource-group string      Target Resource Group (required)\n\
+      --target-subscription-id string     Target Subscription Id (required)\n\
+  -v, --version                           version for armv\n"
     )
 }
 
@@ -219,6 +235,27 @@ mod tests {
         assert_eq!(args.target_resource_group, "rg-b");
         assert_eq!(args.output_path, "./output");
         assert!(!args.debug);
+        assert!(args.exclude_resource_types.is_empty());
+    }
+
+    #[test]
+    fn exclude_resource_types_repeatable_and_comma_separated() {
+        let mut a = v(&ALL);
+        a.extend(v(&[
+            "--exclude-resource-types",
+            "Microsoft.Web/certificates, Microsoft.Foo/bar",
+            "--exclude-resource-types",
+            "Microsoft.Baz/qux",
+        ]));
+        let args = parse(&a, "x").unwrap().unwrap();
+        assert_eq!(
+            args.exclude_resource_types,
+            vec![
+                "Microsoft.Web/certificates".to_string(),
+                "Microsoft.Foo/bar".to_string(),
+                "Microsoft.Baz/qux".to_string(),
+            ]
+        );
     }
 
     #[test]

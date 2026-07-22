@@ -1,7 +1,8 @@
-// Build metadata parity with the Go binary, which injects version/commit/date
-// via -ldflags -X. Resolution order per value: explicit env var (release
-// pipelines) -> git (matching the Taskfile's `git describe` / `rev-parse` /
-// `show -s --format=%cI`) -> the Go zero-values dev/none/unknown.
+// Build metadata injected at compile time (parity with the Go binary's
+// -ldflags -X). The version is the Cargo package version by default
+// (idiomatic for Rust — the crate carries its own version, e.g.
+// "0.0.1-alpha"); commit/date come from git. An explicit env var overrides
+// each for release pipelines.
 use std::process::Command;
 
 fn git(args: &[&str]) -> Option<String> {
@@ -31,11 +32,14 @@ fn main() {
     // Re-run when HEAD moves so the embedded commit stays fresh.
     println!("cargo:rerun-if-changed=../.git/HEAD");
 
-    let version = resolve(
-        "ARMV_VERSION",
-        &["describe", "--tags", "--always", "--dirty"],
-        "dev",
-    );
+    // Version: env override -> Cargo package version (CARGO_PKG_VERSION is
+    // set by cargo for build scripts) -> "dev".
+    println!("cargo:rerun-if-env-changed=ARMV_VERSION");
+    let version = std::env::var("ARMV_VERSION")
+        .ok()
+        .filter(|v| !v.is_empty())
+        .or_else(|| std::env::var("CARGO_PKG_VERSION").ok())
+        .unwrap_or_else(|| "dev".to_string());
     let commit = resolve("ARMV_COMMIT", &["rev-parse", "--short", "HEAD"], "none");
     let date = resolve(
         "ARMV_DATE",

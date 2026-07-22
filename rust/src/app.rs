@@ -18,7 +18,6 @@ pub const CONSOLE_TOP_FAILURES: usize = 3;
 
 /// Application configuration resolved from CLI flags (Go app.Config).
 pub struct Config {
-    pub version: String,
     pub args: Args,
 }
 
@@ -68,6 +67,8 @@ async fn run_inner(cancel: CancellationToken, cfg: &Config) -> anyhow::Result<()
     };
 
     // Login check against the source subscription (login.go checkLogin).
+    tracing::debug!("pipeline start: source_sub={sub} source_rg={src_rg} target_rg={tgt_rg} exclude_types={:?}", cfg.args.exclude_resource_types);
+
     // Every pre-poll Azure call is raced against cancellation so Ctrl-C
     // interrupts even while a credential probe or HTTP request is in flight
     // (the poll loop honours cancellation on its own).
@@ -75,6 +76,7 @@ async fn run_inner(cancel: CancellationToken, cfg: &Config) -> anyhow::Result<()
     cancellable(&cancel, client.get_subscription(sub))
         .await
         .context("login error")?;
+    tracing::debug!("confirmed access to subscription {sub}");
     println!(
         "{}",
         colors::yellow(&format!("Logged into Subscription Id: {sub}"))
@@ -105,11 +107,34 @@ async fn run_inner(cancel: CancellationToken, cfg: &Config) -> anyhow::Result<()
     if resource_ids.is_empty() {
         anyhow::bail!("no resources found in source resource group \"{src_rg}\"");
     }
+    tracing::debug!("listed {} resource(s) in \"{src_rg}\"", resource_ids.len());
+
+    // Drop any resource types the caller asked to exclude (e.g. types known
+    // not to be movable); the excluded IDs are recorded in the report.
+    let (resource_ids, excluded_resources) =
+        exclude_by_type(resource_ids, &cfg.args.exclude_resource_types);
+    if !excluded_resources.is_empty() {
+        tracing::debug!(
+            "excluded {} resource(s) by type; {} remaining",
+            excluded_resources.len(),
+            resource_ids.len()
+        );
+        status(&format!(
+            "Excluded {} resource(s) matching --exclude-resource-types.",
+            excluded_resources.len()
+        ));
+    }
+    if resource_ids.is_empty() {
+        anyhow::bail!(
+            "all resources in source resource group \"{src_rg}\" were excluded by --exclude-resource-types"
+        );
+    }
     status(&format!("Found {} resource(s) to validate.", resource_ids.len()));
 
     let target_rg_id = cancellable(&cancel, client.get_resource_group_id(sub, tgt_rg))
         .await
         .context("failed to get target resource group ID")?;
+    tracing::debug!("resolved target resource group id {target_rg_id}");
 
     // Start the validate-move LRO (validatemove.go ValidateMove).
     status("Validating resource move (this can take a few minutes)...");
@@ -119,6 +144,7 @@ async fn run_inner(cancel: CancellationToken, cfg: &Config) -> anyhow::Result<()
     )
     .await
     .context("failed to validate resource move")?;
+    tracing::debug!("validate-move long-running operation started");
 
     let report_ctx = ReportContext {
         source_subscription_id: cfg.args.source_subscription_id.clone(),
@@ -126,6 +152,7 @@ async fn run_inner(cancel: CancellationToken, cfg: &Config) -> anyhow::Result<()
         target_subscription_id: cfg.args.target_subscription_id.clone(),
         target_resource_group: cfg.args.target_resource_group.clone(),
         resource_count: resource_ids.len(),
+        excluded_resources,
     };
 
     let report = crate::lro::poll_api(&cancel, &client, begin, &cfg.args.output_path, report_ctx)
@@ -156,6 +183,31 @@ fn status(msg: &str) {
     println!("{}", colors::cyan(msg));
 }
 
+/// Partitions resource IDs by whether their type is in `excluded`
+/// (case-insensitive). The type is the `provider/type` pair parsed from each
+/// ID (e.g. `Microsoft.Web/certificates`). Returns `(kept, removed)`.
+fn exclude_by_type(ids: Vec<String>, excluded: &[String]) -> (Vec<String>, Vec<String>) {
+    if excluded.is_empty() {
+        return (ids, Vec::new());
+    }
+    let mut kept = Vec::new();
+    let mut removed = Vec::new();
+    for id in ids {
+        let (resource_type, _) = crate::report::parse_resource_id(&id);
+        // Azure resource types are ASCII, so compare case-insensitively
+        // without allocating a lowercased copy per resource.
+        if excluded
+            .iter()
+            .any(|ex| ex.eq_ignore_ascii_case(&resource_type))
+        {
+            removed.push(id);
+        } else {
+            kept.push(id);
+        }
+    }
+    (kept, removed)
+}
+
 /// Races an async pipeline step against cancellation so Ctrl-C / SIGTERM
 /// interrupt promptly even while an Azure call is in flight. On cancellation
 /// the in-flight future is dropped and a "context canceled" error is
@@ -168,5 +220,74 @@ where
         biased;
         () = cancel.cancelled() => anyhow::bail!("context canceled"),
         result = fut => result,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn cancellable_passes_result_through_when_not_cancelled() {
+        let cancel = CancellationToken::new();
+        let value = cancellable(&cancel, async { anyhow::Ok(42) }).await.unwrap();
+        assert_eq!(value, 42);
+    }
+
+    #[tokio::test]
+    async fn cancellable_interrupts_a_pending_future() {
+        let cancel = CancellationToken::new();
+        cancel.cancel();
+        // A future that would never complete on its own; cancellation must win.
+        let never = async {
+            std::future::pending::<()>().await;
+            anyhow::Ok(())
+        };
+        let err = cancellable(&cancel, never).await.unwrap_err();
+        assert_eq!(format!("{err:#}"), "context canceled");
+    }
+
+    fn ids() -> Vec<String> {
+        vec![
+            "/subscriptions/s/resourceGroups/rg/providers/Microsoft.Web/certificates/cert1".into(),
+            "/subscriptions/s/resourceGroups/rg/providers/Microsoft.Storage/storageAccounts/stg1"
+                .into(),
+            "/subscriptions/s/resourceGroups/rg/providers/Microsoft.Web/sites/app1".into(),
+        ]
+    }
+
+    #[test]
+    fn exclude_by_type_empty_list_keeps_all() {
+        let (kept, removed) = exclude_by_type(ids(), &[]);
+        assert_eq!(kept.len(), 3);
+        assert!(removed.is_empty());
+    }
+
+    #[test]
+    fn exclude_by_type_removes_matching_types() {
+        let (kept, removed) = exclude_by_type(ids(), &["Microsoft.Web/certificates".to_string()]);
+        assert_eq!(removed.len(), 1);
+        assert!(removed[0].contains("/certificates/"));
+        assert_eq!(kept.len(), 2);
+        assert!(kept.iter().all(|id| !id.contains("/certificates/")));
+    }
+
+    #[test]
+    fn exclude_by_type_is_case_insensitive() {
+        let (kept, removed) = exclude_by_type(ids(), &["microsoft.web/CERTIFICATES".to_string()]);
+        assert_eq!(removed.len(), 1);
+        assert_eq!(kept.len(), 2);
+    }
+
+    #[test]
+    fn exclude_by_type_multiple_types() {
+        let excluded = vec![
+            "Microsoft.Web/certificates".to_string(),
+            "Microsoft.Storage/storageAccounts".to_string(),
+        ];
+        let (kept, removed) = exclude_by_type(ids(), &excluded);
+        assert_eq!(removed.len(), 2);
+        assert_eq!(kept.len(), 1);
+        assert!(kept[0].contains("/sites/"));
     }
 }

@@ -11,6 +11,8 @@
 //   pkg/utils/{output,outputfile}.go                   -> output.rs + colors.rs
 //   pkg/utils/jsonutils.go (json.Indent)               -> jsonfmt.rs
 //   pkg/utils/validateinput.go                         -> validate.rs
+//
+// `unsafe` is forbidden package-wide via `[lints]` in Cargo.toml.
 
 pub mod app;
 pub mod auth;
