@@ -1,0 +1,41 @@
+[package]
+name = "armv"
+version = "0.0.1"
+edition = "2024"
+description = "ARMV - Azure Resource Movability Validator (Rust port)"
+license = "MIT"
+repository = "https://github.com/AaronSaikovski/armv"
+
+[lib]
+name = "armv"
+path = "src/lib.rs"
+
+[[bin]]
+name = "armv"
+path = "src/main.rs"
+
+[dependencies]
+anyhow = "1"
+async-trait = "0.1"
+chrono = { version = "0.4", default-features = false, features = ["clock"] }
+indicatif = "0.17"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "time", "signal"] }
+tokio-util = { version = "0.7", features = ["rt"] }
+# ARM access: official new-generation Azure SDK crates. The HTTP calls run
+# through azure_core's pipeline with a BearerTokenCredentialPolicy; only the
+# 5 endpoint definitions (which no new-gen mgmt crate provides) are ours.
+azure_core = "0.30"
+azure_identity = "0.30"
+
+[dev-dependencies]
+assert_cmd = "2"
+predicates = "3"
+tempfile = "3"
+tokio = { version = "1", features = ["test-util"] }
+wiremock = "0.6"
+
+[profile.release]
+strip = true
+lto = true
