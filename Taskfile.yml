@@ -118,3 +118,36 @@ tasks:
       - go generate {{.APPPATH}}
 
   ###############################################################################
+
+  ## rust:build - debug build of the Rust port
+  rust:build:
+    dir: rust
+    cmds:
+      - cargo build
+
+  ## rust:release - release build of the Rust port
+  rust:release:
+    dir: rust
+    cmds:
+      - cargo build --release
+
+  ## rust:test - run the Rust port's tests
+  rust:test:
+    dir: rust
+    cmds:
+      - cargo test
+
+  ## rust:lint - format + clippy for the Rust port
+  rust:lint:
+    dir: rust
+    cmds:
+      - cargo fmt
+      - cargo clippy --all-targets -- -D warnings
+
+  ## rust:clean - remove Rust build artifacts
+  rust:clean:
+    dir: rust
+    cmds:
+      - cargo clean
+
+  ###############################################################################

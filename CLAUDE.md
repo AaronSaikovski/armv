@@ -13,6 +13,7 @@ Markdown report plus a coloured terminal summary banner.
 ## Commands
 
 The project uses [Task](https://taskfile.dev/) (`Taskfile.yml`). Raw `go` commands work too.
+Requires Go 1.26+ (see `go.mod`).
 
 - `task build` — debug build to `bin/armv`
 - `task release` — runs `lint` then a stripped (`-s -w`) release build
@@ -74,5 +75,5 @@ best entry point for understanding the whole flow:
 ### Tests
 
 Tests live in **two** places: a top-level `test/` package (black-box tests importing the public
-API) and `_test.go` files alongside their packages (e.g. `cmd/armv/poller/`,
-`internal/pkg/auth/`). `go test ./...` covers both.
+API) and `_test.go` files inside `cmd/armv/poller/` (`pollresponse_test.go`, `report_test.go` —
+the only in-package tests). `go test ./...` covers both.

@@ -1,0 +1,121 @@
+# Cross-platform release build of the Rust port, reproducing the goreleaser
+# artifact naming (armv_{version}_{Os}_{arch}.tar.gz / .zip + sha256
+# checksums). Trigger manually while the Go goreleaser pipeline remains the
+# canonical release; switch to tag-triggered at cutover.
+name: rust-release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version (without leading v); defaults to git describe"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: ${{ matrix.artifact }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { runner: macos-latest, target: x86_64-apple-darwin, artifact: Darwin_x86_64, cross: false }
+          - { runner: macos-latest, target: aarch64-apple-darwin, artifact: Darwin_arm64, cross: false }
+          - { runner: windows-latest, target: x86_64-pc-windows-msvc, artifact: Windows_x86_64, cross: false }
+          - { runner: windows-latest, target: i686-pc-windows-msvc, artifact: Windows_i386, cross: false }
+          - { runner: ubuntu-latest, target: x86_64-unknown-linux-gnu, artifact: Linux_x86_64, cross: false }
+          - { runner: ubuntu-latest, target: i686-unknown-linux-gnu, artifact: Linux_i386, cross: true }
+          - { runner: ubuntu-latest, target: aarch64-unknown-linux-gnu, artifact: Linux_arm64, cross: true }
+          - { runner: ubuntu-latest, target: armv7-unknown-linux-gnueabihf, artifact: Linux_armv7, cross: true }
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: rust
+          key: ${{ matrix.target }}
+
+      - name: Resolve version metadata
+        id: meta
+        shell: bash
+        run: |
+          VERSION="${{ inputs.version }}"
+          if [ -z "$VERSION" ]; then
+            VERSION="$(git describe --tags --always --dirty)"
+          fi
+          VERSION="${VERSION#v}"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "ARMV_VERSION=v$VERSION" >> "$GITHUB_ENV"
+          echo "ARMV_COMMIT=$(git rev-parse --short HEAD)" >> "$GITHUB_ENV"
+          echo "ARMV_DATE=$(git show -s --format=%cI HEAD)" >> "$GITHUB_ENV"
+
+      - name: Install cross
+        if: matrix.cross
+        run: cargo install cross --locked
+
+      - name: Build
+        shell: bash
+        working-directory: rust
+        run: |
+          if [ "${{ matrix.cross }}" = "true" ]; then
+            cross build --release --target ${{ matrix.target }}
+          else
+            cargo build --release --target ${{ matrix.target }}
+          fi
+
+      - name: Package
+        shell: bash
+        run: |
+          NAME="armv_${{ steps.meta.outputs.version }}_${{ matrix.artifact }}"
+          mkdir -p "dist/$NAME"
+          cp LICENSE README.md "dist/$NAME/"
+          case "${{ matrix.target }}" in
+            *windows*)
+              cp "rust/target/${{ matrix.target }}/release/armv.exe" "dist/$NAME/"
+              cd dist && 7z a "$NAME.zip" "$NAME" > /dev/null
+              ;;
+            *)
+              cp "rust/target/${{ matrix.target }}/release/armv" "dist/$NAME/"
+              cd dist && tar czf "$NAME.tar.gz" "$NAME"
+              ;;
+          esac
+          rm -rf "dist/$NAME"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: armv-${{ matrix.artifact }}
+          path: |
+            dist/*.tar.gz
+            dist/*.zip
+
+  checksums:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Generate checksums
+        shell: bash
+        run: |
+          cd dist
+          VERSION="$(ls armv_*_* | head -1 | sed -E 's/^armv_([^_]+)_.*/\1/')"
+          sha256sum armv_* > "armv_${VERSION}_checksums.txt"
+          cat "armv_${VERSION}_checksums.txt"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: armv-checksums
+          path: dist/armv_*_checksums.txt
